@@ -1,0 +1,41 @@
+
+{% extends "cvdp/login.html" %}
+
+{% load i18n static crispy_forms_tags %}
+
+
+{% block content_title %}
+<div class="row columns">
+  <h3>Multi-factor authentication</h3>
+</div>{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<p>Your account is secured using multi-factor authentication (MFA).
+  To finish signing in, turn on or view your MFA device and type the authentication code below.
+</p>
+{% if device %}
+<p>Hint (device name): <b>{{ device }}</b></p>
+{% endif %}
+{% if action %}
+<form action="{{ action }}" method="post">
+{% else %}
+<form action="." method="post">
+  {% endif %}
+  {% csrf_token %}
+  {{ form|crispy }}
+  <input type="hidden" name="next" value="{{ next }}" />
+  <div class="mb-3">
+    <p class="password-reset-link text-center"><a href="#">Troubleshoot MFA</a></p>
+  </div>
+  <div class="mb-3">
+    <button class="btn btn-primary d-grid w-100" type="submit">Submit</button>
+  </div>
+</form>
+<br/>
+
+{% endblock %}
+
+
+

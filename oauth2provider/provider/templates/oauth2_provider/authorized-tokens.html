@@ -1,0 +1,39 @@
+{% extends "oauth2_provider/base.html" %}
+
+{% load i18n %}
+
+{% block authwidth %}
+<div class="authentication-wrapper-wide authentication-basic container-p-y">
+  {% endblock %}
+
+
+{% block content %}
+    <h3 class="text-center mt-4">{% trans "Your Authorization Tokens" %}</h3>
+    <table class="table striped hover">
+      <thead>
+        <tr>
+	  <th>Provider</th>
+	  <th>Scope</th>
+	  <th>Revoke</th>
+	</tr></thead>
+      <tbody>
+        {% for authorized_token in authorized_tokens %}
+	<tr>
+	  <td>
+            {{ authorized_token.application }}
+	  </td>
+	  <td>
+	    {% for scope_name, scope_description in authorized_token.scopes.items %}
+            {{ scope_name }}: {{ scope_description }}<br/>
+            {% endfor %}
+	  <td>
+	  <td>
+            (<a href="{% url 'oauth2_provider:authorized-token-delete' authorized_token.pk %}">{% trans "revoke" %}</a>)
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">{% trans "There are no authorized tokens yet." %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+{% endblock %}

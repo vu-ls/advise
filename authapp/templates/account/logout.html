@@ -1,0 +1,22 @@
+{% extends "authapp/logout.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main" class="content text-center">
+  <h4 class="mb-2">{% trans "Sign Out" %}</h4>
+  
+  <p class="mb-4">{% trans 'Are you sure you want to sign out?' %}</p>
+
+  <form method="post" action="{% url 'account_logout' %}">
+    {% csrf_token %}
+    {% if redirect_field_value %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+    {% endif %}
+    <div class="mb-3">
+      <button class="btn btn-primary d-grid w-100" type="submit">{% trans 'Sign Out' %}</button>
+    </div>
+  </form>
+</div>
+
+
+{% endblock %}

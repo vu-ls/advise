@@ -1,0 +1,15 @@
+{% extends 'cvdp/bt_base_site.html' %}
+
+
+{% load i18n %}
+
+{% block head_title %}{% trans "Account Inactive" %}{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  <h4>{% trans "Account Inactive" %}</h4>
+  
+  <p>{% trans "This account is inactive." %}</p>
+  <p><a href="{% url 'account_logout' %}">Sign in as a different user</a></p>
+</div>
+{% endblock %}

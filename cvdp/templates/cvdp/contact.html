@@ -1,0 +1,213 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load post_tags crispy_forms_tags user_tags%}
+{% load static %}
+{% block js %}
+{{ block.super }}
+<script type="text/javascript" src="{% static 'cvdp/js/user.js' %}"></script>
+{% endblock %}
+{% block content %}
+
+<div class="modal fade" id="modal">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+<div class="container-xxl flex-grow-1 container-p-y">
+  
+  {% include 'cvdp/include/top_panel.html' with title=object.name secondcrumbs="Contacts" breadcrumbs="Groups" %}
+  {{ csrftoken }}
+  {% if object.user %} 
+
+  <div class="row">
+    <div class="col-md-12">
+      <ul class="nav nav-pills flex-column flex-md-row mb-3" role="tablist">
+        <li class="nav-item">
+          <button type="button" class="nav-link active" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-justified-all" aria-controls="navs-pills-justified-all" aria-selected="true"><i class="bx bx-user me-1"></i> Account</button>
+        </li>
+        <li class="nav-item">
+          <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-justified-tkts" aria-controls="navs-pills-justified-tkts" aria-selected="true"><i class="bx bx-bell me-1"></i> Tickets</button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" type="button"  role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-justified-bounces" aria-controls="navs-pills-justified-bounces" aria-selected="true">
+            <i class="bx bx-link-alt me-1"></i> Bounces</button>
+        </li>
+      </ul>
+
+      <div class="tab-content p-0">
+        <div class="tab-pane fade show active" id="navs-pills-justified-all" role="tabpanel">
+	  <div class="card mb-4">
+            <h5 class="card-header">Profile Details</h5>
+            <!-- Account -->
+            <div class="card-body">
+              <div class="d-flex align-items-start align-items-sm-center gap-4">
+		{% autoescape off %}{{ object.user|userlogo:"d-block rounded large-profile" }}{% endautoescape %}
+		<!--<img
+		    src="../assets/img/avatars/1.png"
+		    alt="user-avatar"
+		    class="d-block rounded"
+		    height="100"
+		    width="100"
+		    id="uploadedAvatar"
+		    />-->
+		<div class="button-wrapper">
+		  <a class="btn btn-primary me-2 mb-4" href=""><i class="fas fa-comment" alt="message user" title="message user"></i> Message User</a>
+		</div>
+              </div>
+            </div>
+	    <hr class="my-0" />
+            <div class="card-body">
+	      
+	      {% if object.user.pending %}
+	      <div class="row" id="pendingwarning">
+		<div class="col-lg-12">
+		  <div class="alert alert-warning">
+		    <p>This user is in pending mode.</p>
+		  </div>
+		</div>
+	      </div>
+	      {% endif %}
+	      
+	      {% if object.user.is_active %}{% else %}
+	      <div class="alert alert-danger">This user is inactive</div>
+	      {% endif %}
+	      
+	      {% if object.user.api_account %}
+	      <b>This is an API service account.</b><br/>
+	      {% endif %}
+	      <h5>User: {{ object.user.screen_name }}</h5>	  
+	      <div class="row">
+		<div class="col-lg-12">
+		  <b>Full Name:</b>  {{ object.user.get_full_name }}<br/>
+		  <b>Organization:</b>  {{ object.user.org }}<br/>
+		  <b>Title:</b>   {{ object.user.title }}<br/>
+		  <b>Email:</b>   {{ object.user.email }}<br/>
+		  <b>Groups:</b>   {{ object.user.groups.all|join:", " }}<br/>
+		  <b>Associations:</b>   <br/>
+		  <ul>
+		    {% for a in associations %}
+		    <li>Added to <a href="{% url 'cvdp:group' a.group.id %}">{{ a.group.name }}</a> on {{ a.created|date:"Y-m-d" }} {% if a.verified %}VERIFIED{% else %}NOT VERIFIED{% endif %}</li>
+		    {% endfor %}
+		  </ul>
+		  <b>Last Login:</b>   {{ object.user.last_login }}<br/>
+		  {% if object.user.userprofile.service %}
+		  <b>MFA Enabled:</b> Not required <br/>
+		  {% else %}
+		  <b>MFA Enabled:</b> {% if object.user|mfa_set %}Set{% else %}Not Set{% endif %} <br/>
+		  {% endif %}
+		  <b>Account Provider:</b> {% for x in object.user.socialaccount_set.all %}
+		  <span class="badge rounded-pill bg-primary p-2">{{ x.provider }}</span>
+		  {% endfor %}
+		  {% if user.has_usable_password %}
+		  <span class="badge rounded-pill bg-primary p-2">LOCAL</span>
+		  {% endif %}
+
+		  <div class="button-group mt-3">
+		    {% if object.user|mfa_set %}
+		    <a id="resetmfa" href="{% url 'authapp:reset_mfa' object.user.id %}"><button class="btn btn-sm btn-warning">MFA Reset</button></a>
+		    {% endif %}
+		    <a href=""><button class="btn btn-sm btn-primary">Email User</button></a>
+		  </div>
+		</div>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<div class="tab-pane fade" id="navs-pills-justified-tkts" role="tabpanel">
+          <div class="card mb-4">
+            <h5 class="card-header">Tickets</h5>
+            <!-- Account -->
+            <div class="card-body">
+	      <div class="row">
+		<div class="col-lg-1">
+		  <label class="form-label" for="filterstatus">Status</label>
+		</div>
+		<div class="col-lg-3">
+                  <select class="input-group-field form-control" id="filterstatus">
+                    <option value="0">All</option>
+                    <option value="1">Open</option>
+                    <option value="4">Closed</option>
+                  </select>
+		</div>
+		<div class="col-lg-6">
+		  <div class="input-group input-group-merge">
+		    <span class="input-group-text" id="basic-addon-search31"><i class="bx bx-search"></i></span>
+                    <input class="form-control" type="text" placeholder="Filter tasks" id="filter_tasks" href="" name="{{ object.user.username }}">
+                    </div>
+		  </div>
+		</div>
+		<div class="col-lg-2"></div>
+	      </div>
+	      <div class="row">
+		<div class="col-lg-12">
+		  <div id="case_tasks">
+		    
+		  </div>
+		</div>
+	      </div>
+	    </div>
+	  </div>
+        <div class="tab-pane fade" id="navs-pills-justified-bounces" role="tabpanel">
+          <div class="card mb-4">
+            <h5 class="card-header">Email Bounces</h5>
+            <!-- Account -->
+            <div class="card-body">
+	      <p><b>No email bounces for this user.</b></p>
+	    </div>
+	  </div>
+	</div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card mt-4">
+	<div class="card-header">
+	  <h5 class="card-title">User Activity</h5>
+	</div>
+	<div class="card-body">
+	  {% for act in activity %}
+	  <div class="d-flex align-items-center gap-2 m-2 border-bottom pb-2">
+	    {% autoescape off %}{{ act.user|userlogo:"profile-pic" }}{% endautoescape %}
+	    {{ act.title }} <small class="text-muted">(<time class="article-row-content-time"><i class="far fa-clock"></i> {{ act.created|timesince }} ago)
+	  </time></small>
+
+	  </div>
+	  {% endfor %}
+	</div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card mt-1">
+	<div class="card-header d-flex justify-content-between">
+	  <h5 class="card-title">Contact Details</h5>
+	  <a class="btn btn-danger" confirm_action="{% url 'cvdp:searchgroups' %}" id="rmcontact" href="{% url 'cvdp:contactapi-detail' object.id %}">Remove Contact</a>
+	</div>
+	<div class="card-body">
+	  {% if object.name %}
+	  <b>Name: </b> {{ object.name }}<br/>
+	  {% endif %}
+	  <b>Email:</b>   {{ object.email }}<br/>
+	  {% if objet.phone %}
+	  <b>Phone:</b>   {{ object.phone }}<br/>
+	  {% endif %}
+          <b>Associations:</b>   <br/>
+	  <ul>
+	  {% for a in associations %}
+	  <li>Added to <a href="{% url 'cvdp:group' a.group.id %}">{{ a.group.name }}</a> on {{ a.created|date:"Y-m-d" }} {% if a.verified %}VERIFIED{% else %}NOT VERIFIED{% endif %}</li>
+	  {% endfor %}
+	  </ul>
+	  
+	</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  
+  
+</div>
+{% endblock %}

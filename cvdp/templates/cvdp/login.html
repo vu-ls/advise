@@ -1,0 +1,101 @@
+{% extends "cvdp/bt_base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+<script type="text/javascript" src="{% static 'cvdp/js/jquery.min.js' %}"></script>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }}login{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block coltype %}content{% endblock%}
+
+
+ {% block body %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}">{{ message|capfirst }}</div>
+{% endfor %}
+
+{% endblock body %}
+{% block content %}
+
+<div id="content-main" class="content">
+  <form action="{% url 'authapp:login' %}" method="post" id="login-form">{% csrf_token %}
+  
+  <h4 class="mb-2">Welcome to AdVISE!</h4>
+  <p class="mb-4">Please sign-in to your account. Note that both fields are case-sensitive.</p>
+
+  {% if form.username.errors %}
+  {% for error in form.username.errors %}
+  <div class="alert alert-danger" id="error_{{ forloop.counter }}_{{ field.auto_id }}"><strong>{{ error }}</strong></div>
+  {% endfor %}
+  {% endif %}
+
+  {% if user.is_authenticated %}
+  <div class="alert alert-info">
+    <strong>
+      You are authenticated as {{ user.username }}. Go to <a href="{% url 'cvdp:dashboard' %}">my dashboard</a> or <a href="{% url 'authapp:logout' %}">login as a different user.</a>
+    </strong>
+  </div>
+  {% endif %}
+
+  {% if oidc_link %}
+  <div class="mb-3">
+    <a href="{{ oidc_link }}" class="btn btn-primary">OPENID LOGIN</a>
+  </div>
+  {% endif %}
+  
+  <div class="mb-3">
+    <label for="email" class="form-label">Email</label>
+    <input
+      type="text"
+      class="form-control"
+      id="id_username"
+      name="username"
+      autofocus
+      />
+  </div>
+  <div class="mb-3 form-password-toggle">
+    <div class="d-flex justify-content-between">
+      <label class="form-label" for="password">Password</label>
+      {% if password_reset_url %}
+      <a href="{{ password_reset_url }}"><small>{% trans 'Forgot Password?' %}</small>
+	{% endif %}
+    </div>
+    <div class="input-group input-group-merge">
+      <input
+        type="password"
+        id="id_password"
+        class="form-control"
+        name="password"
+        placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
+        aria-describedby="password"
+        />
+      <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
+    </div>
+  </div>
+  <div class="mb-3">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="remember-me" />
+      <label class="form-check-label" for="remember-me"> Remember Me </label>
+    </div>
+  </div>
+  <div class="mb-3">
+    <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+  </div>
+</form>
+  
+  <p class="text-center">
+    <span>New to AdVISE?</span>
+    <a href="{% url 'cvdp:signup' %}">
+      <span>Create an account</span>
+    </a>
+  </p>
+
+
+  </div>
+</div>
+
+{% endblock %}
+

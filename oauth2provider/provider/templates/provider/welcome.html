@@ -1,0 +1,58 @@
+{% extends "cvdp/bt_base_site.html" %}
+{% load user_tags %}
+{% block branding %}
+<h3>AdVISE OAUTH2</h3>
+{% endblock %}
+
+
+{% block content %}
+
+
+<h4>Welcome to the AdVISE OAUTH2 Provider</h4>
+
+{% if user.is_authenticated %}
+<div class="alert alert-warning">You are logged in as {{ user.username }}</div>
+{% else %}
+
+<div class="mb-3">
+  <a href="{% url 'login' %}" class="btn btn-primary d-grid w-100">Login</a>
+</div>
+
+
+<div class="mb-3">
+  <a href="{% url 'provider:register' %}" class="btn btn-primary d-grid w-100">Register
+</a>
+</div>
+{% endif %}
+
+
+{% if user.is_staff %}
+<div class="mb-3">
+  <a href="{% url 'admin:index' %}" class="btn btn-primary d-grid w-100">Admin</a>
+</div>
+{% endif %}
+
+{% if user.is_authenticated %}
+<div class="mb-3">
+  <a href="{% url 'password_change' %}" class="btn btn-primary d-grid w-100">Change Password</a>
+</div>
+
+
+
+{% if user|has_mfa_enabled %}
+<div class="mb-3">
+  <a href="{% url 'provider:remove_mfa' %}" class="btn btn-primary d-grid w-100">Remove MFA Device</a>
+</div>
+{% else %}
+<div class="mb-3">
+  <a href="{% url 'provider:setup_mfa' %}" class="btn btn-primary d-grid w-100">Setup MFA</a>
+</div>
+{% endif %}
+
+<div class="mb-3">
+  <a href="{% url 'logout' %}" class="btn btn-secondary d-grid w-100">Logout</a>
+</div>
+{% endif %}
+
+
+{% endblock %}

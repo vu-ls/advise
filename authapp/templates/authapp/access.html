@@ -1,0 +1,153 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load i18n humanize widget_tweaks crispy_forms_tags user_tags %}
+{% load static %}
+{% block js %}
+{{ block.super }}
+<script type="text/javascript" src="{% static 'cvdp/js/profile.js' %}"></script>
+{% endblock %}
+{% block content %}
+</script>
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  {% include 'cvdp/include/top_panel.html' with title="MFA/API" breadcrumbs="Profile" %}
+
+<div class="modal fade" id="modal">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    {% include 'authapp/include/account_nav.html' with mfa=1 %}
+
+    <div class="card mb-4">
+      <h5 class="card-header">Authentication, MFA, and API Access</h5>
+      <!-- Account -->
+      <div class="card-body">
+	<div class="row">
+	  <div class="mb-3 col-md-2">
+	    <label class="form-label">Authentication backend:</label>
+	  </div>
+	  <div class="mb-3 col-md-8">
+            <div class="ms-3">
+	      {% for x in user.socialaccount_set.all %}
+	      <span class="badge rounded-pill bg-primary p-2">{{ x.provider }}</span>
+	      {% endfor %}
+	      {% if user.has_usable_password %}
+	      <span class="badge rounded-pill bg-primary p-2">LOCAL</span>
+	      {% endif %}
+	    </div>
+	  </div>
+	</div>
+
+	<div class="row">
+	  <div class="mb-3 col-md-2">
+            <label class="form-label">My Groups:</label>
+	  </div>
+	  <div class="mb-3 col-md-8">
+            <div class="ms-3">
+              {% for group in groups %}
+
+              <span class="badge rounded-pill bg-label-primary p-2">{{ group }}</span>
+              {% endfor %}
+            </div>
+          </div>
+	</div>
+	{% if user.has_usable_password %}
+	<div class="row">
+	  <div class="mb-3 col-md-2">
+            <label class="form-label">Multi-factor Authentication (MFA)</label>
+	  </div>
+          <div class="mb-3 col-md-8">
+	    <div class="ms-3 d-flex align-items-center gap-2">
+              {% if user|mfa_set %}<span class="badge rounded-pill bg-label-success">Set</span>{% else %}<span class="badge rounded-pill bg-label-danger">Not Set</span> {% endif %}
+	      <div class="ms-3">
+		{% if user|mfa_set %}<a href="{% url 'two-factor-remove' %}" id="rmmfa" class="btn btn-primary btn-sm">Disable MFA</a>{% else %}<a href="{% url 'two-factor-setup' %}" id="enablemfa" class="btn btn-primary btn-sm">Enable MFA</a>{% endif %}
+              </div>
+            </div>
+	  </div>
+	</div>
+	<div class="row">
+	  <div class="mb-3 col-md-2">
+            <label class="form-label">MFA Backup Tokens</label>
+          </div>
+	  <div class="mb-3 col-md-8">
+            <div class="ms-3 d-flex align-items-center gap-2">
+	      <a href="{% url 'two-factor-backup-tokens' %}" class="btn btn-outline-primary btn-sm">{% if user.staticdevice_set.count > 0 %}View{% else %}Generate{% endif %}</a>
+	    </div>
+	  </div>
+	</div>
+	
+	{% endif %}
+	<div class="row">
+	  <div class="mb-3 col-md-2">
+            <label class="form-label">API Key</label>
+	  </div>
+          <div class="mb-3 col-md-8">
+	    <div class="ms-3 d-flex">
+              {% if api_key %}<b><i>{{api_key}}</i></b>{% endif %}
+	      <div class="ms-3">
+		<button id="gentoken" action="{% url 'authapp:apitoken' %}" class="btn btn-outline-secondary btn-sm">{% if api_key %}Refresh API Key{% else %}Generate API Key{% endif %}</button>
+	      </div>
+	    </div>
+	    {% if api_key %}
+	    <div class="ms-3 mt-1">
+	      Generated {{ api_key.created|date:"Y-m-d" }}
+	    </div>
+	    {% endif %}
+          </div>
+	</div>
+      </div>
+      <hr/>
+      <h5 class="card-header">Account Connections</h5>
+      <div class="card-body">
+	{% if form.accounts %}
+	<p>{% blocktrans %}You can sign in to your account using any of the following third party accounts:{% endblocktrans %}</p>
+	
+	
+	<form method="post" action="{% url 'authapp:mfaaccess' %}">
+	  {% csrf_token %}
+	  
+	  {% if form.non_field_errors %}
+	  <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+	  {% endif %}
+	  
+	  {% for base_account in form.accounts %}
+	  {% with base_account.get_provider_account as account %}
+	  <div>
+	    <label for="id_account_{{ base_account.id }}" class="form-label">
+	      <input id="id_account_{{ base_account.id }}" type="radio" name="account" value="{{ base_account.id }}" class="form-check-input"/>
+	      <span class="socialaccount_provider {{ base_account.provider }} {{ account.get_brand.id }}">{{account.get_brand.name}}</span>
+
+	    </label>
+	  </div>
+	  {% endwith %}
+	  {% endfor %}
+	  
+	  <div class="mt-4">
+	    <button class="btn btn-danger" type="submit">{% trans 'Remove' %}</button>
+	  </div>
+	</form>
+	{% else %}
+	<p>{% trans 'You currently have no social network accounts connected to this account.' %}</p>
+	{% endif %}
+
+      </div>
+      <hr/>
+      <h5 class="card-header">{% trans 'Add a 3rd Party Account' %}</h5>
+      <div class="card-body">
+	<ul class="socialaccount_providers list-unstyled">
+	  {% include "socialaccount/snippets/provider_list.html" with process="connect" %}
+	</ul>
+	
+	{% include "socialaccount/snippets/login_extra.html" %}
+      </div>
+    </div>
+    
+    
+  </div>
+</div>
+</div>
+{% endblock %}

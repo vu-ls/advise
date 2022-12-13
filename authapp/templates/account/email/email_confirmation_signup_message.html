@@ -1,0 +1,14 @@
+{% extends "cvdp-email/en/email_html_bootstrap.html" %}
+{% load account %}
+{% load i18n %}
+
+
+{% block content %}
+<p>
+{% user_display user as user_display %}{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}You're receiving this e-mail because user {{ user_display }} has given your e-mail address to register an account on {{ site_domain }}.  {% endblocktrans %}
+</p>
+<p>
+  <a href="{{ activate_url }}" style="color: #ffffff; font-size: 16px; font-family: Helvetica, Arial, sans-serif; text-decoration: none; border-radius: 6px; line-height: 20px; display: block; font-weight: 700 !important; white-space: nowrap; background-color: #0d6efd; padding: 12px; border: 1px solid #0d6efd;">Confirm your account</a>
+</p>
+
+{% endblock %}

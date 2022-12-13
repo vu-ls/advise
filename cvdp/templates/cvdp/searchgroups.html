@@ -1,0 +1,45 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+{% block content %}
+{% load widget_tweaks %}
+
+
+<div class="container-xxl flex-grow-1 container-p-y">
+
+ {% include 'cvdp/include/top_panel.html' with title="Search" breadcrumbs="Groups"  %}
+
+
+ <div id="app"></div>
+ 
+
+ {% comment %}
+	<div class="card-header d-flex align-items-center justify-content-between">
+	  <h5 class="card-title">Contact Associations</h5>
+	  <div class="button-group">
+      	    <a href="{% url 'cvdp:initcontactverify' %}" class="btn btn-primary btn-sm">Verify Contact</a>
+	    <a href="{% url 'cvdp:contactlist' %}" class="btn btn-primary btn-sm">View All</a>
+	  </div>
+	</div>
+	<div class="card-body">
+	  {% include 'cvdp/include/contact_assoc_table.html' with object_list=associations %}
+
+	</div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card">
+	<div class="card-body">
+	  {% include 'cvdp/include/contactactivity.html' with object_list=activity_list title="Contact Activity" %}    
+	</div>
+      </div>
+    </div>
+    {% endcomment %}
+
+</div>
+{% render_bundle 'groups' %}
+{% endblock %}
+
+
+
+    

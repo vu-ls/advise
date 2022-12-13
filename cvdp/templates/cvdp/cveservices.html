@@ -1,0 +1,26 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load i18n %}
+<!-- site-title  -->
+{% load render_bundle from webpack_loader %}
+{% block cvdp_title %}{% trans "CVE Services" %}{% endblock %}
+{% load static %}
+{% block content %}
+
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  {% url 'cvdp:add_cve_account' as button_url %}
+  {% include 'cvdp/include/top_panel.html' with title="CVE Services" breadcrumbs="Settings" button_text="Add CVE Account" buttonid="addcve" %}
+ 
+  <div class="modal fade" id="largemodal">
+    <div class="modal-dialog modal-xl  modal-dialog-centered" role="document">
+      <div class="modal-content">
+      </div>
+    </div>
+  </div>
+
+  <div id="app"></div>
+  
+
+{% render_bundle 'cve' %}
+
+{% endblock %}

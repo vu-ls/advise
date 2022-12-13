@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -x
+exec > >(tee /var/log/tf-user-data.log|logger -t user-data ) 2>&1
+
+logger() {
+  DT=$(date '+%Y/%m/%d %H:%M:%S')
+  echo "$DT $0: $1"
+}
+
+logger "Running Bastion"
+
+#
+# Variables
+#
+
+# Get Private IP address
+#HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/hostname)
+PRIVATE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
+PUBLIC_IP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
+
+AWS_REGION="${tpl_aws_region}"
+
+# using AL2 for bastion, we know it uses yum, this is not needed
+## Detect package management system.
+#YUM=$(which yum 2>/dev/null)
+#APT_GET=$(which apt-get 2>/dev/null)
+
+#
+# Functions
+#
+# none yet
+
+#
+# base setup
+#
+# set up daily security update check
+cat >/etc/cron.daily/security-updates <<EOF
+#!/bin/sh
+
+yum update --security -y
+EOF
+
+chmod 755 /etc/cron.daily/security-updates
+
+# update now
+yum update -y
+
+# install packages
+amazon-linux-extras install -y postgresql14
+pip3 install --upgrade pip
+pip3 install psycopg2-binary

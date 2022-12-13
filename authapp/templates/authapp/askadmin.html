@@ -1,0 +1,22 @@
+{% extends "cvdp/bt_base_site.html" %}
+
+{% load i18n static crispy_forms_tags %}
+
+{% block content_title %}<h3>Assistance Required</h3>{% endblock %}
+
+{% block content %}
+{% for message in messages %}
+{% if message.tags == "error" %}
+<div class="alert alert-danger">{{ message }}</div>
+{% else %}
+<div class="alert alert-{{ message.tags }}">{{ message }}</div>
+{% endif %}
+{% endfor %}
+<p>
+    We are unable to perform this action related to your account.  Please contact the administrator for assistance.
+  </p>
+  <p> <a href="{% url 'authapp:login' %}" class="btn btn-primary">Login</a></p>
+
+{% endblock %}
+
+

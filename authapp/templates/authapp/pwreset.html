@@ -1,0 +1,25 @@
+{% extends "cvdp/login.html" %}
+
+{% load i18n static crispy_forms_tags %}
+
+
+{% block content_title %}<h3>Password Reset</h3>{% endblock %}
+
+{% block content %}
+<div class="mb-3">Use your email to reset your password or <a href="{% url 'authapp:login' %}">Login</a></div>
+<form method="post">
+  {% csrf_token %}
+  <div class="mb-3">
+    {{ form.email|as_crispy_field }}
+  </div>
+  
+    <div class="password-reset-link text-center mb-3">
+      <a href="{% url 'authapp:loginhelp' %}">{% trans 'Need help?' %}</a>
+    </div>
+    <div class="mb-3">
+      <input type="submit" class="btn btn-primary d-grid w-100" type="submit" value="{% trans 'Submit' %}">
+    </div>
+  </form>
+{% endblock %}
+
+

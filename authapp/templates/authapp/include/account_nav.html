@@ -1,0 +1,17 @@
+<ul class="nav nav-pills flex-column flex-md-row mb-3">
+  <li class="nav-item">
+    <a class="nav-link {% if profile %}active{% endif %}" href="{% url 'authapp:profile' %}"><i class="bx bx-user me-1"></i> Account</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if mfa %}active{% endif %}" href="{% url 'authapp:mfaaccess' %}"><i class="bx bx-bell me-1"></i> MFA/API</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if emails %} active {% endif %}" href="{% url 'account_email' %}"><i class="bx bx-envelope"></i> Emails</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if preferences %} active {% endif %}" href="{% url 'authapp:preferences' %}"><i class="bx bx-envelope"></i> Email Preferences</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if password %}active{% endif %}" href="{% url 'account_change_password' %}"><i class="bx bx-key"></i> Password</a>
+  </li>
+</ul>

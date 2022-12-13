@@ -1,0 +1,11 @@
+<ul class="nav nav-pills flex-column flex-md-row mb-3">
+  <li class="nav-item">
+    <a class="nav-link {% if details %}active{% endif %}" href="{% url 'cvdp:group' group.id %}"><i class="bx bx-user me-1"></i> Group Details</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if verifications %}active{% endif %}" href="{% url 'cvdp:group_verifications' group.id %}"><i class="bx bx-bell me-1"></i> Verifications</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if components %} active {% endif %}" href="{% url 'cvdp:group_components' group.id %}"><i class="fas fa-microchip"></i> Components</a>
+  </li>
+</ul>

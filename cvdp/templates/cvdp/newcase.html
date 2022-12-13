@@ -1,0 +1,40 @@
+{% extends CVDP_BASE_TEMPLATE %}{% load i18n crispy_forms_tags %}
+{% block cvdp_title %}{% trans "Create Case" %}{% endblock %}
+<!-- site-title  -->
+{% load static %}
+
+{% block content %}
+
+{% load widget_tweaks %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  
+  {% include 'cvdp/include/top_panel.html' with title="New Case" breadcrumbs="Cases" %}
+  
+  <div class="row">
+    <div class="col-lg-12">
+      <form method="post" id="caseform" onsubmit="submitbtn.disabled = true; return true;" enctype="multipart/form-data">
+	{% csrf_token %}
+	{% if form.errors %}
+	<div class="alert alert-danger">
+          {% if form.errors.items|length == 1 %}Please correct the error below.{% else %}Please correct the errors below.{% endif %}
+	</div>
+	{% endif %}
+	<div class="row">
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-body">
+		{% for field in form %}
+		{{ field|as_crispy_field }}
+		{% endfor %}
+		<button type="submit" id="submitbtn" class="btn btn-primary">Submit</button>
+              </div>
+            </div>
+          </div>
+	</div>
+      </form>
+    </div>
+  </div>
+
+
+{% endblock %}

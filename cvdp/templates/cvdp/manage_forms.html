@@ -1,0 +1,80 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load render_bundle from webpack_loader %}
+{% load i18n %}
+{% load static %}
+{% block js %}
+{{ block.super }}
+
+{% endblock %}
+{% block content %}
+
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  {% url 'cvdp:create_form' as button_url %}
+  {% include 'cvdp/include/top_panel.html' with button_url=button_url button_text="Add form" title="Manage Forms" breadcrumbs="Manage" %}
+
+  <div class="modal fade" id="modal">
+    <div class="modal-dialog modal-xl  modal-dialog-centered" role="document">
+      <div class="modal-content">
+      </div>
+    </div>
+  </div>
+  
+  <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+
+    {% for form in object_list %}
+    <div class="col">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+	  <h5 class="card-title mb-0">
+	    <a href="{% url 'cvdp:design_form' form.id %}">{{ form.title }}</a></h5>
+	  <div class="dropdown">
+            <button
+	      class="btn p-0"
+              type="button"
+	      id="iwantto"
+	      data-bs-toggle="dropdown"
+	      aria-haspopup="true"
+	      aria-expanded="false"
+		>
+	      <i class="bx bx-dots-vertical-rounded"></i>
+            </button>
+	    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="iwantto">
+	      <a class="dropdown-item" href="{% url 'cvdp:editform' form.id %}">{% trans "Edit Form" %}</a>
+	      <a class="dropdown-item" href="{% url 'cvdp:design_form' form.id %}">{% trans "Edit Questions" %}</a>
+	      <a class="dropdown-item rmconfirm" title="Are you sure you want to remove this form?" href="{% url 'cvdp:form_api' form.id %}">{% trans "Remove Form" %}</a>
+            </div>
+	  </div>
+        </div>
+	<hr class="m-0">
+        <div class="card-body">
+	  <label class="form-label">Questions: <span class="form-questions">{{ form.num_questions }}</span>
+	  </label>
+	  <br/>
+	  <label class="form-label">Created by: <span class="form-questions">{{ form.created_by.screen_name }}</span>
+	  </label>
+	</div>
+	<hr class="m-0">
+	<div class="card-body">
+	  {% if form.fields.all|length > 0 %}
+	  <h6>Questions</h6>
+	  <ul>
+	  {% for q in form.fields.all %}
+	  <li>{{ q.question }}</li>
+	  {% endfor %}
+	  </ul>
+	  {% else %}
+	  <b>No questions in this form.</b>
+	  {% endif %}
+	</div>
+      </div>
+      
+    </div>
+    {% endfor %}
+  </div>
+  
+</div>
+
+{% render_bundle 'app' %}
+
+{% endblock %}

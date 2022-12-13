@@ -1,0 +1,26 @@
+{% load i18n crispy_forms_tags %}
+<div class="modal-dialog" role="document">
+  <form method="post" action="{{ action }}" id="addemailform">
+    <div class="modal-content">
+      <div class="modal-header">
+	<h3 class="modal-title">New Contact</h3>
+	<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+	{% csrf_token %}
+
+	{% crispy form %}
+	<div id="vendor-results">
+	</div>
+	<div id="msgvendor" class="hidden">
+          <label for='id_msg'>Message to Admins:</label>
+          <textarea name="msg" cols="40" rows="8" id="id_msg"></textarea>
+	</div>
+      </div>
+      <div class="modal-footer text-right">
+	<a href="#" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</a>
+	<input class="btn btn-primary" type='submit' value='{% trans "Submit" %}' />
+      </div>
+    </div>
+  </form>
+</div>

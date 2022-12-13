@@ -1,0 +1,26 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load static %}
+{% block content %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h2>Uh Oh :(</h2>
+
+  <div class="row mt-5">
+    <div class="col-lg-12">
+      <h3> Something unexpected happened.  Please let us know if this problem continues. </h3>
+      <a href="{% url 'cvdp:dashboard' %}" class="btn btn-primary">Back to home</a>
+        <div class="mt-3">
+          <img
+            src="{% static 'cvdp/images/page-misc-error-light.png' %}"
+            alt="page-misc-error-light"
+            width="500"
+            class="img-fluid"
+            data-app-dark-img="illustrations/page-misc-error-dark.png"
+            data-app-light-img="illustrations/page-misc-error-light.png"
+            />
+        </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

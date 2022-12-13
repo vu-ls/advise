@@ -1,0 +1,42 @@
+#!/bin/bash
+# Simple build script that can be used for manually-managed application
+# deployments, and is needed to bootstrap the initial deployment.
+
+set -o errexit
+
+if [ "X$${AWS_REGION}" = "X" ]; then 
+    echo "AWS_REGION must be set (suggestion: ${aws_region})"
+    exit 1
+fi
+
+if [ "X$${DOCKER_BUILDX}" = "X" ]; then
+    echo "DOCKER_BUILDX must be set to the name of a valid docker buildx instance."
+    echo "Use 'docker buildx ls' to find one, 'docker buildx create --use' to start a"
+    echo "new one."
+    exit 1
+fi
+
+if [ "X$${ADVISE_SRC_DIR}" = "X" ]; then
+    echo "ADVISE_SRC_DIR must be set to the location of the source to build."
+    exit 1
+fi
+
+#DIR="$( cd "$( dirname "$${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+aws ecr get-login-password --region us-east-2 | \
+    docker login --username AWS --password-stdin ${ecr_registry_id}.dkr.ecr.${aws_region}.amazonaws.com
+
+# get us into a sane location
+CURDIR=$(pwd)
+cd $${ADVISE_SRC_DIR}
+docker buildx use $${DOCKER_BUILDX}
+docker buildx build --platform linux/amd64 \
+    -f deploy/docker/Dockerfile-django \
+    --build-arg ASSET_PATH="/static/webpack_bundles/" \
+    --build-arg API_URL="https://${advise_app_fqdn}/advise" \
+    --build-arg REQUIREMENTS_FILE="requirements-aws.txt" \
+    --push -t ${ecr_app_repository_url}:${advise_image_version} .
+docker buildx build --platform linux/amd64 \
+    -f deploy/docker/nginx/Dockerfile \
+    --push -t ${ecr_proxy_repository_url}:${advise_proxy_image_version} deploy/docker/nginx
+cd $${CURDIR}

@@ -1,0 +1,37 @@
+{% load i18n %}
+<div class="modal-dialog" role="document">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">API Key</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+      {% csrf_token %}
+    <div class="modal-body">
+      {% if confirm %}
+      <p>Are you sure you want to revoke your old API key ({{token}}) and create a new one?</p>
+      {% else %}
+      <p>
+	An API Key has been generated for you to access the API.
+	This key should be copied to a safe place and should not be shared with anyone.
+	Should you lose access to this key, you will need to generate a new one.
+      </p>
+      <p><b> {{ token }} </b></p>
+      {% endif %}      
+
+    </div>
+    <div class="modal-footer text-right">
+      {% if confirm %}
+      <form action="{% url 'authapp:apitoken' %}" id="confirmrefresh" method="POST">
+        {% csrf_token %}
+	<a href="#" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</a>
+	<input class="btn btn-primary" type='submit' value='{% trans "Yes" %}' />
+      </form>
+      {% else %}
+      <a href="#" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="apidone">Ok</a>
+      {% endif %}
+      
+    </div>
+  </div>
+</div>
+
+

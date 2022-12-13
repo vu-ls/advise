@@ -1,0 +1,82 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load i18n post_tags %}
+{% load static %}
+{% block js %}
+{{ block.super }}
+
+<script type="text/javascript" src="{% static 'cvdp/js/groupdetail.js' %}"></script>
+<script type="text/javascript" src="{% static 'cvdp/js/tabulator.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'cvdp/css/tabulator_bootstrap4.css' %}">
+ {% endblock %}
+{% block content %}
+
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  {% url 'cvdp:editcontact' contact.id as button_url %}
+  {% include 'cvdp/include/top_panel.html' with button_url=button_url button_text="Edit Group" title=group.name breadcrumbs="Groups" %}
+
+
+  <div class="modal fade" id="modal">
+    <div class="modal-dialog modal-xl  modal-dialog-centered" role="document">
+      <div class="modal-content">
+      </div>
+    </div>
+  </div>
+<div class="row">
+  <div class="col-lg-12">
+
+    {% include 'cvdp/include/group_nav.html' with verifications=1%}
+    
+      <div class="card overflow-hidden">
+        <div class="card-header d-flex justify-content-between pb-0">
+	  <div class="d-flex align-items-start align-items-sm-center gap-4">
+            {% autoescape off %}{{ object|grouplogo:"d-block rounded large-profile" }}{% endautoescape %}
+	    <h3 class="m-0 me-2">{% if object.groupprofile.active %}
+              {{ object.name }} (Active)
+              {% else %}
+              {{ object.name }} (Inactive)
+              {% endif %}</h3>
+            <small class="text-muted">
+            </small>
+	    </div>
+	    <div class="dropdown">
+              <button
+		class="btn p-0"
+		type="button"
+		id="iwantto"
+		data-bs-toggle="dropdown"
+		aria-haspopup="true"
+		aria-expanded="false"
+		>
+		<i class="bx bx-dots-vertical-rounded"></i>
+              </button>
+	      
+              <div class="dropdown-menu dropdown-menu-end" aria-labelledby="iwantto">
+		<a class="dropdown-item verify" href="{% url 'cvdp:assoc_api_detail' 1 %}">{% trans "Verify Selected Users" %}</a>
+		<a class="dropdown-item remove" href="#">{% trans "Remove Selected Users" %}</a>
+	      </div>
+          </div>
+	</div>
+	<div class="card-body mt-3">
+          <div class="row">
+            <div class="col-lg-8">
+	      <h4>Unverified users</h4>
+	    </div>
+	  </div>
+	  <div class="row">
+            <div class="col-lg-12">
+              <div id="contact-table" class="tabulator bootstrap" url="{% url 'cvdp:assoc_api' group.id %}?verified=False"></div>
+            </div>
+          </div>
+	  
+	</div>
+      </div>
+  </div>
+</div>
+
+
+
+
+
+
+{% endblock %}

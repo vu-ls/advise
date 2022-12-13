@@ -1,0 +1,94 @@
+{% load i18n widget_tweaks %}
+{% load account socialaccount %}
+
+<div id="dash" class="hidden" href="{% url 'cvdp:dashboard' %}"></div>
+<div id="login" class="hidden" href="{% url 'authapp:login' %}"></div>
+<form action="{% url 'authapp:postlogin' %}?next={{request.GET.next}}" method="post" id="loginform">
+  {% csrf_token %}
+
+ <h4 class="mb-2">Welcome to AdVISE!</h4>
+  <p class="mb-4">Please sign-in to your account. Note that both fields are case-sensitive.</p>
+
+  {% if form.username.errors %}
+  {% for error in form.username.errors %}
+  <div class="alert alert-danger" id="error_{{ forloop.counter }}_{{ field.auto_id }}"><strong>{{ error }}</strong></div>
+  {% endfor %}
+  {% endif %}
+
+  {% if user.is_authenticated %}
+  <div class="alert alert-info">
+    <strong>
+      You are authenticated as {{ user.username }}. Go to <a href="{% url 'cvdp:dashboard' %}">my dashboard</a> or <a href="{% url 'authapp:logout' %}">login as a different user.</a>
+    </strong>
+  </div>
+  {% endif %}
+
+  {% render_field form.auth_backend class="form-control" %}
+  
+  <div class="mb-3">
+    <label for="email" class="form-label">Email</label>
+    {% render_field form.username class="form-control" %}
+    
+  </div>
+  <div class="mb-3 form-password-toggle">
+      <div class="d-flex justify-content-between">
+        <label class="form-label" for="password">Password</label>
+	{% url 'authapp:init_password_reset' as password_reset_url %}
+        <a href="{{ password_reset_url }}"><small>{% trans 'Forgot Password?' %}</small></a>
+      </div>
+      <div class="input-group input-group-merge">
+        <input
+          type="password"
+          id="id_password"
+          class="form-control"
+          name="password"
+          placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
+          aria-describedby="password"
+	  autofocus
+          />
+        <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
+      </div>
+    </div>
+
+
+   {% get_providers as socialaccount_providers %}
+
+  {% if socialaccount_providers %}
+  <p>Or sign in with one of the following providers:</p>
+  <div class="socialaccount_ballot">
+
+    <ul class="socialaccount_providers">
+      {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+    </ul>
+
+    <div class="login-or">{% trans 'or' %}</div>
+
+  </div>
+    {% include "socialaccount/snippets/login_extra.html" %}
+
+{% endif %}
+
+  
+
+
+  <div class="mb-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="remember-me" />
+        <label class="form-check-label" for="remember-me"> Remember Me </label>
+      </div>
+    </div>
+    <div class="mb-3">
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+    </div>
+</form>
+
+  <p class="text-center">
+    <span>New to AdVISE?</span>
+    <a href="{% url 'authapp:signup' %}">
+      <span>Create an account</span>
+    </a>
+  </p>
+
+</div>
+

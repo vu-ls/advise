@@ -1,0 +1,21 @@
+{% extends "cvdp/bt_base_site.html" %}
+{% load i18n crispy_forms_tags %}
+
+{% block content %}
+<h4>
+  {% trans "Disable Two-Factor Authentication" %}
+</h4>
+
+<p><a href="{% url 'authapp:mfaaccess' %}">< Go back to my profile</a></p>
+
+<p>{% trans "Please enter a valid authentication token to disable two-factor authentication:" %}</p>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form|crispy }}
+  <button type="submit" class="btn btn-outline-danger d-grid w-100">
+    {% trans 'Disable Two-Factor' %}
+  </button>
+</form>
+
+{% endblock %}

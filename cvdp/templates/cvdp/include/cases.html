@@ -1,0 +1,56 @@
+{% load message_tags %}
+{% if dashboard and cases %}
+<div class="card-header">
+  <h5 class="card-title m-0"> Your active cases</h5>
+</div>
+<div class="card-body">
+  <div class="list-group p-0 case-list">
+    {% for case in cases %}
+    {% if case.note.datefirstpublished %}{% else %}
+    {% include 'vinny/include/dash_case.html' with case=case unseen_cases=unseen_cases %} 
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+<hr class="m-0">
+
+{% if num_published %}
+<div class="card-header">
+  <h5 class="card-title"> Your active published cases</h5>
+</div>
+<div class="card-body">
+  <div class="list-group p-0 case-list">
+    {% for case in cases %}
+    {% if case.note.datefirstpublished %}
+    {% include 'vinny/include/dash_case.html' with case=case unseen_cases=unseen_cases %}
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% else %}
+{% for case in cases %}
+<p>HERE</p>
+<div class="card-header">
+  <h5 class="card-title">
+    {% if cases.paginator %}
+    <div class="resultCount"> Showing results {{ cases.start_index }} - {{ cases.end_index }} of {{ total }} Results </div>
+    {% elif paginator.count %}
+    <div class="resultCount"> {{ paginator.count }} Results </div>
+    {% endif %}
+  </h5>
+</div>
+<div class="card-body">
+  <div class="list-group p-0">
+    {% include 'vinny/include/dash_case.html' with case=case unseen_cases=unseen_cases %}
+  </div>
+</div>
+{% empty %}
+<div class="card-header">
+  <h4 class="card-title">No cases matched your filter criteria</h4>
+</div>
+{% endfor %}
+{% endif %}
+{% if cases.paginator %}
+{% include 'vinny/include/std_pagination.html' with object_list=cases %}
+{% endif %}

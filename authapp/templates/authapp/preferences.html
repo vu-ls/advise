@@ -1,0 +1,66 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load i18n humanize widget_tweaks crispy_forms_tags %}
+{% load static %}
+{% block js %}
+{{ block.super }}
+{% endblock %}
+{% block content %}
+</script>
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  {% include 'cvdp/include/top_panel.html' with title="Email Preferences" breadcrumbs="Profile" %}
+
+<div class="modal fade" id="adddependency">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    {% include 'authapp/include/account_nav.html' with preferences=1 %}
+
+    <div class="card mb-4">
+      <h5 class="card-header">Email Preferences</h5>
+      <!-- Account -->
+      
+      <div class="card-body">
+
+	<form method="post">
+	  {% csrf_token %}
+	  {{ form.email_preference|as_crispy_field }}
+	  
+	  {{ form.email_daily|as_crispy_field }}
+	  
+	  <hr>
+      
+      {# Include the hidden fields #}
+      {% for hidden in form.hidden_fields %}
+      {{ hidden }}
+      {% endfor %}
+
+      <label class="form-label">Tell us which notifications you'd like to receive:</label>
+      <ul class="list-unstyled">
+      {% for field in form.visible_fields %}
+      {% if field.name in "email_preference,email_daily" %}
+      {% else %}
+      <li class="mb-2">
+	<div class="form-check">
+	  {% render_field field class="form-check-input mr-2" %}
+	  <div class="form-check-label">
+	    <strong>{% trans field.label %}</strong>
+	    <div class="text-muted">
+	      {% trans field.help_text %}
+	    </div>
+	  </div>
+	</div>
+      </li>
+      {% endif %}
+      {% endfor %}
+      </ul>
+      <input type="submit" class="btn btn-primary" value="Save Changes">
+    </form>
+  </div>
+</div>
+{% endblock %}

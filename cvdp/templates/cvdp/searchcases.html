@@ -1,0 +1,26 @@
+{% extends CVDP_BASE_TEMPLATE %}{% load i18n crispy_forms_tags %}
+<!-- site-title  -->
+{% block cvdp_title %}{% trans "Case Search" %}{% endblock %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+
+{% block content %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+
+  {% if user.is_coordinator %}
+  {% url 'cvdp:newcase' as button_url %}
+  {% endif %}
+ {% include 'cvdp/include/top_panel.html' with title="My Cases" breadcrumbs="Cases" button_url=button_url button_text="New Case" %}
+
+  <div id="app"></div>
+
+  {{ status|json_script:'case_status_options' }}
+  {{ owner|json_script:'owner_option' }}
+  
+  {% render_bundle 'searchcases' %}
+   
+</div>
+{% endblock %}
+
+

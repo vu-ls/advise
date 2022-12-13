@@ -1,0 +1,29 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load i18n %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+
+{% block content %}
+
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  {% url 'cvdp:editcontact' contact.id as button_url %}
+  {% include 'cvdp/include/top_panel.html' with button_url=button_url button_text="Edit Group" title=group.name breadcrumbs="Groups" %}
+
+  <div class="row">
+    <div class="col-lg-12">
+      
+      {% include 'cvdp/include/group_nav.html' with components=1%}
+
+      <div id="app" group="{{group.id}}"> </div>
+      
+    </div>
+
+</div>
+
+
+
+{% render_bundle 'group_components' %}
+
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load render_bundle from webpack_loader %}
+{% load i18n crispy_forms_tags %}
+{% load static %}
+{% block js %}
+{{ block.super }}
+
+{% endblock %}
+{% block content %}
+
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  {% include 'cvdp/include/top_panel.html' with title="Report Vulnerability" breadcrumbs="Report" %}
+
+  <div class="card">
+    <div class="card-header">
+      <p class="lead">
+	{{ intro|linebreaksbr }}
+      </p>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+	{% csrf_token %}
+	{{ form | crispy }}
+	<button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </div>
+  </div>
+  
+</div>
+
+
+{% endblock %}

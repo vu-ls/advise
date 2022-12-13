@@ -1,0 +1,32 @@
+{% extends 'cvdp/bt_base_site.html' %}
+{% load static %}
+{% block authwidth %}
+<div class="authentication-wrapper-wide authentication-basic container-p-y">
+  {% endblock %}
+  
+{% block branding %}
+  <div class="app-brand justify-content-center">
+    <a href="{% url 'login' %}" class="app-brand-link gap-2">
+      <span class="app-brand-logo demo">
+        <img src="{% static 'cvdp/css/images/CVDP.png' %}">
+      </span>
+    </a>
+  </div>
+{% endblock %}
+
+{% block content %}
+{% load crispy_forms_tags %}
+
+  <h4 class="text-center mt-4">Register for an AdVISE Provider account</h4>
+  <p class="text-center mt-2 mb-2">If you already have an account, <a href="{% url 'login' %}">login</a> instead.</p>
+  <form method="POST">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <div class="mt-2">
+      <button class="btn btn-primary d-grid w-100" type="submit">Register</button>
+    </div>
+  </form>
+  
+</div>
+
+{% endblock %}

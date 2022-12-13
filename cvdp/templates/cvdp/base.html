@@ -1,0 +1,373 @@
+{% load render_bundle from webpack_loader %}
+<!DOCTYPE html>
+
+<html
+  lang="en"
+  class="light-style layout-menu-fixed"
+  dir="ltr"
+  data-theme="theme-default"
+  data-assets-path="../assets/"
+  data-template="vertical-menu-template-free"
+  >
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+      />
+    
+    {% load static %}
+    {% load user_tags %}
+    
+    <title>AdVISE Dashboard</title>
+    
+    <meta name="description" content="" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
+      rel="stylesheet"
+      />
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'cvdp/img/apple-touch-icon.png' %}" />
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'cvdp/img/favicon-32x32.png' %}" />
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'cvdp/img/favicon-16x16.png' %}" />
+    <link rel="manifest" href="{% static 'cvdp/img/site.webmanifest' %}" />
+    
+    <!-- Icons. Uncomment required icon fonts -->
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/fonts/boxicons.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'cvdp/css/fontawesome/all.css' %}" />
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/css/core.css' %}" class="template-customizer-core-css" />
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/css/theme-default.css' %}" class="template-customizer-theme-css" />
+    <link rel="stylesheet" href="{% static 'cvdp/css/demo.css' %}" />
+    <link rel="stylesheet" href="{% static 'cvdp/css/bt_style.css' %}" />
+    
+    <!-- Vendors CSS -->
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/libs/perfect-scrollbar/perfect-scrollbar.css' %}" />
+    <!-- Helpers -->
+    {% block js %}
+    <script src="{% static 'cvdp/vendor/js/helpers.js' %}"></script>
+    
+    <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
+    <!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
+    <script src="{% static 'cvdp/js/config.js' %}"></script>
+    <script src="{% static 'cvdp/vendor/libs/jquery/jquery.js' %}"></script>
+    <!--<script src="{% static 'cvdp/js/cvdp.js' %}"></script>-->
+    <!--<script src="{% static 'cvdp/js/autocomplete.js' %}"></script>-->
+    {% endblock %}
+    </head>
+
+  <body>
+    <!-- Layout wrapper -->
+    <div class="layout-wrapper layout-content-navbar">
+      <div class="layout-container">
+        <!-- Menu -->
+        <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+	  <div class="app-brand demo">
+	    <a href="{% url 'cvdp:dashboard' %}" class="app-brand-link">
+	      <img src="{% static 'cvdp/css/images/CVDP.png' %}">
+	    </a>
+	    
+	    <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
+              <i class="bx bx-chevron-left bx-sm align-middle"></i>
+            </a>
+	  </div>
+	  
+	  <div class="menu-inner-shadow"></div>
+	  
+	  <ul class="menu-inner py-1">
+	    <!-- Dashboard -->
+	    <li class="menu-item {% if dashboard %}active{% endif %}">
+	      <a href="{% url 'cvdp:dashboard' %}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-home-circle"></i>
+                <div data-i18n="Analytics">Dashboard</div>
+	      </a>
+	    </li>
+
+            <!-- Tickets -->
+            <li class="menu-item {% if inboxpage %}active{% endif %}">
+              <a href="{% url 'cvdp:inbox' %}" class="menu-link">
+                <i class="menu-icon tf-icons fas fa-envelope"></i>
+                <div data-i18n="Analytics">Inbox  <span id="unread_msg_badge"></span></div>
+              </a>
+            </li>
+
+            <!-- Cases -->
+            <li class="menu-item {% if casepage %}active {% endif %}">
+              <a href="{% url 'cvdp:casesearch' %}" class="menu-link">
+                <i class="menu-icon tf-icons fas fa-briefcase"></i>
+                <div data-i18n="Analytics">Cases</div>
+              </a>
+            </li>
+
+	    {% if user.is_coordinator %}
+	    <!-- Contacts -->
+            <li class="menu-item {% if contactpage %}active {% endif %}">
+              <a href="{% url 'cvdp:searchgroups' %}" class="menu-link">
+                <i class="menu-icon tf-icons fas fa-mobile-alt"></i>
+                <div data-i18n="Analytics">Groups</div>
+              </a>
+            </li>
+	    
+            <li class="menu-item {% if triagepage %}active {% endif %}">
+              <a href="{% url 'cvdp:triage' %}" class="menu-link">
+                <i class="menu-icon tf-icons fas fa-notes-medical"></i>
+                <div data-i18n="Analytics">Triage</div>
+              </a>
+            </li>
+	    {% endif %}
+
+	    {% if user.is_coordinator or user.groups.all|length > 0 %}
+	    <li class="menu-item {% if componentspage %}active {% endif %}">
+              <a href="{% url 'cvdp:components' %}" class="menu-link">
+                <i class="menu-icon tf-icons fas fa-microchip"></i>
+                <div data-i18n="Analytics">Components</div>
+              </a>
+            </li>
+	    {% endif %}
+	    
+	    {% if user.groups.all|length > 0 %}
+	    <!-- User Mgmt -->
+            <li class="menu-item {% if groupadminpage %}active {% endif %}">
+              <a href="{% url 'cvdp:groupadmin' %}" class="menu-link">
+                <i class="menu-icon tf-icons fas fa-user"></i>
+                <div data-i18n="Analytics">My Group</div>
+              </a>
+            </li>
+            {% endif %}
+	    <!-- Report -->
+            <li class="menu-item {% if reportpage %}active {% endif %}">
+              <a href="{% url 'cvdp:report' %}" class="menu-link">
+                <i class="menu-icon tf-icons fas fa-file-alt"></i>
+                <div data-i18n="Analytics">Report a Vulnerability</div>
+              </a>
+            </li
+>	    <!-- Vul Reports -->
+            <li class="menu-item {% if myreportspage %}active {% endif %}">
+              <a href="{% url 'cvdp:reports' %}" class="menu-link">
+                <i class="menu-icon tf-icons fas fa-archive"></i>
+                <div data-i18n="Analytics">My Reports</div>
+              </a>
+            </li>
+
+            {% if user.is_coordinator %}
+	    <li class="menu-item">
+              <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-dock-top"></i>
+                <div data-i18n="Layouts">Settings</div>
+              </a>
+	      <ul class="menu-sub">
+                <li class="menu-item">
+                  <a href="#" class="menu-link">
+                    <div data-i18n="Without menu">Tag Manager</div>
+                  </a>
+                </li>
+		<li class="menu-item">
+                  <a href="#" class="menu-link">
+                    <div data-i18n="Fluid">Email Templates</div>
+                  </a>
+                </li>
+		
+
+                <li class="menu-item {% if manageform %}active{% endif %}">
+                  <a href="{% url 'cvdp:manage_forms' %}" class="menu-link">
+                    <div data-i18n="Blank">Reporting Form</div>
+                  </a>
+                </li>
+
+		<li class="menu-item {% if cveservices %}active{% endif %}">
+                  <a href="{% url 'cvdp:cve_services' %}" class="menu-link">
+                    <div data-i18n="Blank">CVE Services</div>
+                  </a>
+                </li>
+		<li class="menu-item {% if useradminpage %}active{% endif %}">
+                  <a href="{% url 'cvdp:user_admin' %}" class="menu-link">
+                    <div data-i18n="Blank">User Admin</div>
+                  </a>
+                </li>
+
+              </ul>
+            </li>
+	    {% endif %}
+	  </ul>
+	</aside>
+      <!-- / Menu -->
+      
+      <!-- Layout container -->
+      <div class="layout-page">
+        <!-- Navbar -->
+	
+        <nav class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme" id="layout-navbar">
+            <div class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
+              <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0)">
+                <i class="bx bx-menu bx-sm"></i>
+              </a>
+            </div>
+
+            <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
+              <!-- Search -->
+	       <form action="{% url 'cvdp:quicksearch' %}" method="GET" id="myform" name="queryForm">
+		 <div class="navbar-nav align-items-center">
+                   <div class="nav-item d-flex align-items-center">
+                     <i class="bx bx-search fs-4 lh-0"></i>
+                     <input
+                       type="text"
+		       name="searchbar"
+		       id="searchbar"
+                       class="form-control border-0 shadow-none"
+                       placeholder="Search..."
+                       aria-label="Search..."
+                       />
+                   </div>
+		 </div>
+	       </form>
+              <!-- /Search -->
+
+              <ul class="navbar-nav flex-row align-items-center ms-auto">
+                <!-- Place this tag where you want the button to render. -->
+                <!-- User -->
+		<li class="nav-item mr-3 navbar-dropdown dropdown">
+		  <a href="javascript:void(0);" class="nav-link nav-icon iconClass dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+		    <i class="menu-icon fas fa-bell">
+		    </i>
+		    <span class="badge rounded-pill bg-danger">2</span>
+		  </a>
+		  <ul class="dropdown-menu dropdown-menu-end">
+		    <li>
+		      <a class="dropdown-item" href="#">
+			You have new things to look at!
+		      </a>
+		    </li>
+		    <li>
+                      <div class="dropdown-divider"></div>
+                    </li>
+		    <li>
+                      <a class="dropdown-item" href="#">
+			They will be listed here, I swear!
+                      </a>
+                    </li>
+		  </ul>
+		</li>
+		
+                <li class="nav-item navbar-dropdown dropdown-user dropdown">
+                  <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
+                    <div class="avatar avatar-online">
+                      {% autoescape off %}{{ user|userlogo:"profile-pic" }}{% endautoescape %}
+                    </div>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <a class="dropdown-item" href="#">
+                        <div class="d-flex">
+                          <div class="flex-shrink-0 me-3">
+                            <div class="avatar avatar-online">
+			      {% autoescape off %}{{ user|userlogo:"profile-pic" }}{% endautoescape %}
+                            </div>
+                          </div>
+                          <div class="flex-grow-1">
+                            <span class="fw-semibold d-block">{{ user.screen_name }}</span>
+                            <small class="text-muted">{{ user.groups.all|join:", "}} {% if user.is_superuser %}<br/>Admin{% endif %}</small>
+                          </div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <div class="dropdown-divider"></div>
+                    </li>
+                    <li>
+                      <a class="dropdown-item" href="{% url 'authapp:profile' %}">
+                        <i class="bx bx-user me-2"></i>
+                        <span class="align-middle">Profile</span>
+                      </a>
+                    </li>
+		    <li>
+                      <a class="dropdown-item" href="{% url 'account_change_password' %}">
+                        <i class="bx bx-key me-2"></i>
+                        <span class="align-middle">Change Password</span>
+                      </a>
+                    </li>
+
+
+		    {% if user.is_staff %}
+                    <li>
+                      <a class="dropdown-item" href="{% url 'admin:index' %}">
+                        <i class="bx bx-cog me-2"></i>
+                        <span class="align-middle">Admin</span>
+                      </a>
+                    </li>
+		    {% endif %}
+                    <li>
+                      <div class="dropdown-divider"></div>
+                    </li>
+                    <li>
+                      <a class="dropdown-item" href="{% url 'authapp:logout' %}">
+                        <i class="bx bx-power-off me-2"></i>
+                        <span class="align-middle">Log Out</span>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+                <!--/ User -->
+              </ul>
+            </div>
+        </nav>
+	
+        <!-- / Navbar -->
+	
+        <!-- Content wrapper -->
+        <div class="content-wrapper">
+          <!-- Content -->
+	  {% block content %}
+	  {% endblock %}
+	  <a href="#" class="scrollup btn btn-primary"><i class="fas fa-arrow-up"></i></a>
+        </div>
+        <!-- / Content -->
+	
+        <!-- Footer -->
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
+            <div class="mb-2 mb-md-0">
+              ©
+	      2023 {{ ORG_NAME }}
+            </div>
+	    <div class="bottom-footer__copyright">
+	      {% if DISCLOSURE_POLICY_LINK %}
+	      <a href="{{ DISCLOSURE_POLICY_LINK }}" class="footer-link me-4" target="_blank" rel="noopener">Disclosure Policy</a>
+	      {% endif %}
+	      {% if TERMS_OF_USE_LINK %}
+	      <a href="{{TERMS_OF_USE_LINK}}" class="footer-link me-4" target="_blank" rel="nopener">Terms of Use</a>
+	      {% endif %}
+	      <span class="fw-bold">V.{{ VERSION }}</span>
+	    </div>
+	  </div>
+        </footer>
+        <!-- / Footer -->
+	
+        <div class="content-backdrop fade"></div>
+      </div>
+      <!-- Content wrapper -->
+      </div>
+      <!-- / Layout page -->
+    </div>
+    
+    <!-- Overlay -->
+    <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- / Layout wrapper -->
+
+<!-- Core JS -->
+<!-- build:js assets/vendor/js/core.js -->
+<script src="{% static 'cvdp/vendor/js/bootstrap.js' %}"></script>
+<script src="{% static 'cvdp/vendor/libs/perfect-scrollbar/perfect-scrollbar.js' %}"></script>
+<script src="{% static 'cvdp/vendor/js/menu.js' %}"></script>
+<!-- endbuild -->
+
+<!-- Main JS -->
+<script src="{% static 'cvdp/js/main.js' %}"></script>
+</body>
+</html>
+{% render_bundle 'app' %}

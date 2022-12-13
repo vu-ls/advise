@@ -1,0 +1,42 @@
+{% extends "cvdp/bt_base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<h4>
+  {% trans "Two-Factor Authentication Backup Tokens" %}
+</h4>
+
+<p><a href="{% url 'authapp:mfaaccess' %}">< Go back to my profile</a></p>
+
+{% if backup_tokens %}
+  {% if reveal_tokens %}
+    <ul>
+      {% for token in backup_tokens %}
+        <li>{{ token.token }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    {% trans 'Backup tokens have been generated, but are not revealed here for security reasons. Press the button below to generate new ones.' %}
+  {% endif %}
+{% else %}
+  {% trans 'You have not setup backup tokens. Press the button below to generate some.' %}
+{% endif %}
+
+    <div class="mt-4">
+      <a href="{% url 'cvdp:dashboard' %}" class="btn btn-primary d-grid w-100">Go to my dashboard</a>
+    </div>
+	
+    
+    <div class="mt-4">
+<form method="post">
+  {% csrf_token %}
+  <button class="btn btn-outline-primary d-grid w-100" type="submit">
+    {% trans 'Generate backup tokens' %}
+  </button>
+</form>
+</div>
+<div class="mt-4">
+  <a class='btn btn-secondary w-100 d-grid' href="{% url 'two-factor-remove' %}">Disable Two Factor</a>
+</div>
+
+{% endblock %}

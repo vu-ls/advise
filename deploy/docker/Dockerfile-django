@@ -1,0 +1,103 @@
+##############################################################################
+## node artifact build
+##############################################################################
+FROM node:16 as build-node
+
+#RUN addgroup -S advise && \
+#    adduser -S advise -G advise && \
+#    pip install --upgrade pip && \
+RUN mkdir -p /home/advise/app && \
+    mkdir -p /home/advise/app/assets
+
+ENV APP_HOME=/home/advise/app
+WORKDIR ${APP_HOME}
+
+ARG ASSET_PATH
+ARG API_URL
+ENV ASSET_PATH $ASSET_PATH
+ENV API_URL $API_URL
+
+COPY package.json package-lock.json ${APP_HOME}
+RUN npm install
+
+COPY webpack.config.js ${APP_HOME}
+COPY ./assets ${APP_HOME}/assets
+RUN npm run build
+
+
+##############################################################################
+## django artifact build
+##############################################################################
+FROM python:3.10-alpine as build-django
+
+RUN pip install --upgrade pip && \
+    mkdir -p /home/advise/app && \
+    mkdir -p /home/advise/app/staticfiles
+
+ENV APP_HOME=/home/advise/app
+WORKDIR ${APP_HOME}
+
+# set to space-delimited list of additional APKs for *build* step
+ARG ADDITIONAL_BUILD_APK=""
+# allow builder to override which requirements.txt we use to hook cloud
+# provider requirements, etc. via inheritance
+ARG REQUIREMENTS_FILE="requirements.txt"
+
+RUN apk update && \
+    apk add --update --virtual build-deps \
+        gcc \
+        git \
+        libffi-dev \
+        musl-dev \
+        python3-dev \
+        openssl \
+        postgresql-dev \
+        postgresql-client ${ADDITIONAL_BUILD_APK}
+
+COPY ${REQUIREMENTS_FILE} requirements.txt deploy/docker/requirements-docker.txt ${APP_HOME}
+RUN pip install -r ${REQUIREMENTS_FILE} && \
+    pip install -r requirements-docker.txt 
+
+# We clean up build-deps, but probably not necessary.
+RUN apk del build-deps && \
+    rm -rf /var/cache/apk/*
+
+
+##############################################################################
+## django final image
+##############################################################################
+FROM python:3.10-alpine
+
+RUN addgroup -S advise && \
+    adduser -S advise -G advise && \
+    mkdir -p /home/advise/app && \
+    mkdir -p /home/advise/app/static && \
+    mkdir -p /home/advise/app/assets && \
+    mkdir -p /home/advise/app/staticfiles && \
+    chown -R advise:advise /home/advise/app
+
+ENV APP_HOME=/home/advise/app
+WORKDIR ${APP_HOME}
+
+# set to space-delimited list of additional APKs for final container
+ARG ADDITIONAL_APP_APK=""
+
+RUN apk update && \
+    apk add --update openssl postgresql-client curl ${ADDITIONAL_APP_APK} && \
+    rm -rf /var/cache/apk/*
+
+COPY --from=build-django /usr/local/lib/python3.10/site-packages/ /usr/local/lib/python3.10/site-packages/
+COPY --from=build-django /usr/local/bin/ /usr/local/bin/
+COPY --from=build-node --chown=advise:advise ${APP_HOME}/webpack-stats.json ${APP_HOME}/
+COPY --from=build-node --chown=advise:advise ${APP_HOME}/node_modules/ ${APP_HOME}/node_modules/
+#COPY --from=build-node ${APP_HOME}/webpack-stats.json ${APP_HOME}
+COPY --chown=advise:advise . ${APP_HOME}/
+COPY --from=build-node --chown=advise:advise ${APP_HOME}/assets/webpack_bundles/ ${APP_HOME}/assets/webpack_bundles/
+COPY --chown=advise:advise deploy/docker/app-startup.sh ${APP_HOME}/
+
+#RUN chown -R advise:advise ${APP_HOME} && \
+RUN chmod 755 ${APP_HOME}/app-startup.sh
+
+USER advise
+
+ENTRYPOINT ["./app-startup.sh"]

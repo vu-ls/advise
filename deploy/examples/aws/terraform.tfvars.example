@@ -1,0 +1,25 @@
+# This file is an example of the variables one might set to deploy using
+# this AWS example. Note that terraform.tfvars is not intended to be 
+# checked into VCS, and is in fact ignored by the provided .gitignore.
+
+multi_az               = false
+project_name           = "example"
+environment_name       = "dev"
+domain_name            = "example.local"
+advise_app_hostname    = "example"
+advise_oauth_hostname  = "oauth"
+ssh_key_name           = "my_ed25519_key"
+advise_django_debug    = true
+advise_email_backend   = "django_ses.SESBackend"
+advise_contact_address = "advise-contact@example.local"
+oauth_email_backend    = "django_ses.SESBackend"
+oauth_contact_address  = "advise-auth-contact@example.local"
+contact_address        = "cloud-resource-contact@example.local"
+bastion_allowed_cidrs  = ["127.0.0.1/32"]
+advise_allowed_cidrs   = ["127.0.0.1/32"]
+advise_superuser_username = "admin@example.local"
+advise_superuser_password = "adminPa$$"
+advise_app_secret_key     = "generate_with_python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key().replace("$", "!"))'"
+advise_oauth_secret_key   = "generate_with_python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key().replace("$", "!"))'"
+db_app_master_username    = "advise_master"
+db_oauth_master_username  = "oauth_master"

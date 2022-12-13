@@ -1,0 +1,18 @@
+{% extends "cvdp/login.html" %}
+
+{% load i18n static %}
+
+{% block content_title %}<h3>Your account is pending approval.</h3>{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<p>Your account is currently in pending state.  Once your account is approved you will be
+  able to login to view your cases.  You will receive an email as soon as your account is approved.
+</p>
+<div class="mb-3 mt-3">
+  <a href="{% url 'cvdp:report' %}" class="btn btn-primary d-grid w-100">Submit a Report</a>
+</div>
+
+
+{% endblock %}

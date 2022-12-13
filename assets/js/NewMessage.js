@@ -1,0 +1,258 @@
+import React from 'react';
+import { Alert, Modal, Card, Badge, FloatingLabel, Button, InputGroup, Form, Row, Col } from "react-bootstrap";
+import {AsyncTypeahead} from 'react-bootstrap-typeahead';
+import { useCallback, useState, useEffect } from 'react';
+import MessageAPI from './MessageAPI';
+import 'react-bootstrap-typeahead/css/Typeahead.bs5.css';
+import 'react-bootstrap-typeahead/css/Typeahead.css';
+import '../css/casethread.css'
+import DisplayLogo from "./DisplayLogo";
+import ReactQuill, { Quill,editor } from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import ContactAPI from './ContactAPI';
+import DeleteConfirmation from './DeleteConfirmation';
+const contactapi = new ContactAPI();
+
+const messageapi = new MessageAPI();
+
+const CACHE = {};
+const PER_PAGE = 50;
+
+function makeAndHandleRequest(query, page = 1) {
+    return contactapi.searchAllContacts(query).then((response) => {
+	let items = response;
+	let total_count = items.length;
+	const options = items.map((i) => ({
+	    name: i.name,
+	    uuid: i.uuid,
+	    color: i.color,
+	    logo: i.logo
+	}));
+	console.log(options);
+	return {options, total_count};
+    });
+}
+
+
+const NewMessage = (props) => {
+
+    const [messageTo, setMessageTo] = useState([]);
+    const [error, setError] = useState(null);
+    const [message, setMessage] = useState("");
+    const [suggested, setSuggested] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [query, setQuery] = useState("");
+    const [options, setOptions] = useState([]);
+    const [invalidMessage, setInvalidMessage] = useState(false);
+    const [invalidMessageTo, setInvalidMessageTo] = useState(false);
+    const [displayConfirmationModal, setDisplayConfirmationModal] = useState(false);
+    const [deleteMessage, setDeleteMessage] = useState(null);
+    const [allowSelectUser, setAllowSelectUser] = useState(false);
+    
+    const closeMessage = (e) => {
+	console.log("close message");
+	setDeleteMessage("Your message is unsent.  Do you really want to cancel?")
+	setDisplayConfirmationModal(true);
+    }
+
+    const modules = React.useMemo(
+        () => ({
+            toolbar: [
+            [{ header: '1' }, { header: '2' }],
+		[('bold', 'italic', 'indent', 'underline', 'strike', 'blockquote')],
+		[{ list: 'ordered' }, { list: 'bullet' }],
+		['link', 'image', 'formula'],
+		['code-block']
+            ],
+	}), []
+    );
+
+  const handleInputChange = (q) => {
+      setQuery(q);
+  };
+
+    const clearText = () => {
+        setMessage('');
+    }
+
+    useEffect(() => {
+	if (props.coordinator) {
+	    setAllowSelectUser(true);
+	}
+    }, [props]);
+
+    const hideConfirmationModal = () => {
+        setDisplayConfirmationModal(false);
+    }
+
+    const handleSearch = useCallback((q) => {
+	if (CACHE[q]) {
+	    setOptions(CACHE[q].options);
+	    return;
+	}
+
+	setIsLoading(true);
+	makeAndHandleRequest(q).then((resp) => {
+	    CACHE[q] = { ...resp, page: 1 };
+	    console.log("OPTIONS ARE>>>>>>>", resp.options);
+	    setIsLoading(false);
+	    setOptions(resp.options);
+	});
+    }, []);
+
+    const handlePagination = (e, shownResults) => {
+	const cachedQuery = CACHE[query];
+
+	// Don't make another request if:
+	// - the cached results exceed the shown results
+	// - we've already fetched all possible results
+	if (
+	    cachedQuery.options.length > shownResults ||
+		cachedQuery.options.length === cachedQuery.total_count
+	) {
+	    return;
+	}
+
+	setIsLoading(true);
+
+	const page = cachedQuery.page + 1;
+
+	makeAndHandleRequest(query, page).then((resp) => {
+	    const options = cachedQuery.options.concat(resp.options);
+	    CACHE[query] = { ...cachedQuery, options, page };
+
+	    setIsLoading(false);
+	    console.log("OPTIONS ARE, options");
+	    setOptions(options);
+	});
+    };
+
+    const submitPost = async (e) => {
+	e.preventDefault();
+        let formField = new FormData();
+	if (message == "") {
+	    setInvalidMessage(true);
+	    return;
+	} else {
+	    setInvalidMessage(false);
+	}
+	if (messageTo == "" && allowSelectUser) {
+	    setInvalidMessageTo(true);
+	    return;
+	} else {
+	    setInvalidMessageTo(false);
+	}
+	formField.append('content', message);
+	console.log(messageTo);
+	if (allowSelectUser) {
+	    let users = messageTo.map((item) => item.uuid);
+	    formField.append('users', users);
+	}
+	console.log(formField);
+
+	await messageapi.createThread(formField).then((response) => {
+	    console.log(response);
+	    props.reload();
+	}).catch(err => {
+	    setError(`Error sending message: ${err.response.data.message}`);
+	});
+
+    };
+
+    return (
+	<Card>
+            <Card.Header>
+		<div className="d-flex justify-content-between">
+		    <Card.Title>
+			New Message
+		    </Card.Title>
+		    <Button variant="btn-icon" onClick={(e)=>closeMessage(e)}>Cancel</Button>
+		</div>
+            </Card.Header>
+
+	    <Card.Body className="pb-5">
+		{error &&
+		 <Alert variant="danger"> {error}</Alert>
+		}
+
+		<Form>
+		    {allowSelectUser ?
+		     <>
+			 <Form.Group className="mb-3" controlId="_type">
+			     <Form.Label>To:</Form.Label>
+			     <AsyncTypeahead
+				 id="messageto"
+				 multiple
+			    options = {options}
+				 isLoading={isLoading}
+				 onPaginate={handlePagination}
+				 onSearch={handleSearch}
+				 paginate
+				 onChange={setMessageTo}
+				 onInputChange={handleInputChange}
+				 labelKey="name"
+				 isInvalid={invalidMessageTo}
+				 placeholder="Search for a user"
+				 renderMenuItemChildren={(option) => (
+				<div className="d-flex align-items-center gap-2">
+				    <DisplayLogo
+					name={option.name}
+					photo={option.photo}
+					color={option.color}
+				    />
+				    <span className="participant">{option.name}</span>
+				</div>
+				     
+				 )}
+				 useCache={false}
+			     />
+			 </Form.Group>
+			 {invalidMessageTo &&
+			  <Form.Text className="error">
+                              This field is required.
+			  </Form.Text>
+			 }
+		     </>
+		     :
+		     <Alert variant="warning">Send a message to the coordination team.</Alert>
+		    }
+		    <Form.Group className="mb-3">
+			<Form.Label>Message:</Form.Label>
+			<ReactQuill
+                            style={{
+				height: '25vh',
+				fontSize: '18px',
+				marginBottom: '50px',
+                            }}
+                            value={message}
+			    isInvalid={invalidMessage}
+                            modules={{...modules}}
+                            placeholder="Write your message"
+                            onChange={setMessage}
+			/>
+		    </Form.Group>
+		    {invalidMessage &&
+                     <Form.Text className="error">
+                         This field is required.
+                     </Form.Text>
+                    }
+		    <div className="text-end pt-3">
+			<button onClick={clearText} className="mx-1 btn btn-outline-secondary">Cancel</button>
+			<button onClick={(e) => submitPost(e)} className="btn btn-primary">Submit</button>
+		    </div>
+		</Form>
+		<DeleteConfirmation
+                    showModal={displayConfirmationModal}
+                    confirmModal={props.cancelMessage}
+                    hideModal={hideConfirmationModal}
+                    id="something"
+                    message={deleteMessage} />
+	    </Card.Body>
+        </Card>
+    )
+
+
+}
+
+
+export default NewMessage;

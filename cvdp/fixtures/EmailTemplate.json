@@ -1,0 +1,227 @@
+[
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 1,
+  "fields": {
+    "template_name": "case_new_post",
+    "template_type": 4,
+    "title": null,
+    "subject": "New Post",
+    "plain_text": "Hello,\r\n\r\nThis is a courtesy e-mail to let you know that a case you are working on has a new post.",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that a case you are working on has a new post. </p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-27T19:48:34.762Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 2,
+  "fields": {
+    "template_name": "enable_mfa",
+    "template_type": 1,
+    "title": null,
+    "subject": "MFA successfully enabled",
+    "plain_text": "Hello, \r\n\r\nThis is a courtesy e-mail to let you know that multi-factor authentication (MFA) was successfully enabled on your account.\r\n\r\nIf you did not initiate this change, please let us know as soon as possible.",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p> <p style=\"font-family: sans-serif; font-size:1em;\">This is a courtesy e-mail to let you know that multi-factor authentication (MFA) was successfully enabled on your account.</p>\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">\r\nIf you did not initiate this change, please let us know as soon as possible.\r\n</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-01-20T14:32:21.868Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 3,
+  "fields": {
+    "template_name": "mfa_removed",
+    "template_type": 1,
+    "title": null,
+    "subject": "MFA successfully removed",
+    "plain_text": "Hello, \r\n\r\nThis is a courtesy e-mail to let you know that multi-factor authentication (MFA) was successfully disabled on your account.\r\n\r\nIf you did not initiate this change, please let us know as soon as possible.",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p> <p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that multi-factor authentication (MFA) was successfully disabled on your account.</p>\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">\r\nIf you did not initiate this change, please let us know as soon as possible.\r\n</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-01-20T14:33:28.264Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 4,
+  "fields": {
+    "template_name": "new_message",
+    "template_type": 3,
+    "title": "You have a new message!",
+    "subject": "New Message in AdVISE",
+    "plain_text": "Hello,\r\n\r\nThis is a courtesy e-mail to let you know that {{ sender }} has sent you a message.  Please login to view the message. \r\n\r\nView Online: {{ url }} (login required)",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that {{ sender }} has sent you a message.  Please login to view the message. </p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-27T15:04:47.019Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 5,
+  "fields": {
+    "template_name": "user_mentioned",
+    "template_type": 4,
+    "title": "You were tagged!",
+    "subject": "You were tagged in a post",
+    "plain_text": "Hello,\r\n\r\nThis is a courtesy e-mail to let you know that you were mentioned in a post.\r\n\r\nTo view the post:\r\n\r\nView Online: {{ url }} (login required)\r\n\r\n\r\nIf you would prefer to not receive email notifications, please login to change your email preferences.",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that you were mentioned in a post.\r\n</p>\r\n\r\n\r\n<p>If you would prefer to not receive email notifications, please login to change your email preferences.</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-28T00:59:54.079Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 6,
+  "fields": {
+    "template_name": "group_mentioned",
+    "template_type": 4,
+    "title": "Your group was tagged!",
+    "subject": "Your group was mentioned in a Case",
+    "plain_text": "Hello,\r\n\r\nThis is a courtesy e-mail to let you know that your organization was tagged in a case post.\r\nTo view the post:\r\n\r\nView Online: {{ url }} (login required)\r\n\r\nIf you would prefer to not receive email notifications, please login to change your email preferences.",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that your organization was tagged in a case post.\r\n</p>\r\n\r\n<p>If you would prefer to not receive email notifications, please login to change your email preferences.</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-28T01:00:04.790Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 7,
+  "fields": {
+    "template_name": "reply_message",
+    "template_type": 3,
+    "title": "You have a new message reply",
+    "subject": "New Message in AdVISE",
+    "plain_text": "Hello,\r\n\r\nThis is a courtesy e-mail to let you know that {{ sender }} has replied to a message.  Please login to view the message. \r\n\r\nView Online: {{ url }} (login required)",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that {{ sender }} has replied to a message.  Please login to view the message. </p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-27T15:06:57.663Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 8,
+  "fields": {
+    "template_name": "vendor_notify",
+    "template_type": 0,
+    "title": "New Case",
+    "subject": "You have a new case to view",
+    "plain_text": "Hello,\r\n\r\nWe have new information about a vulnerability that may affect your products. We have opened a new to case to share this information. Please login to view the case and the information regarding this vulnerability.\r\n\r\nView Online: {{ url }} (Login Required)",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">\r\nWe have new information about a vulnerability that may affect your products. We have opened a new to case to share this information. Please login to view the case and the information regarding this vulnerability.\r\n</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-28T18:43:10.717Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 9,
+  "fields": {
+    "template_name": "vendor_check",
+    "template_type": 0,
+    "title": "Case Reminder",
+    "subject": "You have a new case to view",
+    "plain_text": "Hello,\r\n\r\nJust a friendly reminder! We have new information about a vulnerability that may affect your products. We have opened a new to case to share this information. Please login to view the case and the information regarding this vulnerability.\r\n\r\nView Online: {{ url }} (Login Required)",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">\r\nJust a friendly reminder! We have new information about a vulnerability that may affect your products. We have opened a new to case to share this information. Please login to view the case and the information regarding this vulnerability.\r\n</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-28T18:43:49.179Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 10,
+  "fields": {
+    "template_name": "case_assignment",
+    "template_type": 0,
+    "title": "Case assigned to you",
+    "subject": "You were assigned a new case",
+    "plain_text": "Hello,\r\n\r\nThis is a courtesy e-mail to let you know that a case has been assigned to you by {{ assignee }}.\r\n\r\nView Online: {{ url }} (login required)",
+    "html": "<p style=\\\"font-family: sans-serif; font-size: 1em;\\\">Hello,</p>\r\n\r\n<p style=\\\"font-family: sans-serif; font-size: 1em;\\\">\r\nThis is a courtesy e-mail to let you know that a case has been assigned to you by {{ assignee}}.\r\n</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-29T01:25:10.939Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 11,
+  "fields": {
+    "template_name": "new_thread",
+    "template_type": 0,
+    "title": "New Case Message",
+    "subject": "You have a new message in a case.",
+    "plain_text": "Hello,\r\n\r\nYou have a new message in case {{caseid}} from {{ assignee}}.\r\n\r\nView Online: {{ url }] (Login Required)",
+    "html": "<p style=\\\"font-family: sans-serif; font-size: 1em;\\\">Hello,</p>\r\n\r\n<p style=\\\"font-family: sans-serif; font-size: 1em;\\\">\r\nYou have a new message in case {{ caseid}} from {{ assignee}}.\r\n</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-29T01:43:51.132Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 12,
+  "fields": {
+    "template_name": "password_changed",
+    "template_type": 1,
+    "title": "Password Recently Changed",
+    "subject": "AdVISE Password Changed",
+    "plain_text": "Hello,\r\n\r\nThis is a courtesy email to let you know that your account password was recently changed.  If you did not initiate this change, please let us know as soon as possible.",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that your account password has recently changed.  If you did not initiate this change, please let us know as soon as possible.\r\n</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-29T13:34:44.944Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 13,
+  "fields": {
+    "template_name": "password_reset",
+    "template_type": 1,
+    "title": "Password Reset",
+    "subject": "AdVISE Password Reset",
+    "plain_text": "Hello,\r\n\r\nThis is a courtesy e-mail to let you know that your account password has recently been reset.  If you did not initiate this change, please let us know as soon as possible.",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that your account password has recently been reset.  If you did not initiate this change, please let us know as soon as possible.\r\n</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-29T13:37:27.255Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 14,
+  "fields": {
+    "template_name": "email_added",
+    "template_type": 1,
+    "title": "An email has been added to your AdVISE account",
+    "subject": "A new email has been added to your AdVISE account",
+    "plain_text": "Hello,\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that a new e-mail, {{email}}, has been added to your AdVISE account..  If you did not initiate this change, please let us know as soon as possible.",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that a new e-mail, <b>{{ email}}</b>, has been added to your AdVISE account.  If you did not initiate this change, please let us know as soon as possible.\r\n</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-29T13:40:18.516Z"
+  }
+},
+{
+  "model": "cvdp.emailtemplate",
+  "pk": 15,
+  "fields": {
+    "template_name": "email_removed",
+    "template_type": 1,
+    "title": "Email Removed",
+    "subject": "An email has been removed from your AdVISE account",
+    "plain_text": "Hello, \r\n\r\nThis is a courtesy e-mail to let you know that a new e-mail, {{ email}}, has been removed your AdVISE account.  If you did not initiate this change, please let us know as soon as possible.",
+    "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that a new e-mail, <b>{{ email}}</b>, has been removed from your AdVISE account.  If you did not initiate this change, please let us know as soon as possible.\r\n</p>",
+    "locale": "en",
+    "user": null,
+    "modified": "2023-03-29T13:41:11.580Z"
+  }
+}
+]

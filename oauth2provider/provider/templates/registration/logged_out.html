@@ -1,0 +1,18 @@
+{% extends "cvdp/bt_base_site.html" %}
+{% load i18n %}
+{% block branding %}
+
+<h3>AdVise OAuth2 Provider</h3>
+
+{% endblock %}
+{% block content_title %}<div class="row column"><h2>Logged out</h2></div>{% endblock %}
+
+{% block content %}
+<!-- /Logo -->
+<h4 class="mb-5 text-center">See you again soon.</h4>
+<div class="mb-4">
+
+  <a class="btn btn-primary d-grid w-100" href="{% url 'provider:welcome' %}">{% trans 'Log in' %}</a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends CVDP_BASE_TEMPLATE %}{% load i18n crispy_forms_tags %}
+{% block cvdp_title %}{% trans "Edit Case" %}{% endblock %}
+{% load static %}
+<!-- site-title  -->
+{% block js %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'cvdp/css/jquery-ui.min.css' %}" />
+<script type="text/javascript" src="{% static 'cvdp/js/editcase.js' %}"></script>
+<script type="text/javascript" src="{% static 'cvdp/js/jquery-ui.js' %}"></script>
+{% endblock %}
+{% block content %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  {% include 'cvdp/include/top_panel.html' with title="Edit" breadcrumbs=object.caseid %}
+
+  {% if form.errors %}
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="alert alert-danger">
+          {% if form.errors.items|length == 1 %}Please correct the error below.{% else %}Please correct the errors below.{% endif %}
+	  {{ form.errors }}
+          {% for error in form.non_field_errors %}
+          <div>
+            {{ error|escape }}
+          </div>
+          {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="card">
+    <div class="card-body">
+      <form method="post" id="caseform">
+        {% csrf_token %}
+        <div class="row">
+	  <div class="col-lg-6 mb-3">
+	    {{ form.case_id|as_crispy_field }}
+	  </div>
+	  <div class="col-lg-6">
+	  </div>
+          <div class="col-lg-12 mb-3">
+            {{ form.title|as_crispy_field }}
+          </div>
+	  <div class="col-lg-12 mb-3">
+            {{ form.summary|as_crispy_field }}
+          </div>
+          <div class="col-lg-6 mb-3">
+            {{ form.due_date|as_crispy_field }}
+          </div>
+	  <div class="col-lg-6 mb-3">
+            {{ form.public_date|as_crispy_field }}
+          </div>
+	</div>
+        <div class="mt-4">
+          <a href="{{ object.get_absolute_url }}" class="btn btn-outline-secondary">Cancel</a>
+          <input type="submit" value="Save" class="btn btn-primary" id="submitbutton">
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

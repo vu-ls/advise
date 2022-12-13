@@ -1,0 +1,65 @@
+{% extends "cvdp/bt_base_site.html" %}
+{% load i18n crispy_forms_tags %}
+{% block branding %}
+
+<h3 class="text-center">AdVise OAuth2 Provider Login</h3>
+
+{% endblock %}
+
+{% block content %}
+
+<div id="content-main" class="content">
+  <form  method="post" action="{% url 'login' %}?next={{request.GET.next}}">
+    {% csrf_token %}
+
+    <div class="text-center">
+      <p class="mb-4">Please sign-in to your account.</p>
+    </div>
+
+
+{% if form.errors %}
+<div class="alert alert-danger"><strong>Your username and password didn't match. Please try again.</strong></div>
+{% endif %}
+
+{% if user.is_authenticated %}
+<div class="alert alert-info">
+  <strong>
+    You are authenticated as {{ user.username }}. Go to <a href="{% url 'provider:welcome' %}">here</a> or <a href="{% url 'logout' %}">login as a different user.</a>
+  </strong>
+</div>
+{% endif %}
+
+
+<div class="mb-3">
+    <label for="username" class="form-label">Email</label>
+    <input
+      type="text"
+      class="form-control"
+      id="id_username"
+      name="username"
+      autofocus
+      />
+  </div>
+  <div class="mb-3 form-password-toggle">
+    <div class="d-flex justify-content-between">
+      <label class="form-label" for="password">Password</label>
+      <a href="{% url 'password_reset' %}"><small>{% trans 'Forgot Password?' %}</small></a>
+    </div>
+    <div class="input-group input-group-merge">
+      <input
+        type="password"
+        id="id_password"
+        class="form-control"
+        name="password"
+        placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
+        aria-describedby="password"
+        />
+      <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
+    </div>
+  </div>
+  <input type="hidden" name="next" value="{{ next }}" />
+  <div class="mb-3">
+    <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+  </div>
+</form>
+{% endblock %}

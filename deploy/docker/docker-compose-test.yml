@@ -1,0 +1,109 @@
+version: '3.7'
+
+services:
+  advise:
+    build:
+      context: ../../
+      dockerfile: deploy/docker/Dockerfile-django
+      args:
+        ASSET_PATH: "/static/webpack_bundles/"
+        API_URL: "http://app.advise.test:8000/advise"
+    image: advise
+    volumes:
+      - static_data:/home/advise/app/staticfiles
+    command: app-startup.sh
+    networks:
+      advise_app: {}
+      advise_db: {}
+    expose:
+      - 8000
+    env_file:
+      - ../../.env.test.local
+    environment:
+      WSGI_APP: advise.wsgi
+      WORKDIR: .
+      DB_NAME: advise
+      OAUTH_SERVER_BASEURL: "http://auth.advise.test:8000"
+      OAUTH_SERVER_INTERNAL_URL: "http://auth-int.advise.test:8000"
+      #CORS_ALLOWED_ORIGINS: '["http://localhost:8080", "http://localhost:8081"]'
+      CORS_ALLOWED_ORIGINS: '["http://app.advise.test:8000"]'
+      ALLOWED_HOSTS: '["localhost", "127.0.0.1", "app.advise.test", "auth.advise.test"]'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  oauth2provider:
+    image: advise
+    volumes:
+      - static_data:/home/advise/app/staticfiles-provider
+    command: app-startup.sh
+    networks:
+      advise_auth: {}
+      advise_db: {}
+    expose:
+      - 8000
+    env_file:
+      - ../../.env.test.local
+    environment:
+      WSGI_APP: oauth2provider.wsgi
+      WORKDIR: oauth2provider 
+      DB_NAME: advise_oauth2
+      ALLOWED_HOSTS: '["localhost", "127.0.0.1", "auth.advise.test", "auth-int.advise.test", "app.advise.test"]'
+    depends_on:
+      db:
+        condition: service_healthy
+      # I don't know if we need this, but we want to wait until we have the
+      # most recent image of the advise container build before starting the
+      # provider.
+      advise:
+        condition: service_started
+
+  nginx:
+    build:
+      context: ./nginx-local
+    volumes:
+      - static_data:/home/advise/app/staticfiles
+    networks:
+      advise_app: 
+        aliases:
+          - app.advise.test
+          - auth-int.advise.test
+      advise_auth:
+        aliases:
+          - auth.advise.test
+    ports:
+      - "8000:80"
+      #- "8081:81"
+    expose:
+      - 8000
+    depends_on: 
+      - advise
+      - oauth2provider
+
+  db:
+    image: postgres:14-alpine
+    env_file:
+      - ../../.env.test.local
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      advise_db: {}
+    #ports:
+    #  - "5432:5432"
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  static_data:
+  assets_data:
+
+networks:
+  advise_app: {}
+  advise_auth: {}
+  advise_db: {}

@@ -1,0 +1,20 @@
+{% extends "authapp/login.html" %}
+
+{% load i18n static %}
+
+{% block content_title %}<h3>Registration Complete</h3>{% endblock %}
+
+{% block content %}
+
+<p>
+    Your account has been confirmed.  You may now login.
+</p>
+
+<div class="mb-3 mt-3">
+  <a href="{% url 'authapp:login' %}" class="btn btn-primary d-grid w-100">Login</a>
+</div>
+
+{% endblock %}
+
+
+

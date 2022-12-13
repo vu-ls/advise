@@ -1,0 +1,9 @@
+.git/
+.gitignore
+.gitlab-ci.yml
+deploy/
+node_modules/
+!deploy/docker/app-startup.sh
+!deploy/docker/requirements-docker.txt
+**/venv/
+**/.env*

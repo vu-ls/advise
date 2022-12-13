@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+{% load static %}
+<html
+  lang="en"
+  class="light-style customizer-hide"
+  dir="ltr"
+  data-theme="theme-default"
+  data-assets-path="../assets/"
+  data-template="vertical-menu-template-free"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+
+    <title>{% block title %}{% endblock %}</title>
+
+    <meta name="description" content="" />
+
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'cvdp/img/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'cvdp/img/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'cvdp/img/favicon-16x16.png' %}">
+    <link rel="manifest" href="{% static 'cvdp/img/site.webmanifest' %}">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Icons. Uncomment required icon fonts -->
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/fonts/boxicons.css' %}" />
+
+
+    <!-- Core CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'cvdp/css/fontawesome/all.css' %}" />
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/css/core.css' %}" class="template-customizer-core-css" />
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/css/theme-default.css' %}" class="template-customizer-theme-css" />
+    <link rel="stylesheet" href="{% static 'cvdp/css/demo.css' %}" />
+    <link rel="stylesheet" href="{% static 'cvdp/css/bt_style.css' %}" />
+
+
+    <!-- Vendors CSS -->
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/libs/perfect-scrollbar/perfect-scrollbar.css' %}" />
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/css/pages/page-auth.css' %}" />
+    <!-- Helpers -->
+    {% block js %}
+    <script src="{% static 'cvdp/vendor/js/helpers.js' %}"></script>
+
+    <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
+    <!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
+    <script src="{% static 'cvdp/js/config.js' %}"></script>
+    {% endblock %}
+    {% block extrastyle %}{% endblock %}
+    {% block extrahead %}{% endblock %}
+
+  </head>
+
+  <body>
+    <!-- Content -->
+
+    <div class="container-xxl">
+      {% block authwidth %}
+      <div class="authentication-wrapper authentication-basic container-p-y">
+	{% endblock %}
+        <div class="authentication-inner">
+          <!-- Register -->
+          <div class="card">
+	    {% if user.is_authenticated %}
+	    <div class="card-header text-end pb-0">
+	      <a href="{% url 'account_logout' %}" title="log out"><i class="fas fa-sign-out-alt"></i></a>
+	    </div>
+	    {% endif %}
+	      
+		 
+            <div class="card-body">
+              <!-- Logo -->
+	      {% block branding %}
+              <div class="app-brand justify-content-center">
+                <a href="{{ LOGIN_URL }}" class="app-brand-link gap-2">
+                  <span class="app-brand-logo demo">		    
+		    <img src="{% static 'cvdp/css/images/CVDP.png' %}">
+                  </span>
+                </a>
+              </div>
+	      {% endblock %}
+
+	      {% block body %}
+	      {% if messages %}
+	      {% for message in messages %}
+	      <div class="alert alert-{{ message.tags }}">
+		{{ message|capfirst }}</div>
+	      {% endfor %}
+	      {% endif %}
+	      {% endblock body %}
+	      {% block content %}
+	      
+              <!-- /Logo -->
+              <h4 class="mb-2">Welcome to CVDP!</h4>
+              <p class="mb-4">Please sign-in to your account.</p>
+
+              <form id="formAuthentication" class="mb-3" action="index.html" method="POST">
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email or Username</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="email"
+                    name="email-username"
+                    placeholder="Enter your email or username"
+                    autofocus
+                  />
+                </div>
+                <div class="mb-3 form-password-toggle">
+                  <div class="d-flex justify-content-between">
+                    <label class="form-label" for="password">Password</label>
+                    <a href="auth-forgot-password-basic.html">
+                      <small>Forgot Password?</small>
+                    </a>
+                  </div>
+                  <div class="input-group input-group-merge">
+                    <input
+                      type="password"
+                      id="password"
+                      class="form-control"
+                      name="password"
+                      placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
+                      aria-describedby="password"
+                    />
+                    <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="remember-me" />
+                    <label class="form-check-label" for="remember-me"> Remember Me </label>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+                </div>
+              </form>
+	      
+              <p class="text-center">
+                <span>New on our platform?</span>
+                <a href="auth-register-basic.html">
+                  <span>Create an account</span>
+                </a>
+              </p>
+	      {% endblock %}
+            </div>
+          </div>
+          <!-- /Register -->
+        </div>
+      </div>
+    </div>
+
+    <!-- / Content -->
+
+    <!-- Core JS -->
+    <!-- build:js assets/vendor/js/core.js -->
+    <script src="{% static 'cvdp/vendor/js/bootstrap.js' %}"></script>
+    <!--<script src="{% static 'cvdp/vendor/libs/popper/popper.js' %}"></script>-->
+    <script src="{% static 'cvdp/vendor/js/menu.js' %}"></script>
+    <!-- Main JS -->
+    <script src="{% static 'cvdp/js/main.js' %}"></script>
+
+    <!-- Page JS -->
+
+  </body>
+</html>

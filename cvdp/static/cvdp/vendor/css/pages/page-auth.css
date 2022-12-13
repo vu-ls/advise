@@ -1,0 +1,85 @@
+@charset "UTF-8";
+.authentication-wrapper {
+  display: flex;
+  flex-basis: 100%;
+  min-height: 100vh;
+  width: 100%;
+}
+.authentication-wrapper .authentication-inner {
+  width: 100%;
+}
+.authentication-wrapper.authentication-basic {
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.authentication-wrapper.authentication-signup {
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+
+.authentication-wrapper.authentication-cover {
+  align-items: flex-start;
+}
+.authentication-wrapper.authentication-cover .authentication-inner {
+  height: 100vh;
+}
+.authentication-wrapper.authentication-basic .authentication-inner {
+  max-width: 500px;
+  position: relative;
+}
+
+.authentication-wrapper.authentication-signup .authentication-inner {
+    max-width:700px;
+    position: relative;
+}
+
+.authentication-wrapper.authentication-basic .authentication-inner:before {
+  width: 148px;
+  height: 148px;
+  content: " ";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+}
+.authentication-wrapper.authentication-basic .authentication-inner:after {
+  width: 243px;
+  height: 240px;
+  content: " ";
+  position: absolute;
+  bottom: -68px;
+  left: -46px;
+}
+.authentication-wrapper.authentication-basic .authentication-inner .card {
+  z-index: 1;
+}
+.authentication-wrapper.authentication-basic .authentication-inner .card .app-brand {
+    margin-bottom: 2.5rem;
+    padding:20px;
+}
+
+.authentication-wrapper.authentication-signup .authentication-inner .card .app-brand {
+    margin-bottom: 2.5rem;
+    padding:20px;
+}
+
+.authentication-wrapper .auth-input-wrapper .auth-input {
+  max-width: 50px;
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+  font-size: 150%;
+}
+
+@media (max-width: 575.98px) {
+  .authentication-wrapper .auth-input-wrapper .auth-input {
+    font-size: 1.125rem;
+  }
+}
+.light-style .authentication-wrapper .authentication-bg {
+  background-color: #fff;
+}
+.light-style .authentication-wrapper.authentication-basic .authentication-inner:after {
+}
