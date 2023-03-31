@@ -58,10 +58,6 @@ AdVISE is developed and maintained by Emily Sarneso (@esarneso) and Jonathan Woy
 
 4. Feeling shy? Send us [mail](mailto:contactus@vu.ls) to discuss an idea or get support.
 
-## License
-
-AdVISE is released under the GNU Affero General Public License (AGPL).
-
 ## Roadmap
 
 AdVISE is under active development. In the coming months, we plan to improve upon the existing implementation and add many new features.
@@ -69,3 +65,10 @@ AdVISE is under active development. In the coming months, we plan to improve upo
 ## Looking for support?
 
 vu.ls has many years of experience in coordinating vulnerabilities, vulnerability analysis, and PSIRT consultation. We offer varying levels of support in these fields. Visit [vu.ls](https://www.vu.ls) for more information.
+
+## License
+
+AdVISE is released under the GNU Affero General Public License (AGPL).
+
+- Copyright (C) 2023 Vul Labs, LLC
+
