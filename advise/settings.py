@@ -14,6 +14,7 @@ import os
 import logging.config
 import environ
 import json
+from advise.storage_backends import ArtifactFileStorage
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -341,9 +342,26 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'assets'),
 ]
 
-MEDIA_URL = '/media/'
+MEDIA_URL = os.environ.get('MEDIA_URL', '/media/')
+MEDIA_ROOT = os.path.join(BASE_DIR, os.environ.get('MEDIA_ROOT', 'media'))
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# artifact file storage defaults
+ATTACHMENTS_URL = os.environ.get('ATTACHMENTS_URL', '/attachments/')
+ATTACHMENTS_ROOT = os.path.join(BASE_DIR, os.environ.get('ATTACHMENT_FILE_LOCATION', 'attachments'))
+# for 4.2, we should use the newly-introduced STORAGES dict to manage
+# these backends [JDW]
+#
+#STORAGES['attachments'] = {
+#    'BACKEND': "django.core.files.storage.FileSystemStorage",
+#    'OPTIONS': {
+#        'location': ATTACHMENTS_ROOT,
+#        'base_url': ATTACHMENTS_URL
+#    }
+#}
+ATTACHMENT_FILES_ARGS = {
+    'location': ATTACHMENTS_ROOT,
+    'base_url': ATTACHMENTS_URL,
+}
 
 # set up STATIC files
 # (assumed local unless otherwise)
@@ -369,6 +387,22 @@ if DEPLOYMENT_TYPE == 'AWS':
     #PRIVATE_FILE_STORAGE = 'advise.storage_backends.PrivateMediaStorage'
     # unset STATIC_ROOT so we don't cause any conflicts with staticfiles
     STATIC_ROOT = None
+
+    # set up attachment file storage
+    ATTACHMENT_FILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_ATTACHMENT_FILES_STORAGE_BUCKET_NAME = os.environ.get('AWS_ATTACHMENT_FILES_STORAGE_BUCKET_NAME')
+    AWS_ATTACHMENT_FILES_LOCATION = os.environ.get('ATTACHMENT_FILES_LOCATION', 'attachments')
+    ATTACHMENT_FILES_ARGS = {
+        'location': AWS_ATTACHMENT_FILES_LOCATION,
+        'bucket_name': AWS_ATTACHMENT_FILES_STORAGE_BUCKET_NAME,
+        'file_overwrite': False,
+        'default_acl': 'private',
+        'region_name': AWS_REGION,
+        'custom_domain': False,
+    }
+    ATTACHMENTS_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_ATTACHMENT_FILES_LOCATION}/'
+    ATTACHMENTS_ROOT = None
+
 
 
 AUTHENTICATION_BACKENDS = [

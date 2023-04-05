@@ -11,6 +11,7 @@ services:
     image: advise
     volumes:
       - static_data:/home/advise/app/staticfiles
+      - attachment_data:/home/advise/app/attachments
     command: app-startup.sh
     networks:
       advise_app: {}
@@ -102,6 +103,7 @@ volumes:
   postgres_data:
   static_data:
   assets_data:
+  attachment_data:
 
 networks:
   advise_app: {}

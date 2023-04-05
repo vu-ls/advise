@@ -528,7 +528,7 @@ class CaseArtifactTest(TestCase):
         client.force_login(self.coord_user)
         response = client.get(reverse('cvdp:artifact', args=[self.artifact.file.uuid]))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get('Content-Disposition'), "attachment; filename=artifact.jpg")
+        self.assertEqual(response.get('Content-Disposition'), "attachment; filename=\"artifact.jpg\"")
 
     def test_get_unauth_case_artifact(self):
         client = Client()

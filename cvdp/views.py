@@ -79,16 +79,22 @@ class ArtifactView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
                     raise PermissionDenied()
 
             mime_type = attachment.mime_type
-            file_path=os.path.join(settings.MEDIA_ROOT, attachment.file.name)
-            if os.path.exists(file_path):
-                with open(file_path, 'rb') as fh:
-
+            if attachment.file.storage.exists(attachment.file.name):
+                # TODO: We should be doing this URL magic and serving from
+                #       potentially cached storage. Right now, we're going
+                #       quick-and-dirty and doing the same thing we did when
+                #       this was only dealing with local files. [JDW]
+                #url = attachment.file.storage.url(str(attachment.file.name), parameters={'Content-Disposition': f'attachment; filename="{attachment}"'})
+                #logger.debug(f"in ArtifactView: built url {url}")
+                #response = HttpResponseRedirect(url)
+                with attachment.file.storage.open(str(attachment.file.name)) as fh:
                     response = HttpResponse(fh.read(), content_type = mime_type)
-                    response['Content-Disposition'] = f"attachment; filename={attachment}"
+                    response['Content-Disposition'] = f"attachment; filename=\"{attachment}\""
                     response["Content-type"] = mime_type
                     response["Cache-Control"] = "must-revalidate"
                     response["Pragma"] = "must-revalidate"
                     return response
+
         raise Http404
 
 

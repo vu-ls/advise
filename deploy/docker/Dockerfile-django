@@ -74,6 +74,7 @@ RUN addgroup -S advise && \
     mkdir -p /home/advise/app/static && \
     mkdir -p /home/advise/app/assets && \
     mkdir -p /home/advise/app/staticfiles && \
+    mkdir -p /home/advise/app/attachments && \
     chown -R advise:advise /home/advise/app
 
 ENV APP_HOME=/home/advise/app
