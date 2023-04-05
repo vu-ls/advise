@@ -10,6 +10,7 @@ module.exports = {
     context: __dirname,
     entry: {
 	main: './assets/js/index',
+	login: './assets/js/login',
 	participantapp: './assets/js/participants',
 	app: './assets/js/app',
 	reportapp: './assets/js/report',

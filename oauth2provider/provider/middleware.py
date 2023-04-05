@@ -76,19 +76,19 @@ class Base2FAMiddleware(MiddlewareMixin):
     def process_view(self, request, view_func, view_args, view_kwargs):
         # The user is not logged in, do nothing.
         if request.user.is_anonymous:
-            return
+            return None
         
         # If this doesn't require 2FA, then stop processing.
         if not self.require_2fa(request):
-            return
+            return None
         
         # If the user is on one of the allowed pages, do nothing.
         if self.is_allowed_page(request):
-            return
+            return None
 
         if request.user.totpdevice_set.filter(confirmed=True).exists():
             # User already has two-factor configured, do nothing.
-            return
+            return None
 
         # The request required 2FA but it isn't configured!
         return self.on_require_2fa(request)
@@ -98,4 +98,7 @@ class Require2FAMiddleware(Base2FAMiddleware):
 
     def require_2fa(self, request):
         #all users are required to have mfa enabled
-        return True
+        if settings.REQUIRE_MFA_AUTH:
+            return True
+        #if not set, or if REQUIRE_MFA_AUTH is False
+        return False

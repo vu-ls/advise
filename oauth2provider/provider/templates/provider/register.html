@@ -19,9 +19,10 @@
 
   <h4 class="text-center mt-4">Register for an AdVISE Provider account</h4>
   <p class="text-center mt-2 mb-2">If you already have an account, <a href="{% url 'login' %}">login</a> instead.</p>
-  <form method="POST">
+  <form method="POST" action="{% url 'provider:register' %}?redirect_uri={{request.GET.redirect_uri}}">
     {% csrf_token %}
     {{ form|crispy }}
+    <input type="hidden" name="next" value="{{ redirect_uri }}" />
     <div class="mt-2">
       <button class="btn btn-primary d-grid w-100" type="submit">Register</button>
     </div>

@@ -12,6 +12,16 @@
     max-width: 400px;
 }
 
+.loginapp {
+    max-width:750px;
+    position: absolute;
+    margin: 0;
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
+
 
 .api_token {
     cursor: pointer;

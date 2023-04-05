@@ -1,5 +1,6 @@
 {% extends CVDP_BASE_TEMPLATE %}
 {% load i18n humanize widget_tweaks crispy_forms_tags user_tags %}
+{% load socialaccount %}
 {% load static %}
 {% block js %}
 {{ block.super }}
@@ -81,16 +82,27 @@
 	</div>
 	
 	{% endif %}
+	{% if oauth_provider_mfa %}
+	<div class="row">
+          <div class="mb-3 col-md-2">
+            <label class="form-label">Multi-factor Authentication (MFA)</label>
+          </div>
+          <div class="mb-3 col-md-8">
+            <div class="ms-3 d-flex align-items-center gap-2">
+	      <a href="{{ oauth_provider_mfa }}"><span class="badge rounded-pill bg-label-info">View Settings</span></a>
+	    </div>
+	  </div>
+	</div>
+	{% endif %}
+
 	<div class="row">
 	  <div class="mb-3 col-md-2">
             <label class="form-label">API Key</label>
 	  </div>
           <div class="mb-3 col-md-8">
-	    <div class="ms-3 d-flex">
+	    <div class="ms-3 d-flex align-items-center gap-2">
               {% if api_key %}<b><i>{{api_key}}</i></b>{% endif %}
-	      <div class="ms-3">
 		<button id="gentoken" action="{% url 'authapp:apitoken' %}" class="btn btn-outline-secondary btn-sm">{% if api_key %}Refresh API Key{% else %}Generate API Key{% endif %}</button>
-	      </div>
 	    </div>
 	    {% if api_key %}
 	    <div class="ms-3 mt-1">
@@ -100,6 +112,7 @@
           </div>
 	</div>
       </div>
+      {% if providers %}
       <hr/>
       <h5 class="card-header">Account Connections</h5>
       <div class="card-body">
@@ -133,17 +146,25 @@
 	{% else %}
 	<p>{% trans 'You currently have no social network accounts connected to this account.' %}</p>
 	{% endif %}
-
+	
       </div>
       <hr/>
       <h5 class="card-header">{% trans 'Add a 3rd Party Account' %}</h5>
+      
       <div class="card-body">
-	<ul class="socialaccount_providers list-unstyled">
-	  {% include "socialaccount/snippets/provider_list.html" with process="connect" %}
-	</ul>
-	
+	<div class="row">
+	  <div class="col-lg-4">
+	    <div class="socialaccount_providers align-items-center w-100 justify-content-center gap-4">
+	      {% for p in providers %}
+	      <a title="{{p.name}}" class="socialaccount_provider {{p.id}} btn btn-outline-primary" 
+		 href="{% provider_login_url p.id process=process scope=scope auth_params=auth_params %}">{{p.name}}</a>
+	      {% endfor %}
+	    </div>
+	  </div>
+	</div>
 	{% include "socialaccount/snippets/login_extra.html" %}
       </div>
+      {% endif %}
     </div>
     
     

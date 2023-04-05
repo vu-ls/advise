@@ -1,1 +1,52 @@
-{% extends "authapp/login.html" %}
+{% extends 'cvdp/login.html' %}
+{% load i18n static crispy_forms_tags widget_tweaks%}
+{% load account socialaccount %}
+
+{% block content %}
+<div id="content-main" class="content">
+  
+  <div id="dash" class="hidden" href="{% url 'cvdp:dashboard' %}"></div>
+  <div id="login" class="hidden" href="{% url 'authapp:login' %}"></div>
+  
+  <form action="{% url 'account_login' %}?next={{request.GET.next}}" method="post" id="login-form">
+    {% csrf_token %}
+    {% url 'account_reset_password' as password_reset_url %}
+
+    <h4 class="mb-2 text-center">Welcome to AdVISE!</h4>
+    <p class="mb-4 text-center">Please sign-in to your account. <a href="{{ password_reset_url }}">{% trans 'Forgot Password?' %}</a>.</p>
+    
+    {% if user.is_authenticated %}
+    <div class="alert alert-info">
+      <strong>
+	You are authenticated as {{ user.username }}. Go to <a href="{% url 'cvdp:dashboard' %}">my dashboard</a> or <a href="{% url 'authapp:logout' %}">login as a different user.</a>
+    </strong>
+    </div>
+  {% endif %}
+    
+    {% render_field form.auth_backend class="form-control" %}
+
+    {{ form|crispy }}
+    
+    <div class="mb-1">
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn btn-primary btn-lg d-grid w-100" type="submit">Sign in</button>
+    </div>
+  </form>
+    
+    {% get_providers as socialaccount_providers %}
+    
+    {% if socialaccount_providers %}
+    <p class="text-center mt-4">Or sign in with one of the following providers:</p>
+    <div class="socialaccount_ballot">
+      
+      <div class="d-grid">
+	{% include "socialaccount/include/provider_list.html" with process="login" %}
+      </div>
+      
+    </div>
+    {% include "socialaccount/snippets/login_extra.html" %}
+    
+    {% endif %}
+  
+</div>
+{% endblock %}

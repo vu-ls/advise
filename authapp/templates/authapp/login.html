@@ -1,73 +1,82 @@
-{% extends "cvdp/login.html" %}
-{% load i18n static crispy_forms_tags widget_tweaks%}
-{% load account socialaccount %}
+{% extends "cvdp/bt_base_site.html" %}
+{% load i18n static %}
+{% load account socialaccount provider_tags %}
+{% load render_bundle from webpack_loader %}
 
 {% block extrahead %}
 <script type="text/javascript" src="{% static 'cvdp/js/jquery.min.js' %}"></script>
 {% endblock %}
 
+{% block branding %}{% endblock %}
+
+{% block authwidth %}
+<div class="authentication-wrapper authentication-signup container-p-y">
+  {% endblock %}
+  
 {% block content %}
-
-<div id="content-main" class="content">
-
-<div id="dash" class="hidden" href="{% url 'cvdp:dashboard' %}"></div>
-<div id="login" class="hidden" href="{% url 'authapp:login' %}"></div>
-
-<form action="{% url 'account_login' %}?next={{request.GET.next}}" method="post" id="login-form">
-  {% csrf_token %}
-  {% url 'account_reset_password' as password_reset_url %}
-
- <h4 class="mb-2">Welcome to AdVISE!</h4>
-  <p class="mb-4">Please sign-in to your account. <a href="{{ password_reset_url }}">{% trans 'Forgot Password?' %}</a>.</p>
-
-  {% if user.is_authenticated %}
-  <div class="alert alert-info">
-    <strong>
-      You are authenticated as {{ user.username }}. Go to <a href="{% url 'cvdp:dashboard' %}">my dashboard</a> or <a href="{% url 'authapp:logout' %}">login as a different user.</a>
-    </strong>
-  </div>
-  {% endif %}
-
-  {% render_field form.auth_backend class="form-control" %}
-
-  {{ form|crispy }}
-  
-
-  {% get_providers as socialaccount_providers %}
-  
-  {% if socialaccount_providers %}
-  <p>Or sign in with one of the following providers:</p>
-  <div class="socialaccount_ballot">
-    
-    <ul class="btn-group-vertical">
-      {% include "socialaccount/snippets/provider_list.html" with process="login" %}
-    </ul>
-    
-  </div>
-    {% include "socialaccount/snippets/login_extra.html" %}
-
-{% endif %}
-    
-
-  <div class="mb-3">
-    <div class="mb-3">
-      <input type="hidden" name="next" value="{{ next }}">
-      <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+  <div class="modal fade" id="largemodal" data-bs-keyboard="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+	<div class="modal-header pb-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+	</div>
+	<div class="modal-body" id="modalbody">
+	</div>
+      </div>
     </div>
-</form>
+  </div>
+  <div class="row">
+    <div class="col-lg-6 border-end p-5 text-center">
+      <div class="d-grid pt-2 align-items-center w-100 justify-content-center gap-4">
 
-  <p class="text-center">
-    <span>New to AdVISE?</span>
-    <a href="{% url 'account_signup' %}">
-      <span>Create an account</span>
-    </a>
-  </p>
+	{% if user.is_authenticated %}
+	<div class="alert alert-info">
+	  <strong>
+	    You are authenticated as {{ user.username }}.
+	  </strong>
+	</div>
+	<a href="{% url 'cvdp:dashboard' %}" class="btn btn-primary btn-lg">My Dashboard</a>
+	<a href="{% url 'authapp:logout' %}" class="btn btn-primary btn-lg">Login as a different user.</a>
 
+	{% else %}
+	
+	{% if login_url %}
+	<a href="{{ login_url }}" id="loginbtn" class="btn btn-primary btn-lg">
+	  Login
+	</a>
+      
+      {% else %}
+      
+      {% get_providers as socialaccount_providers %}
+      {% with p=socialaccount_providers|get_provider:provider %}
+      
+      <a href="{% provider_login_url p.id openid=brand.openid_url process=process %}" class="btn btn-primary btn-lg">
+	Login with Email
+      </a>
+      {% for provider in socialaccount_providers %}
+      {% if provider == p %}
+      {% else %}
+      <a title="{{provider.name}}" class="socialaccount_provider {{provider.id}}"
+	 href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">{{provider.name}}</a>
+      {% endif %}
+      {% endfor %}
+      {% endwith %}
+      {% endif %}
+      <a href="{{ registration_link }}?redirect_uri={{request.build_absolute_uri}}" class="btn btn-outline-primary btn-lg">Sign Up</a>
+      {% endif %}
+
+      </div>
+    </div>
+    <div class="col-lg-6 p-5 text-center">
+      <div class="d-flex justify-content-center align-items-center mb-3">
+        <img src="/static/cvdp/css/images/CVDP.png" />
+      </div>
+      <p class="text-center mt-4 lead">
+        The Advanced Vulnerability Information Sharing Environment -- A Platform for CVD and PSIRT Management
+      </p>
+    </div>
+  </div>
+  
 </div>
-</div>
-
-
-{% if token_login %}
-
-{% endif %}
+{% render_bundle 'login' %}
 {% endblock %}

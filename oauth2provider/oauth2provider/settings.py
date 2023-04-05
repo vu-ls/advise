@@ -70,13 +70,22 @@ if DEPLOYMENT_TYPE == 'AWS':
 trusted_domains = []
 for hostname in ALLOWED_HOSTS:
     trusted_domains.append(f"https://{hostname}")
+
+trusted_domains.append('http://localhost:8000')
+
 CSRF_TRUSTED_ORIGINS = trusted_domains
 CSRF_COOKIE_HTTPONLY = False
 
 # Application definition
 
-
+#set to True to enable email verification.  This is done in AdVISE so we don't
+# to do it twice.
+ACCOUNT_EMAIL_VERIFICATION = os.environ.get("ACCOUNT_EMAIL_VERIFICATION", False)
 LOGIN_REDIRECT_URL = 'provider:welcome'
+
+DASHBOARD_LINK = os.environ.get('DASHBOARD_LINK', 'http://localhost:8000/advise/dashboard/')
+
+REQUIRE_MFA_AUTH = os.environ.get('REQUIRE_MFA_AUTH', True)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -106,10 +115,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django_otp.middleware.OTPMiddleware',
     #'provider.middleware.ProviderTwoFactorMiddleware',
-    'provider.middleware.Require2FAMiddleware', #<--- if you want to require 2fa
+    'provider.middleware.Require2FAMiddleware', 
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+
+#CORS_ALLOW_ALL_ORIGINS = False
+#CORS_ALLOWED_ORIGINS = ['http://localhost:8000']
 
 SESSION_COOKIE_NAME = 'adviseprovider_sessionid'
 

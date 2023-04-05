@@ -24,7 +24,8 @@ class AdViseSocialAccountAdapter(DefaultSocialAccountAdapter):
             user.org = data.get('org')
             
         return user
-"""
+
+    """
     
     def pre_social_login(self, request, sociallogin):
 

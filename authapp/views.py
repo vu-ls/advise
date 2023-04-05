@@ -1,7 +1,7 @@
 # Create your views here.
 from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin, UserPassesTestMixin
 from django.forms.utils import ErrorList
-from django.http import Http404, JsonResponse
+from django.http import Http404, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import gettext as _
 from django.utils.decorators import method_decorator
@@ -16,7 +16,6 @@ from django.urls import resolve
 from django.contrib.auth import authenticate, login as auth_login
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.views import LogoutView as CALogoutView
-from django.contrib.auth.forms import PasswordChangeForm
 from django.conf import settings
 from django.contrib.auth import logout, get_user_model, update_session_auth_hash
 from django.template.defaulttags import register
@@ -32,8 +31,13 @@ import logging
 import traceback
 from django.utils.http import url_has_allowed_host_and_scheme
 from allauth.socialaccount.forms import DisconnectForm
+from allauth.account.forms import ChangePasswordForm, SetPasswordForm
+from allauth.socialaccount import providers
+from allauth.socialaccount.providers.oauth2.views import OAuth2View
 from django_otp.plugins.otp_totp.models import TOTPDevice
-
+from django.template.defaulttags import token_kwargs
+from django.utils.http import urlencode
+from allauth.utils import get_request_param, build_absolute_uri
 
 User = get_user_model()
 
@@ -88,6 +92,30 @@ class PendingTestMixin(UserPassesTestMixin):
         else:
             return True
 
+
+class InitLoginView(TemplateView):
+    template_name = 'authapp/login.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(InitLoginView, self).get_context_data(**kwargs)
+
+        social_accounts = providers.registry.get_list()
+        if hasattr(settings, 'USE_PROVIDER'):
+            context['provider'] = settings.USE_PROVIDER
+        else:
+            context['login_url'] = reverse("account_login")
+        if hasattr(settings, 'REGISTRATION_LINK'):
+            context['registration_link'] = settings.REGISTRATION_LINK
+        else:
+            context['registration_link'] = reverse("account_signup")
+
+        if self.request.GET.get('registration'):
+            messages.success(
+                self.request,
+                'Registration successful.  You can now login.'
+            )
+            
+        return context
 
 class PreferencesView(LoginRequiredMixin, PendingTestMixin, FormView):
     template_name='authapp/preferences.html'
@@ -234,6 +262,16 @@ class MFAAccessView(LoginRequiredMixin, FormView):
         context = super(MFAAccessView, self).get_context_data(**kwargs)
         context['groups'] = self.request.user.groups.values_list('name', flat=True)
         context['api_key'] = APIToken.objects.filter(user=self.request.user).first()
+        ps = providers.registry.get_list()
+        if ps:
+            if hasattr(settings, 'USE_PROVIDER'):
+                for p in ps:
+                    if p.name == settings.USE_PROVIDER:
+                        ps.remove(p)
+                if hasattr(settings, "OAUTH_SERVER_MFA_SETUP"):
+                    context['oauth_provider_mfa'] = settings.OAUTH_SERVER_MFA_SETUP
+        context['providers'] = ps
+            
         return context
 
 
@@ -304,6 +342,58 @@ class UpdateProfilePhoto(LoginRequiredMixin, PendingTestMixin,FormView):
         return render(self.request, 'authapp/logo.html', {'user': self.request.user})
 
 
+class SetPasswordView(LoginRequiredMixin, PendingTestMixin, FormView):
+    template_name = 'authapp/password_change_form.html'
+    form_class = SetPasswordForm
+    success_url = reverse_lazy("authapp:set_password")
+
+    def dispatch(self, request, *args, **kwargs):
+        if hasattr(settings, 'USE_PROVIDER'):
+            if hasattr(settings, "OAUTH_SERVER_PASSWORD_CHANGE"):
+                return redirect(settings.OAUTH_SERVER_PASSWORD_CHANGE)
+
+        if self.request.user.has_usable_password():
+            return HttpResponseRedirect(reverse("authapppassword"))
+        return super(SetPasswordView, self).dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super(SetPasswordView, self).get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+        messages.success(self.request, "Your password has been set!")
+        update_session_auth_hash(self.request, self.request.user)        
+        return super(SetPasswordView, self).form_valid(form)
+    
+    
+class ChangePasswordView(LoginRequiredMixin, PendingTestMixin, FormView):
+    template_name = 'authapp/password_change_form.html'
+    form_class = ChangePasswordForm
+    success_url = reverse_lazy("authapp:password")
+
+    def dispatch(self, request, *args, **kwargs):
+        if hasattr(settings, 'USE_PROVIDER'):
+            if hasattr(settings, "OAUTH_SERVER_PASSWORD_CHANGE"):
+                return redirect(settings.OAUTH_SERVER_PASSWORD_CHANGE)
+
+        if not self.request.user.has_usable_password():
+            return HttpResponseRedirect(reverse("authapp:set_password"))
+        
+        return super(ChangePasswordView, self).dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super(ChangePasswordView, self).get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+    
+    def form_valid(self, form):
+        form.save()
+        messages.success(self.request, "Your password has been changed!")
+        update_session_auth_hash(self.request, self.request.user)
+        return super(ChangePasswordView, self).form_valid(form)
+    
 class UpdateProfileView(LoginRequiredMixin, PendingTestMixin,FormView):
     template_name = 'authapp/profile.html'
     form_class = ProfileForm

@@ -46,6 +46,8 @@ urlpatterns = [
     re_path('^$', RedirectView.as_view(url='advise/')),
     path('admin/', admin.site.urls),
     path('accounts/social/connections/', RedirectView.as_view(url="/advise/auth/profile/mfa/")),
+    path('accounts/password/set/', RedirectView.as_view(url='/advise/auth/password/')),
+    path('accounts/password/change/', RedirectView.as_view(url='/advise/auth/password/')),
     path('accounts/', include('allauth.urls')),
     path('accounts/', include('allauth_2fa.urls')),
     path('advise/',include(('cvdp.urls', 'cvdp'), namespace="cvdp")),

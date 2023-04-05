@@ -7,6 +7,7 @@ urlpatterns = [
     re_path('^$', RedirectView.as_view(pattern_name="provider:welcome"), name='index'),
     path('home/', views.WelcomeView.as_view(), name='welcome'),
     path('register/', views.RegistrationView.as_view(), name='register'),
+    path('activate/<uidb64>/<token>/', views.ActivateAccountView.as_view(), name='activate'),
     re_path(r'^mfa/removemfa/', views.MFARemoveView.as_view(), name='remove_mfa'),
     re_path(r'^mfa/setupmfa/', views.MFASetupView.as_view(), name='setup_mfa'),
     re_path(r'^mfa/', views.MFARequiredView.as_view(), name='mfa'),

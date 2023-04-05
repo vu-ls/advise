@@ -30,6 +30,7 @@ class CustomAdapter(OAuth2Adapter):
     profile_url = '{}/profile/'.format(settings.OAUTH_SERVER_INTERNAL_URL)
 
     def complete_login(self, request, app, token, **kwargs):
+        print("WHEN AM I HERE?")
         headers = {'Authorization': 'Bearer {0}'.format(token.token)}
         logger.debug(headers)
         resp = requests.get(self.profile_url, headers=headers)

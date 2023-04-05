@@ -2,7 +2,7 @@
 {% load i18n crispy_forms_tags %}
 {% block branding %}
 
-<h3 class="text-center">AdVise OAuth2 Provider Login</h3>
+<h3 class="text-center">Welcome to AdVISE!</h3>
 
 {% endblock %}
 
@@ -17,10 +17,13 @@
     </div>
 
 
-{% if form.errors %}
-<div class="alert alert-danger"><strong>Your username and password didn't match. Please try again.</strong></div>
-{% endif %}
-
+    {% if form.errors %}
+    
+    {% for x in form.non_field_errors %}
+    <div class="alert alert-danger"><strong>{{ x }}</strong></div>
+    {% endfor %}
+    {% endif %}
+    
 {% if user.is_authenticated %}
 <div class="alert alert-info">
   <strong>

@@ -6,8 +6,40 @@ from django.contrib.auth import get_user_model
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django.utils.translation import gettext_lazy as _
 from django_otp.forms import OTPAuthenticationFormMixin
+from django.core.exceptions import ValidationError
 
 User = get_user_model()
+
+
+class ProviderAuthenticationForm(AuthenticationForm):
+
+
+    def get_invalid_login_error(self):
+        user = User.objects.get(username=self.cleaned_data.get('username'))
+
+        if not user.email_confirmed:
+            raise ValidationError(
+                _("The email associated with this account has not been confirmed. Please confirm the email before logging in."),
+                code='email_unconfirmed',
+            )
+        if not user.is_active:
+            raise ValidationError(
+                _("This account is inactive."),
+                code='inactive',
+            )
+    
+    def confirm_login_allowed(self, user):
+        if not user.email_confirmed:
+            raise ValidationError(
+		_("The email associated with this account has not been confirmed. Please confirm the email before logging in."),
+                code='email_unconfirmed',
+            )
+        if not user.is_active:
+            raise ValidationError(
+                _("This account is inactive."),
+                code='inactive',
+            )
+
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(

@@ -141,7 +141,7 @@ ACCOUNT_FORMS = {
     'signup': 'authapp.forms.AdviseSignUpForm',
 }
 SOCIALACCOUNT_FORMS = {'signup': 'authapp.oauth2.forms.CustomSocialSignupForm'}
-
+SOCIALACCOUNT_LOGIN_ON_GET=True
 #if true - all new sign ups will be pending until someone approves them
 REQUIRE_ACCOUNT_APPROVAL = os.environ.get("REQUIRE_ACCOUNT_APPROVAL", False)
 
@@ -179,6 +179,9 @@ OAUTH_SERVER_BASEURL = os.environ.get('OAUTH_SERVER_BASEURL', 'http://localhost:
 # If not set, default to the BASEURL defined above (this is the default for
 # many installation scenarios).
 OAUTH_SERVER_INTERNAL_URL = os.environ.get('OAUTH_SERVER_INTERNAL_URL', OAUTH_SERVER_BASEURL)
+
+OAUTH_SERVER_MFA_SETUP = f"{OAUTH_SERVER_BASEURL}/provider/mfa/removemfa/"
+OAUTH_SERVER_PASSWORD_CHANGE = f"{OAUTH_SERVER_BASEURL}/accounts/password_change/"
 
 ROOT_URLCONF = 'advise.urls'
 
@@ -448,4 +451,16 @@ WEBPACK_LOADER = {
 
 #JOB_MANAGER
 #JOB_MANAGER = "cvdp.appcomms.async.CeleryRedis_Communicator"
+
+# These 2 variables determine how initial login works
+# If you want to disable local authentication/local registrations
+# and just use the provided Advise provider, then uncomment
+# the following 2 lines.  Make sure the USE_PROVIDER matches
+# the name of the custom provider which should be AdVise Provider
+# You can have additional social providers in both cases.
+
+if (use_provider := os.environ.get('USE_PROVIDER')):
+    USE_PROVIDER = use_provider #'AdVise Provider'
+if (registration_link := os.environ.get('REGISTRATION_LINK')):
+    REGISTRATION_LINK = registration_link #f'{OAUTH_SERVER_BASEURL}/provider/register'
 
