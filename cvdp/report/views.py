@@ -55,19 +55,32 @@ class ReportsAPIView(viewsets.ModelViewSet):
         return CaseReport.objects.filter(entry__created_by=self.request.user).order_by('-entry__created')
 
 #TODO - anyone can submit a report - add anonymous reporting feature
-class ReportView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
+class ReportView(UserPassesTestMixin, generic.TemplateView):
     template_name = 'cvdp/report.html'
     login_url="authapp:login"
     success_url = 'results.html'
 
+    def test_func(self):
+        if self.request.user.is_anonymous:
+            if hasattr(settings, "ALLOW_ANONYMOUS_REPORTS"):
+                if settings.ALLOW_ANONYMOUS_REPORTS:
+                    return True
+            return False
+        return PendingTestMixin.test_func(self)
+    
     def get_context_data(self, **kwargs):
         context = super(ReportView, self).get_context_data(**kwargs)
 
         form = ReportingForm.objects.all().first()
-
-        context['form'] = form.get_form()
+        if (form):
+            context['form'] = form.get_form()
+            context['intro'] = form.intro
         context['reportpage'] = 1
-        context['intro'] = form.intro
+
+        if self.request.user.is_anonymous:
+            context['base_template'] = 'cvdp/report_no_auth.html'
+        else:
+            context['base_template'] = settings.CVDP_BASE_TEMPLATE
         
         return context
 
@@ -79,8 +92,9 @@ class ReportView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
         form = rform.get_form(self.request.POST)
         if form.is_valid():
             #create form entry
-            fe = FormEntry(form=rform,
-                           created_by=self.request.user)
+            fe = FormEntry(form=rform)
+            if self.request.user.is_authenticated:
+                fe.created_by=self.request.user
             fe.save()
             
             logger.debug(form.cleaned_data)
@@ -104,13 +118,16 @@ class ReportView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
             case.save()
 
             #add reporter to Case as reporter
-            contact = Contact.objects.filter(user=self.request.user).first()
-
-            add_new_case_participant(case.official_thread, contact.uuid, self.request.user, "reporter")
-
+            if self.request.user.is_authenticated:
+                contact = Contact.objects.filter(user=self.request.user).first()
+                add_new_case_participant(case.official_thread, contact.uuid, self.request.user, "reporter")
+                
             messages.success(
                 self.request,
                 "Got it! Thanks for your vulnerability report."
             )
+            if self.request.user.is_authenticated:
             
-            return redirect("cvdp:reports")
+                return redirect("cvdp:reports")
+            else:
+                return redirect("authapp:login")

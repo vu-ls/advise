@@ -1,5 +1,12 @@
 {% extends 'cvdp/bt_base_site.html' %}
 {% load static %}
+
+{% block extrahead %}
+<script src="https://www.google.com/recaptcha/api.js"></script>
+<script src="{% static 'cvdp/js/login.js' %}" src="text/javascript"></script>
+{% endblock %}
+
+
 {% block authwidth %}
 <div class="authentication-wrapper-wide authentication-basic container-p-y">
   {% endblock %}
@@ -17,14 +24,20 @@
 {% block content %}
 {% load crispy_forms_tags %}
 
-  <h4 class="text-center mt-4">Register for an AdVISE Provider account</h4>
+  <h4 class="text-center mt-4">Register for an AdVISE account</h4>
   <p class="text-center mt-2 mb-2">If you already have an account, <a href="{% url 'login' %}">login</a> instead.</p>
-  <form method="POST" action="{% url 'provider:register' %}?redirect_uri={{request.GET.redirect_uri}}">
+  <form method="POST" id="login-form" action="{% url 'provider:register' %}?redirect_uri={{request.GET.redirect_uri}}">
+    
     {% csrf_token %}
-    {{ form|crispy }}
+    {{ form | crispy }}
+
     <input type="hidden" name="next" value="{{ redirect_uri }}" />
     <div class="mt-2">
-      <button class="btn btn-primary d-grid w-100" type="submit">Register</button>
+      <button class="g-recaptcha btn btn-primary d-grid w-100" id="recaptcha-submit"
+	      data-sitekey="{{ form.captcha }}"
+              data-callback='onSubmit'
+              data-action='submit'
+	      type="submit">Register</button>
     </div>
   </form>
   

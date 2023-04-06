@@ -1,5 +1,7 @@
 import contextlib
 from django import forms
+import requests
+from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
@@ -7,13 +9,16 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from django.utils.translation import gettext_lazy as _
 from django_otp.forms import OTPAuthenticationFormMixin
 from django.core.exceptions import ValidationError
+import logging
 
 User = get_user_model()
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 
 class ProviderAuthenticationForm(AuthenticationForm):
-
-
+    
     def get_invalid_login_error(self):
         user = User.objects.get(username=self.cleaned_data.get('username'))
 
@@ -39,8 +44,9 @@ class ProviderAuthenticationForm(AuthenticationForm):
                 _("This account is inactive."),
                 code='inactive',
             )
-
-
+        
+        
+        
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(
 	required=True,
@@ -74,6 +80,7 @@ class SignUpForm(UserCreationForm):
         max_length=200,
         required=False,
         label="Job Title")
+
     
     class Meta:
         model = User
@@ -82,7 +89,31 @@ class SignUpForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('label_suffix', '')
         super(SignUpForm, self).__init__(*args,**kwargs)
+        self.captcha = settings.RECAPTCHA_PUBLIC_KEY
 
+
+    def clean(self):
+        #check captcha                                                                                             
+        logger.debug(self.data)
+        recaptcha_response = self.data.get('g-recaptcha-response')
+        data = {
+            "secret": settings.RECAPTCHA_PRIVATE_KEY,
+            "response": recaptcha_response,
+        }
+        req_object = requests.post(url = "https://www.google.com/recaptcha/api/siteverify",
+                             data=data,
+                             headers={
+                                 "Content-type": "application/x-www-form-urlencoded",
+                                 "User-agent": "reCAPTCHA Django",
+                             })
+        resp = req_object.json()
+        if resp['success']:
+            logger.debug(f"Successful recaptcha, score: {resp['score']}")
+            if resp['score'] > settings.RECAPTCHA_SUCCESS_SCORE:
+                return self.cleaned_data
+        raise ValidationError(_('Invalid ReCAPTCHA. Please try again.'))
+
+        
     def save(self, commit=True):
         user = super(SignUpForm, self).save(commit=False)
         user.organization=self.cleaned_data['organization']

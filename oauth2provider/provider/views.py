@@ -207,8 +207,12 @@ class RegistrationView(generic.FormView):
     def get_context_data(self, **kwargs):
         context = super(RegistrationView, self).get_context_data(**kwargs)        
         context["redirect_uri"] = self.request.GET.get('redirect_uri')
-        context['form'] = SignUpForm()
+        #context['form'] = SignUpForm()
         return context
+
+    def form_invalid(self, form):
+        logger.debug(f"{self.__class__.__name__} errors: {form.errors}")
+        return super().form_invalid(form)
     
     def form_valid(self, form):
         user = form.save(commit = False)

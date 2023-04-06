@@ -2,6 +2,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
 from authapp.models import User
+import requests
 from cvdp.settings import DEFAULT_USER_SETTINGS
 from allauth.account.forms import SignupForm
 from django.utils.translation import gettext, gettext_lazy as _
@@ -11,6 +12,7 @@ import pytz
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Field
 from django.core.validators import RegexValidator
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -126,6 +128,7 @@ class AdviseSignUpForm(SignupForm):
     agree_to_terms = forms.BooleanField(
         required=True,
         label="I agree to the terms of service")
+
     
     class Meta:
         model = User
@@ -134,10 +137,37 @@ class AdviseSignUpForm(SignupForm):
         kwargs.setdefault('label_suffix', '')
         super(AdviseSignUpForm, self).__init__(*args,**kwargs)
 
+
+    def __init__(self, *args, **kwargs):
+        super(AdviseSignUpForm, self).__init__(*args, **kwargs)
+        self.captcha = settings.RECAPTCHA_PUBLIC_KEY
+        
+
+    def clean(self):
+        #check captcha
+        logger.debug(self.data)
+        recaptcha_response = self.data.get('g-recaptcha-response')
+        data = {
+            "secret": settings.RECAPTCHA_PRIVATE_KEY,
+            "response": recaptcha_response,
+        }
+        req_object = requests.post(url = "https://www.google.com/recaptcha/api/siteverify",
+                             data=data,
+                             headers={
+                                 "Content-type": "application/x-www-form-urlencoded",
+                                 "User-agent": "reCAPTCHA Django",
+                             })
+        resp = req_object.json()
+        if resp['success']:
+            if resp['score'] > settings.RECAPTCHA_SUCCESS_SCORE:
+                return self.cleaned_data
+        raise forms.ValidationError(_('Invalid ReCAPTCHA. Please try again.'))
+        
         
     def save(self, request):
         organization = self.cleaned_data.pop('organization')
         title = self.cleaned_data.pop('title')
+
         user = super(AdviseSignUpForm, self).save(request)
         user.refresh_from_db()
 

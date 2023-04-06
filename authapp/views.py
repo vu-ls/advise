@@ -109,6 +109,10 @@ class InitLoginView(TemplateView):
         else:
             context['registration_link'] = reverse("account_signup")
 
+        if hasattr(settings, "ALLOW_ANONYMOUS_REPORTS"):
+            if settings.ALLOW_ANONYMOUS_REPORTS:
+                context['report_link'] = reverse("cvdp:report")
+            
         if self.request.GET.get('registration'):
             messages.success(
                 self.request,

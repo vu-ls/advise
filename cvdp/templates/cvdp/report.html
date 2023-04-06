@@ -1,10 +1,11 @@
-{% extends CVDP_BASE_TEMPLATE %}
-{% load render_bundle from webpack_loader %}
+{% extends base_template %}
 {% load i18n crispy_forms_tags %}
 {% load static %}
+
 {% block js %}
 {{ block.super }}
-
+<script src="https://www.google.com/recaptcha/api.js"></script>
+<script src="{% static 'cvdp/js/login.js' %}" src="text/javascript"></script>
 {% endblock %}
 {% block content %}
 
@@ -12,20 +13,31 @@
 <div class="container-xxl flex-grow-1 container-p-y">
   {% include 'cvdp/include/top_panel.html' with title="Report Vulnerability" breadcrumbs="Report" %}
 
+  {% if form %}
   <div class="card">
     <div class="card-header">
+      {% if user.is_anonymous %}
+      <div class="alert alert-danger">Hey! You are about to submit this report anonymously. You will not be able to track progress of this case and we will not be able to contact you for more information. We want you to help us coordinate this vulnerability.  Please <a href="{% url 'authapp:login' %}">create an account</a> before submitting this form.</div>
+      {% endif %}
       <p class="lead">
 	{{ intro|linebreaksbr }}
       </p>
     </div>
     <div class="card-body">
-      <form method="post" enctype="multipart/form-data">
+      <form method="post" enctype="multipart/form-data" id="login-form">
 	{% csrf_token %}
 	{{ form | crispy }}
-	<button type="submit" class="btn btn-primary">Submit</button>
+	<button type="submit" class="btn btn-primary g-recaptcha" id="recaptcha-submit"
+		data-sitekey="{{ form.captcha }}"
+		data-callback='onSubmit'
+		data-action='submit'>Submit</button>
       </form>
     </div>
   </div>
+  {% else %}
+  <div class="alert alert-danger">Oops! The reporting form has not been setup yet. Contact the systems administrators to setup the reporting form.</div>
+  {% endif %}
+    
   
 </div>
 

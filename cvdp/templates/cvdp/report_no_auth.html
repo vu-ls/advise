@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+{% load static user_tags %}
+<html
+  lang="en"
+  class="light-style layout-menu-fixed"
+  dir="ltr"
+  data-theme="theme-default"
+  data-assets-path="../assets/"
+  data-template="vertical-menu-template-free"
+  >
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+      />
+
+    <title>AdVISE Dashboard</title>
+    
+    <meta name="description" content="" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
+      rel="stylesheet"
+      />
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'cvdp/img/apple-touch-icon.png' %}" />
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'cvdp/img/favicon-32x32.png' %}" />
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'cvdp/img/favicon-16x16.png' %}" />
+    <link rel="manifest" href="{% static 'cvdp/img/site.webmanifest' %}" />
+
+     <!-- Icons. Uncomment required icon fonts -->
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/fonts/boxicons.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'cvdp/css/fontawesome/all.css' %}" />
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/css/core.css' %}" class="template-customizer-core-css" />
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/css/theme-default.css' %}" class="template-customizer-theme-css" />
+    <link rel="stylesheet" href="{% static 'cvdp/css/demo.css' %}" />
+    <link rel="stylesheet" href="{% static 'cvdp/css/bt_style.css' %}" />
+    
+    <!-- Vendors CSS -->
+    <link rel="stylesheet" href="{% static 'cvdp/vendor/libs/perfect-scrollbar/perfect-scrollbar.css' %}" />
+    <!-- Helpers -->
+    {% block js %}
+    <script src="{% static 'cvdp/vendor/js/helpers.js' %}"></script>
+    <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
+    <!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
+    <script src="{% static 'cvdp/js/config.js' %}"></script>
+    {% endblock %}
+    </head>
+    
+  <body>
+    <!-- Layout wrapper -->
+    <div class="layout-wrapper layout-content-navbar layout-without-menu">
+      <div class="layout-container">
+	
+        <!-- Layout container -->
+        <div class="layout-page">
+          <!-- Navbar -->
+	  <nav class="container-xxl">
+	    <div class="d-flex justify-content-between align-items-center">
+              <a href="{% url 'cvdp:dashboard' %}" class="app-brand-link mt-4">
+		<img src="{% static 'cvdp/css/images/CVDP.png' %}">
+              </a>
+
+	      <a href="{% url 'authapp:login' %}" class="btn btn-primary">Log In</a>
+	    </div>
+          </nav>
+
+	  <div class="content-wrapper">
+          <!-- Content -->
+          {% block content %}
+          {% endblock %}
+          <a href="#" class="scrollup btn btn-primary"><i class="fas fa-arrow-up"></i></a>
+          </div>
+          <!-- / Content -->
+	  
+          <!-- Footer -->
+          <footer class="content-footer footer bg-footer-theme">
+            <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
+              <div class="mb-2 mb-md-0">
+		©
+              2023 {{ ORG_NAME }}
+              </div>
+              <div class="bottom-footer__copyright">
+		{% if DISCLOSURE_POLICY_LINK %}
+		<a href="{{ DISCLOSURE_POLICY_LINK }}" class="footer-link me-4" target="_blank" rel="noopener">Disclosure Policy</a>
+		{% endif %}
+		{% if TERMS_OF_USE_LINK %}
+		<a href="{{TERMS_OF_USE_LINK}}" class="footer-link me-4" target="_blank" rel="nopener">Terms of Use</a>
+		{% endif %}
+		<span class="fw-bold">V.{{ VERSION }}</span>
+              </div>
+            </div>
+          </footer>
+          <!-- / Footer -->
+	  <div class="content-backdrop fade"></div>
+	</div>
+	<!-- Content wrapper -->
+      </div>
+      <!-- / Layout page -->
+    </div>
+
+    <!-- Core JS -->
+    <!-- build:js assets/vendor/js/core.js -->
+    <script src="{% static 'cvdp/vendor/js/bootstrap.js' %}"></script>
+    <script src="{% static 'cvdp/vendor/libs/perfect-scrollbar/perfect-scrollbar.js' %}"></script>
+    <script src="{% static 'cvdp/vendor/js/menu.js' %}"></script>
+    <!-- endbuild -->
+    
+    <!-- Main JS -->
+    <script src="{% static 'cvdp/js/main.js' %}"></script>
+  </body>
+</html>

@@ -1,9 +1,11 @@
 {% extends "cvdp/bt_base_site.html" %}
 {% load i18n static crispy_forms_tags widget_tweaks %}
-
 {% block extrahead %}
 <script src="https://www.google.com/recaptcha/api.js"></script>
+<script src="{% static 'cvdp/js/login.js' %}" src="text/javascript"></script>
 {% endblock %}
+
+
 
 {% block title %}AdVISE Sign up{% endblock %}
 
@@ -12,10 +14,18 @@
   {% endblock %}
 
 
-{% block content %}<div id="content-main">
+  {% block content %}
+  <div id="content-main">
   
-<form method="post" id="signupform" onsubmit="return noDoubleClicks(this);">{% csrf_token %}
-  <div class="login-form">
+    <form method="post" id="login-form" >
+      {% csrf_token %}
+      <div class="login-form">
+	{% if form.captcha.errors %}
+	<div class="alert alert-danger">{% for error in form.captcha.errors %}{{ error }} {% endfor %}
+	</div>
+	{% endif %}
+	
+    
     {% if form.errors %}
     <div class="alert alert-danger">
       {% if form.errors.items|length == 1 %}{% trans "Please correct the error below." %}{% else %}{% trans "Please correct the errors below." %}{% endif %}
@@ -34,9 +44,11 @@
     {% endif %}
       {% endfor %}
     
-    <div class="g-recaptcha" data-sitekey="{{ GOOGLE_SITE_KEY }}" data-size="invisible" data-callback="formSubmit"></div>
     <div class="mb-3 mt-3">
-      <button class="btn btn-primary d-grid w-100" id="vrfSubmit" type="submit">Sign in</button>
+      <button class="btn btn-primary d-grid w-100 g-recaptcha" id="recaptcha-submit"
+              data-sitekey="{{ form.captcha }}"
+              data-callback='onSubmit' 
+              data-action='submit' type="submit">Sign in</button>
     </div>
     
   </div>

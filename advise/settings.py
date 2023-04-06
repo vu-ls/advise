@@ -401,6 +401,9 @@ ORG_NAME = os.environ.get('ORG_NAME', 'Vullabs')
 #set if you want links in the footer, remove if you don't
 DISCLOSURE_POLICY_LINK = "https://myorg.org/policies/vuldisclosure/"
 TERMS_OF_USE_LINK = "https://myorg.org/terms"
+#if True, add a link to login page to receive anonymous reports. 
+ALLOW_ANONYMOUS_REPORTS = os.environ.get('ALLOW_ANONYMOUS_REPORTS', True)
+
 
 CASE_IDENTIFIER = "CASE#"
 
@@ -463,4 +466,10 @@ if (use_provider := os.environ.get('USE_PROVIDER')):
     USE_PROVIDER = use_provider #'AdVise Provider'
 if (registration_link := os.environ.get('REGISTRATION_LINK')):
     REGISTRATION_LINK = registration_link #f'{OAUTH_SERVER_BASEURL}/provider/register'
+
+
+
+RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_SITE_KEY')
+RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_SECRET_KEY')
+RECAPTCHA_SUCCESS_SCORE = os.environ.get('RECAPTCHA_SUCCESS_SCORE', 0.5)
 

@@ -101,7 +101,7 @@ class AbstractReportingForm(models.Model):
         default=False,
         help_text=('Allow user to upload file.')
     )
-    
+
     def __str__(self):
         return str(self.title)
 

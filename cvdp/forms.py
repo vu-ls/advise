@@ -7,6 +7,7 @@ from crispy_forms.helper import FormHelper
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import get_user_model
+import requests
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,9 @@ class GenReportingForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         logger.debug("IN REPORTING FORM!!!")
+        self.captcha = settings.RECAPTCHA_PUBLIC_KEY
         extra = kwargs.pop('extra')
+        
         super(GenReportingForm, self).__init__(*args, **kwargs)
 
         for i, values in enumerate(extra):
@@ -29,3 +32,21 @@ class GenReportingForm(forms.Form):
                          
             self.fields['question_%d' % i] = klass(label=label, **field_args)
 
+    def clean(self):
+        logger.debug(self.data)
+        recaptcha_response = self.data.get('g-recaptcha-response')
+        data = {
+            "secret": settings.RECAPTCHA_PRIVATE_KEY,
+            "response": recaptcha_response,
+        }
+        req_object = requests.post(url = "https://www.google.com/recaptcha/api/siteverify",
+                             data=data,
+                             headers={
+                                 "Content-type": "application/x-www-form-urlencoded",
+                                 "User-agent": "reCAPTCHA Django",
+                             })
+        resp = req_object.json()
+        if resp['success']:
+            if resp['score'] > settings.RECAPTCHA_SUCCESS_SCORE:
+                return self.cleaned_data
+        raise forms.ValidationError(_('Invalid ReCAPTCHA. Please try again.'))
