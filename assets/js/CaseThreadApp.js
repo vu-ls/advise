@@ -202,6 +202,7 @@ const CaseThreadApp = (caseid) => {
 		 <Col lg={8} md={8}>
 		     <CaseDetailApp
 			 caseInfo = {caseInfo}
+			 updateStatus = {fetchInitialData}
 			 user = {reqUser}
 		     />
 		     
@@ -266,7 +267,7 @@ const CaseThreadApp = (caseid) => {
 						  )
 					      })
 					  }
-					      {showArchived || reqUser.role !== "owner" ?
+					      {showArchived || reqUser.role !== "owner" || participants.length == 0 ?
 						  ""
 						  :
 						  <Nav.Item>

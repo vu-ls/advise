@@ -37,7 +37,10 @@ def generate_uuid():
     return uuid.uuid1()
 
 def user_logo_path(instance, filename):
-    return f'user_logos/{instance.user.id}/{filename}'
+    try:
+        return f'user_logos/{instance.user.contact.uuid}/{filename}'
+    except:
+        return f'user_logos/unknown/{filename}'
 
 class UserProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL,
@@ -722,7 +725,7 @@ def get_uuid_filename(self, filename):
 class Attachment(models.Model):
     file = models.FileField(
         _('File'),
-        storage=locate(settings.ATTACHMENT_FILES_STORAGE)()
+        storage=locate(settings.ATTACHMENT_FILES_STORAGE)(),
         upload_to=get_uuid_filename,
         max_length=1000,
     )

@@ -74,6 +74,22 @@ export default class CaseThreadAPI{
 	const url = `${API_URL}/api/case/${c.case}/participants/summary/`;
         return axios.get(url);
     }
+
+    getCaseReport(c) {
+	const url = `${API_URL}/report/add/case/${c.case_id}/`;
+        return axios.get(url);
+    }
+
+    addCaseReport(c, data) {
+	console.log(c);
+	console.log(data);
+	let formField = new FormData();
+	for (let k in data) {
+	    formField.append(k, data[k])
+	}
+	const url = `${API_URL}/report/case/${c.case_id}/add/`;
+	return axios.post(url, formField).then(response => response.data);
+    }
     
     getCaseParticipants(c) {
         const url = `${API_URL}/api/case/${c.case}/participants/`;

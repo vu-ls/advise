@@ -17,7 +17,7 @@ from cvdp.manage.forms import *
 from rest_framework import exceptions, generics, status, authentication, viewsets, mixins, filters
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from cvdp.permissions import GroupWritePermission, PendingUserPermission
+from cvdp.permissions import CoordinatorPermission, PendingUserPermission, is_case_owner
 from cvdp.manage.serializers import *
 from cvdp.cases.serializers import ReportSerializer
 from cvdp.manage.models import ReportingForm
@@ -54,7 +54,79 @@ class ReportsAPIView(viewsets.ModelViewSet):
     def get_queryset(self):
         return CaseReport.objects.filter(entry__created_by=self.request.user).order_by('-entry__created')
 
-#TODO - anyone can submit a report - add anonymous reporting feature
+
+class AddReportView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+    template_name = 'cvdp/add_report.html'
+    login_url = "authapp:login"
+
+    def test_func(self):
+        return self.request.user.is_coordinator or self.request.user.is_staff
+    
+    def get_context_data(self, **kwargs):
+        context = super(AddReportView, self).get_context_data(**kwargs)
+
+        form = ReportingForm.objects.all().first()
+        if (form):
+            context['form'] = form.get_form()
+            context['intro'] = form.intro
+
+        case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
+        if case.report:
+            context['error'] = "This case already has a report"
+        if not is_case_owner(self.request.user, case.id):
+            context['error'] = "You must be the case owner to add a report."
+            
+        return context
+
+class AddCaseReportView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+    http_method_names = ['post']
+    template_name='cvdp/notemplate.html'
+    login_url = "authapp:login"
+
+    def test_func(self):
+        case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
+        return is_case_owner(self.request.user, case.id)
+    
+    def post(self, request, *args, **kwargs):
+        logger.debug(f"{self.__class__.__name__} post: {self.request.POST}")
+
+        case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
+        if case.report:
+            return JsonResponse({'message': 'This case already has a report.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        rform = ReportingForm.objects.all().first()
+
+        form = rform.get_form(self.request.POST)
+        if form.is_valid():
+            #create form entry                                                                                                                                       
+            fe = FormEntry(form=rform)
+            if self.request.user.is_authenticated:
+                fe.created_by=self.request.user
+            fe.save()
+
+            logger.debug(form.cleaned_data)
+
+            #make the answers                                                                                                                                        
+            pp = rform.get_pretty_answers(form.cleaned_data)
+
+            logger.debug(pp)
+
+            #create case report                                                                                                                                      
+            cr = CaseReport(entry=fe,
+                            report=pp)
+            cr.save()
+
+            case.report = cr
+            case.save()
+
+            serializer = ReportSerializer(cr)
+            
+            return JsonResponse({'message': 'success', 'data': serializer.data}, status=status.HTTP_202_ACCEPTED)
+            
+        else:
+            return JsonResponse({'message': form.errors}, status=status.HTTP_400_BAD_REQUEST)
+        
+    
 class ReportView(UserPassesTestMixin, generic.TemplateView):
     template_name = 'cvdp/report.html'
     login_url="authapp:login"

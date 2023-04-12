@@ -229,7 +229,7 @@ class UserAdminView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateVie
         return context
     
 class PendingUsersAPI(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticated, GroupWritePermission, PendingUserPermission, CoordinatorPermission)
+    permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
     serializer_class = UserSerializer
 
     def get_queryset(self):
@@ -246,7 +246,7 @@ class PendingUsersAPI(viewsets.ModelViewSet):
             return Response({'error': 'user not pending'}, status=status.HTTP_400_BAD_REQUEST)
 
 class NewUsersAPIView(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticated, GroupWritePermission, PendingUserPermission, CoordinatorPermission)
+    permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
     serializer_class = UserSerializer
 
     def get_queryset(self):
@@ -267,7 +267,7 @@ class AssignRolesView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateV
         return context
 
 class AutoAssignmentAPIView(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticated, GroupWritePermission, PendingUserPermission, StaffPermission)
+    permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
     serializer_class = AutoAssignmentSerializer
 
     def get_queryset(self):
@@ -275,6 +275,9 @@ class AutoAssignmentAPIView(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         logger.debug(request.data)
+        if not(request.user.is_staff):
+            #only staff members can create auto assignment weights
+            raise PermissionDenied()
 
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -287,6 +290,10 @@ class AutoAssignmentAPIView(viewsets.ModelViewSet):
 
     def update(self, request, **kwargs):
         logger.debug(request.data)
+        if not(request.user.is_staff):
+            #only staff members can create auto assignment weights
+            raise PermissionDenied()
+        
         instance = self.get_object()
         data = request.data
         if request.data.get('user'):
@@ -348,7 +355,7 @@ class CVEServicesAccountManagement(LoginRequiredMixin, UserPassesTestMixin, Form
 
 
 class CVEAccountAPI(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticated, GroupWritePermission, PendingUserPermission, CoordinatorPermission)
+    permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
     serializer_class = CVEAccountSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['active']

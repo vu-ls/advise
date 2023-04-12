@@ -80,7 +80,7 @@ class CaseCoordinatorSerializer(serializers.ModelSerializer):
 
     def get_owners(self, obj):
         return list(CaseParticipant.objects.filter(case=obj, role="owner").values_list('contact__user__screen_name', flat=True))
-        
+
 
     def get_advisory_status(self, obj):
         advisory = CaseAdvisory.objects.filter(case=obj).first()
@@ -226,12 +226,12 @@ class CaseParticipantSerializer(serializers.ModelSerializer):
         if obj.group:
             if obj.group.groupprofile.logo:
                 url = obj.group.groupprofile.logo.url
-                return request.build_absolute_uri(url)
+                return url
         elif obj.contact:
             if obj.contact.user:
                 if obj.contact.user.userprofile.photo:
-                    url = obj.contact.user.userprofile.photo
-                    return request.build_absolute_uri(url)
+                    url = obj.contact.user.userprofile.photo.url
+                    return url
                     #return obj.contact.user.userprofile.photo
         return None
             

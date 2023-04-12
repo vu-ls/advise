@@ -1,0 +1,14 @@
+{% load i18n crispy_forms_tags %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% else %}
+
+{% if form %}
+<div>
+    {% csrf_token %}
+    {{ form | crispy }}
+</div>
+{% else %}
+<div class="alert alert-danger">Oops! The reporting form has not been setup yet. Contact the systems administrators to setup the reporting form.</div>
+{% endif %}
+{% endif %}

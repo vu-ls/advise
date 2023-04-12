@@ -173,6 +173,9 @@ def add_new_case_participant(thread, name, user, role):
                     if contact.user:
                         if not contact.user.is_coordinator:
                             raise InvalidRoleException("Participant can't be case owner")
+                        else:
+                            cp.notified = timezone.now()
+                            
                     else:
                         raise InvalidRoleException("Participant can't be case owner")
                     

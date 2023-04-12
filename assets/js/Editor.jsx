@@ -82,21 +82,26 @@ export default function Editor(props) {
 	    {error &&
 	     <Alert variant="danger"> {error}</Alert>
 	    }
-            <div className="card-body" ref={cardRef}>
-		{users.length > 0 &&
-		<RichText
-		    people = {users}
-		    placeholder="Write a post or use @ to tag someone"
-		    setValue={handleChange}
-		    value={text}
-		    ref={editorRef}
-		/>
-		}
-	    </div>
-            <div className="card-footer text-end">
-                <button onClick={clearText} className="mx-1 btn btn-outline-secondary">Cancel</button>
-                <button onClick={submitPost} className="btn btn-primary">Submit</button>
-            </div>
+	    {users.length > 0 ?
+	     <>
+		 <div className="card-body" ref={cardRef}>
+		     
+		     <RichText
+			 people = {users}
+			 placeholder="Write a post or use @ to tag someone"
+			 setValue={handleChange}
+			 value={text}
+			 ref={editorRef}
+		     />
+		 </div>
+		 <div className="card-footer text-end">
+                     <button onClick={clearText} className="mx-1 btn btn-outline-secondary">Cancel</button>
+                     <button onClick={submitPost} className="btn btn-primary">Submit</button>
+		 </div>
+	     </>
+	     :
+	     <div className="card-body">Assign this case before starting the discussion.</div>
+	    }
         </div>
 	)
 } 

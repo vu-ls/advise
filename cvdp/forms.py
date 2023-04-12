@@ -33,7 +33,10 @@ class GenReportingForm(forms.Form):
             self.fields['question_%d' % i] = klass(label=label, **field_args)
 
     def clean(self):
-        logger.debug(self.data)
+        if not self.data.get('g-recaptcha-response'):
+            #this form may be added by coordinator
+            return self.cleaned_data
+
         recaptcha_response = self.data.get('g-recaptcha-response')
         data = {
             "secret": settings.RECAPTCHA_PRIVATE_KEY,

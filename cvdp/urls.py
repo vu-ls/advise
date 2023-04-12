@@ -51,6 +51,8 @@ urlpatterns = [
     path('api/search/', views.APISearchView.as_view(), name='apisearch'),
     path('reports/', reportviews.ReportsView.as_view(), name='reports'),
     path('report/', reportviews.ReportView.as_view(), name='report'),
+    re_path('^report/add/case/(?P<caseid>\d+)/$', reportviews.AddReportView.as_view(), name='addreport'),
+    re_path('^report/case/(?P<caseid>\d+)/add/$', reportviews.AddCaseReportView.as_view(), name='add_case_report'),
     path('inbox/', msgviews.InboxView.as_view(), name='inbox'),
     re_path('^artifact/(?P<path>.*)/$', views.ArtifactView.as_view(), name='artifact'),
     path('api/form/submissions/', reportviews.ReportsAPIView.as_view({'get': 'list'}), name='reportsapi'),
@@ -83,6 +85,7 @@ urlpatterns = [
     re_path('^case/(?P<caseid>[0-9]+)/$', caseviews.CaseView.as_view(), name='case'),
     re_path('^case/(?P<caseid>[0-9]+)/edit/$', caseviews.EditCaseView.as_view(), name='edit_case'),
     re_path('^case/(?P<caseid>[0-9]+)/advisory/$', caseviews.EditAdvisoryView.as_view(), name='advisory'),
+
     re_path('^api/case/(?P<caseid>[0-9]+)/advisory/latest/$', caseviews.AdvisoryAPIView.as_view({'get': 'retrieve', 'patch': 'partial_update'}), name='advisoryapi'),
     re_path('^api/case/(?P<caseid>[0-9]+)/advisory/$', caseviews.AdvisoryAPIView.as_view({'get': 'list', 'post': 'create'}), name='advisoryapi-list'),
     #path('case/search/results/', caseviews.CaseFilterResults.as_view(), name='caseresults'),

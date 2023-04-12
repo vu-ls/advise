@@ -8,11 +8,9 @@ const container = document.getElementById("quilljs");
 const caseid = container.getAttribute("caseid");
 const root = createRoot(container);
 root.render(
-    <React.StrictMode>
-	<CaseThreadApp
-	    case = {caseid}
-	/>
-    </React.StrictMode>
+    <CaseThreadApp
+	case = {caseid}
+    />
 
 );
 

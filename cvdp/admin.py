@@ -8,7 +8,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
-from cvdp.models import UserProfile, GroupProfile, Contact, CaseThreadParticipant, CaseParticipant, EmailTemplate, Case, AssignmentRole, UserAssignmentWeight
+from cvdp.models import UserProfile, GroupProfile, Contact, CaseThreadParticipant, CaseParticipant, EmailTemplate, Case, AssignmentRole, UserAssignmentWeight, CaseReport
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
@@ -114,3 +114,4 @@ admin.site.register(CaseThreadParticipant)
 admin.site.register(CaseParticipant)
 admin.site.register(AssignmentRole)
 admin.site.register(UserAssignmentWeight)
+admin.site.register(CaseReport)

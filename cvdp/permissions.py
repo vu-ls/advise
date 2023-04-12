@@ -69,8 +69,8 @@ def is_my_case_thread(user, thread):
 
 def is_case_owner(user, case):
     #get my contact
-    if user.is_staff or user.is_superuser:
-        return True
+#    if user.is_staff or user.is_superuser:
+#        return True
     contact = Contact.objects.filter(user=user).first()
     return CaseParticipant.objects.filter(case__id=case, contact=contact, role='owner').exists()
 

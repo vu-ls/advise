@@ -311,11 +311,13 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'assets'),
 ]
 
-DEFAULT_FILE_STORAGE = 'advise.storage_backends.DefaultFileStorage'
+# default file storage left as default
 MEDIA_URL = os.environ.get('MEDIA_URL', '/media/')
 MEDIA_ROOT = os.path.join(BASE_DIR, os.environ.get('MEDIA_ROOT', 'media'))
 
 # artifact file storage defaults
+# set ATTACHMENT_FILES_STORAGE to None for default filesystem storage
+ATTACHMENT_FILES_STORAGE = 'advise.storage_backends.AttachmentFileStorage'
 ATTACHMENTS_URL = os.environ.get('ATTACHMENTS_URL', '/attachments/')
 ATTACHMENTS_ROOT = os.path.join(BASE_DIR, os.environ.get('ATTACHMENT_FILE_LOCATION', 'attachments'))
 # for 4.2, we should use the newly-introduced STORAGES dict to manage

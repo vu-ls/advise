@@ -14,18 +14,19 @@ if settings.DEPLOYMENT_TYPE == 'AWS':
             # propagate any settings we have
             for arg,val in settings.ATTACHMENT_FILES_ARGS.items():
                 kwargs[arg] = val
-            super(AttachmentFileStorage, self).__init__(self, *args, **kwargs)
+            super(AttachmentFileStorage, self).__init__(*args, **kwargs)
 
     class DefaultFileStorage(S3Boto3Storage):
         def __init__(self, *args, **kwargs):
             # propagate any settings we have
             for arg,val in settings.MEDIA_FILES_ARGS.items():
                 kwargs[arg] = val
-            super(DefaultFileStorage, self).__init__(self, *args, **kwargs)
-
-class AttachmentFileStorage(FileSystemStorage):
-    def __init__(self, *args, **kwargs):
-        # propagate any settings we have
-        for arg,val in settings.ATTACHMENT_FILES_ARGS.items():
-            kwargs[arg] = val
-        super(AttachmentFileStorage, self).__init__(self, *args, **kwargs)
+            super(DefaultFileStorage, self).__init__(*args, **kwargs)
+else:
+    class AttachmentFileStorage(FileSystemStorage):
+        def __init__(self, *args, **kwargs):
+    
+            # propagate any settings we have
+            for arg,val in settings.ATTACHMENT_FILES_ARGS.items():
+                kwargs[arg] = val
+            super(AttachmentFileStorage, self).__init__(*args, **kwargs)
