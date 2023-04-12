@@ -11,7 +11,7 @@ from django.utils.functional import cached_property
 from django.dispatch import Signal
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
-from advise.storage_backends import AttachmentFileStorage
+import advise.storage_backends
 import uuid
 import re
 import io
@@ -19,6 +19,7 @@ import traceback
 import random
 import base64
 import os
+from pydoc import locate
 import logging
 # Create your models here.
 
@@ -721,7 +722,7 @@ def get_uuid_filename(self, filename):
 class Attachment(models.Model):
     file = models.FileField(
         _('File'),
-        storage=AttachmentFileStorage(),
+        storage=locate(settings.ATTACHMENT_FILES_STORAGE)()
         upload_to=get_uuid_filename,
         max_length=1000,
     )

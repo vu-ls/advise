@@ -304,37 +304,6 @@ DJANGO_LOGLEVEL = os.environ.get('DJANGO_LOGLEVEL', 'info').upper()
 LOGGING_CONFIG = None
 LOGGER_HANDLER = 'console'
 
-logging_dict = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'console': {
-            # exact format is not important, this is the minimum information    
-            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'console',
-        },
-    },
-    'loggers': {
-        # root logger                                                           
-        'cvdp': {
-            'level': LOGLEVEL,
-            'handlers': [LOGGER_HANDLER],
-        },
-        'authapp': {
-            'level': LOGLEVEL,
-            'handlers': [LOGGER_HANDLER],
-            }
-        }
-    }
-
-logging.config.dictConfig(logging_dict)
-
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 STATICFILES_DIRS = [
@@ -342,6 +311,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'assets'),
 ]
 
+DEFAULT_FILE_STORAGE = 'advise.storage_backends.DefaultFileStorage'
 MEDIA_URL = os.environ.get('MEDIA_URL', '/media/')
 MEDIA_ROOT = os.path.join(BASE_DIR, os.environ.get('MEDIA_ROOT', 'media'))
 
@@ -389,7 +359,7 @@ if DEPLOYMENT_TYPE == 'AWS':
     STATIC_ROOT = None
 
     # set up attachment file storage
-    ATTACHMENT_FILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    ATTACHMENT_FILES_STORAGE = 'advise.storage_backends.AttachmentFileStorage'
     AWS_ATTACHMENT_FILES_STORAGE_BUCKET_NAME = os.environ.get('AWS_ATTACHMENT_FILES_STORAGE_BUCKET_NAME')
     AWS_ATTACHMENT_FILES_LOCATION = os.environ.get('ATTACHMENT_FILES_LOCATION', 'attachments')
     ATTACHMENT_FILES_ARGS = {
@@ -403,7 +373,65 @@ if DEPLOYMENT_TYPE == 'AWS':
     ATTACHMENTS_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_ATTACHMENT_FILES_LOCATION}/'
     ATTACHMENTS_ROOT = None
 
+    DEFAULT_FILE_STORAGE = 'advise.storage_backends.DefaultFileStorage'
+    AWS_MEDIA_FILES_STORAGE_BUCKET_NAME = os.environ.get('AWS_MEDIA_FILES_STORAGE_BUCKET_NAME')
+    AWS_MEDIA_FILES_LOCATION = os.environ.get('MEDIA_FILES_LOCATION', 'media')
+    MEDIA_FILES_ARGS = {
+        'location': AWS_MEDIA_FILES_LOCATION,
+        'bucket_name': AWS_MEDIA_FILES_STORAGE_BUCKET_NAME,
+        'file_overwrite': False,
+        'default_acl': 'private',
+        'region_name': AWS_REGION,
+        'custom_domain': False,
+    }
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_FILES_LOCATION}/'
+    MEDIA_ROOT = None
 
+    LOGGER_HANDLER = 'watchtower'
+
+logging_dict = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'console': {
+            # exact format is not important, this is the minimum information    
+            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'console',
+        },
+    },
+    'loggers': {
+        # root logger                                                           
+        'cvdp': {
+            'level': LOGLEVEL,
+            'handlers': [LOGGER_HANDLER],
+        },
+        'authapp': {
+            'level': LOGLEVEL,
+            'handlers': [LOGGER_HANDLER],
+            }
+        }
+    }
+
+
+logging.config.dictConfig(logging_dict)
+
+if DEPLOYMENT_TYPE == 'AWS': 
+    LOG_GROUP_NAME = os.environ.get('ADVISE_LOG_GROUP_NAME', 'ADVISE')
+    logging_dict['handlers']['watchtower'] = {
+        'level': 'DEBUG',
+        'class': 'watchtower.CloudWatchLogHandler',
+        'log_group': LOG_GROUP_NAME,
+        'stream_name': 'cvdp',
+        'formatter': 'console',
+    }
+
+logging.config.dictConfig(logging_dict)
+        
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',

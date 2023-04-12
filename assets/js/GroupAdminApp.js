@@ -392,7 +392,7 @@ const GroupAdminApp = (props) => {
 				    <div className="d-flex justify-content-between">
 					<div className="d-flex align-items-center gap-1">
 					    {selectedGroup.photo ?
-					     <Image src={selectedGroup.photo} rounded />
+					     <Image className="large-profile rounded-circle" src={selectedGroup.photo} rounded />
 					     :
 					     <>
 						 <div className="d-block rounded large-profile rounded-circle text-center flex-shrink-0" style={{backgroundColor: selectedGroup.logocolor}}>
