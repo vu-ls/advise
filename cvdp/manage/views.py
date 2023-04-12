@@ -148,7 +148,10 @@ class QuestionAPIView(viewsets.ModelViewSet):
         logger.debug(request.data)
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            serializer.save(form=form)
+            q = serializer.save(form=form)
+            if not request.data.get('required'):
+                q.required = False
+                q.save()
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     def destroy(self, request, *args, **kwargs):

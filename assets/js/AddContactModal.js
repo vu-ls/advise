@@ -31,8 +31,11 @@ const AddContactModal = ({showModal, hideModal, title, edit, group}) => {
     
     
     const handleSubmit = async (event) => {
+
+	console.log("IN HANDLE SUBMIT!");
 	setDisableButton(true);
-	event.preventDefault();
+	if (event) event.preventDefault();
+	    
 	const formData = new FormData(event.target),
               formDataObj = Object.fromEntries(formData.entries());
 
@@ -64,6 +67,7 @@ const AddContactModal = ({showModal, hideModal, title, edit, group}) => {
     }
 
     useEffect(() => {
+	console.log("HIDEMODAL");
 	clear_data();
     }, [hideModal]);
 
@@ -104,7 +108,7 @@ const AddContactModal = ({showModal, hideModal, title, edit, group}) => {
                  <div className="alert alert-danger">{error}</div>
                  : ""}
 
-		<form onSubmit={(e)=>handleSubmit(e)}>
+		<Form onSubmit={handleSubmit}>
 		    <Form.Group className="mb-3">
 			<Form.Label>Email <span className="required">*</span></Form.Label>
 			<Form.Control name="email"
@@ -131,7 +135,6 @@ const AddContactModal = ({showModal, hideModal, title, edit, group}) => {
                         }
 		    </Form.Group>
 		     <div className="d-flex justify-content-end gap-2 mt-3">
-			 <Button variant="outline-secondary" type="cancel" onClick={(e)=>(e.preventDefault(), hideModal())}>Cancel</Button>
 			 <Button
 			     variant="primary"
 			     type="submit"
@@ -140,7 +143,7 @@ const AddContactModal = ({showModal, hideModal, title, edit, group}) => {
 			     Submit
 			 </Button>
 		     </div>
-		 </form>
+		 </Form>
 
 	    </Modal.Body>
 	</Modal>

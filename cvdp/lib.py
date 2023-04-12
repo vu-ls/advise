@@ -16,6 +16,17 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
+def send_template_email(template, emails, context):
+
+    if context:
+        context['template'] =  template
+    else:
+        context = {'template': template}
+
+    cvdp_send_email(None, None, emails, **context)
+
+
 def check_permissions(user):
 
     groups = user.groups.all()
@@ -308,4 +319,5 @@ def get_post_mentions(post):
                 group_emails.append(x.email)
 
     return user_emails, group_emails
+
 

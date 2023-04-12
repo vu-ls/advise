@@ -27,6 +27,7 @@ from django.contrib.auth import get_user_model
 import traceback
 from cvdp.groups.forms import *
 from django.core.paginator import Paginator
+from cvdp.lib import send_template_email
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -445,26 +446,49 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
         group = get_object_or_404(Group, id=self.kwargs['pk'])
         self.check_object_permissions(self.request, group)
         
-        #TODO - mark this user as verified if the group admin is adding them!
-        
+        group_admin = ContactAssociation.objects.filter(group=group, contact__user=request.user, group_admin=True).exists()
+
+        ctx = {'group': group.name, 'added_by': request.user.email, 'url': request.get_host()}
+        logger.debug(group_admin)
         #does this email already exist in this contact bc serializer will fail
         contact = Contact.objects.filter(email = request.data['email']).first()
         if contact:
-            ca = ContactAssociation.objects.update_or_create(contact=contact, group=group,
+            ca, created = ContactAssociation.objects.update_or_create(contact=contact, group=group,
                                                              defaults={'added_by': self.request.user})
+            if group_admin:
+                #mark this user as verified if the group admin is adding them!
+                #send email to user to let them know they have been added
+                ca.verified = True
+                ca.save()
+                
             if contact.user:
                 group.user_set.add(contact.user)
+                if group_admin and created:
+                    send_template_email("group_admin_added", [contact.email], ctx)
+            else:
+                if group_admin and created:
+                    #send invitation
+                    send_template_email("group_admin_invite", [contact.email], ctx)
+
             return Response({}, status=status.HTTP_202_ACCEPTED)
         serializer = ContactSerializer(data=request.data)
         if serializer.is_valid():
             contact = serializer.save()
             contact.added_by = self.request.user
+            contact.save()
             #is there an existing user already associated with this email?
             user = User.objects.filter(email=contact.email).first()
             if user:
                 contact.user = user
+                contact.save()
                 group.user_set.add(user)
-            contact.save()
+                if group_admin:
+                    send_template_email("group_admin_added", [contact.email], ctx)
+
+
+            else:
+                if group_admin:
+                    send_template_email("group_admin_invite", [contact.email], ctx)
             ca = ContactAssociation.objects.update_or_create(contact=contact, group=group)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:

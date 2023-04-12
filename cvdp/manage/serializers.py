@@ -16,7 +16,7 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = FormQuestion
         fields = ('id', 'question', 'question_type', 'question_choices', 'required', 'private', )
 
-
+        
 class EmailTemplateSerializer(serializers.ModelSerializer):
 
     class Meta:

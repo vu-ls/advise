@@ -60,8 +60,10 @@ export default class ContactAPI{
     }
 
     removeGroupContact(c) {
-	const url = `${API_URL}/api/groups/contacts/${c}/`;
-        return axios.delete(url)
+	const requests = c.map((item) => `${API_URL}/api/groups/contacts/${item}/`);
+        return axios.all(requests.map((item) => axios.delete(item))).then((data) => data);
+	//const url = `${API_URL}/api/groups/contacts/${c}/`;
+        //return axios.delete(url)
     }
     
     updateGroupContact(c, data) {

@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
     
     def handle(self, *args, **options):
-        """
+        
         logger.info("Loading email templates.")
         if EmailTemplate.objects.count() > 0:
             logger.info("Email Templates already exist")
@@ -23,7 +23,7 @@ class Command(BaseCommand):
         else:
             call_command('loaddata', 'EmailTemplate.json')
             logger.info("Done loading email templates.")
-            """
+
         if CWEDescriptions.objects.count() > 0:
             logger.info("CWE Info already exists")
         else:
