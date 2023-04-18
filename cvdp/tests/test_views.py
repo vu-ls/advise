@@ -587,14 +587,17 @@ class CaseArtifactTest(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
-        #make sure coord user can't fully delete file created by another
+        #coord user can unshare, but not fully remove
         client.force_authenticate(user=self.coord_user)
         response = client.delete(
             reverse('cvdp:artifactapi-detail', args=[artifact.file.uuid])
             )
-        #must be superuser
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        #make sure it still exsits, not deleted
+        artifact = CaseArtifact.objects.filter(file__uuid=artifact.file.uuid).exists()
+        self.assertEqual(artifact, True)
+            
     def test_reporter_get_artifact_detail(self):
         client=APIClient()
         client.force_authenticate(user=self.reporter_user)

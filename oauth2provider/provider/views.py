@@ -1,6 +1,7 @@
 from base64 import b64encode
 from django.shortcuts import render, redirect
 from django.conf import settings
+from django.forms.utils import ErrorList
 from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
 from oauth2_provider.decorators import protected_resource
 from django.contrib.auth import get_user_model, login as auth_login
@@ -76,6 +77,17 @@ class WelcomeView(generic.TemplateView):
             
         return context
 
+
+class PasswordChangeDoneView(LoginRequiredMixin, generic.RedirectView):
+    permanent = False
+    login_url = "login"
+
+    def get_redirect_url(self, **kwargs):
+        return reverse('provider:welcome')
+
+    def dispatch(self, request, *args, **kwargs):
+        messages.success(self.request, 'Password change successful. Select My Dashboard to return to AdVISE.')
+        return super().dispatch(request, *args, **kwargs)
 
 class LoginView(auth_views.LoginView):
     form_class = ProviderAuthenticationForm
@@ -183,12 +195,13 @@ class MFASetupView(AccessMixin, generic.FormView):
         auth_login(self.request, form.user)
         if self.request.session.get('redirect_uri'):
             next_url = self.request.session['redirect_uri']
-            del(self.request.session['redirect_uri'])
-            o = urlparse(next_url)
-            if o.query:
-                return redirect(next_url+"&registration=success")
-            else:
-                return redirect(next_url+"?registration=success")
+            if next_url:
+                del(self.request.session['redirect_uri'])
+                o = urlparse(next_url)
+                if o.query:
+                    return redirect(next_url+"&registration=success")
+                else:
+                    return redirect(next_url+"?registration=success")
         
         return super().form_valid(form)
 
@@ -217,6 +230,14 @@ class RegistrationView(generic.FormView):
     def form_valid(self, form):
         user = form.save(commit = False)
         next_url = self.request.POST.get('next')
+        #does this user exist?
+
+        dup = User.objects.filter(email__iexact = form.cleaned_data['email'])
+        if dup:
+            form._errors.setdefault("email", ErrorList([
+                u'Email already exists.'
+            ]))
+            return super().form_invalid(form)
         if settings.ACCOUNT_EMAIL_VERIFICATION:
             user.save()
 

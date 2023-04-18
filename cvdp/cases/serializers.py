@@ -1,5 +1,6 @@
 from cvdp.models import *
 from cvdp.components.models import ComponentStatus, Product
+from django.core.exceptions import ObjectDoesNotExist
 from cvdp.permissions import my_case_role, is_my_case
 from cvdp.serializers import ChoiceField
 from cvdp.groups.serializers import GroupSerializer
@@ -7,6 +8,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import Group
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.db.models import Count, Q
 from cvdp.md_utils import markdown as md
 from authapp.models import User
 import difflib
@@ -146,11 +148,17 @@ class UserSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='screen_name')
     logocolor = serializers.CharField(source='userprofile.logocolor')
     photo = serializers.ImageField(source='userprofile.photo')
-
+    contact = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ('id', 'name', 'org', 'photo', 'logocolor', 'title',)
-        
+        fields = ('id', 'name', 'org', 'photo', 'logocolor', 'title', 'contact')
+
+    def get_contact(self, obj):
+        try:
+            return obj.contact.id
+        except ObjectDoesNotExist:
+            return None
 
 class UserCaseStateSerializer(serializers.Serializer):
     user = UserSerializer()
@@ -591,3 +599,195 @@ class AdvisorySerializer(serializers.ModelSerializer):
             baseText.splitlines(keepends=True), newText.splitlines(keepends=True)
         )
         return list(diff)
+
+
+class CSAFPublisherSerializer(serializers.ModelSerializer):
+    category = serializers.ReadOnlyField(default='coordinator')
+    contact_details = serializers.CharField(default=f"Email: {settings.CONTACT_EMAIL}")
+    issuing_authority = serializers.CharField(default=f'{settings.ORG_NAME}')
+    name = serializers.CharField(default=f'{settings.ORG_NAME}')
+    namespace = serializers.CharField(default="www.test.org")
+
+    class Meta:
+        model = CaseAdvisory
+        fields = ('category', 'contact_details', 'issuing_authority', 'name', 'namespace', )
+        depth = 1
+
+class CSAFTrackingSerializer(serializers.ModelSerializer):
+    current_release_date = serializers.DateTimeField(source='advisory.date_last_published')
+    generator = serializers.SerializerMethodField()
+    id = serializers.CharField(source='advisory.case.get_caseid')
+    initial_release_date = serializers.DateTimeField(source='advisory.date_published')
+    status = serializers.ReadOnlyField(default='final') #also could be 'draft' or 'interim'
+    version = serializers.CharField(source='revision_number')
+
+    class Meta:
+        model = CaseAdvisory
+        fields = ('current_release_date', 'generator', 'id', 'initial_release_date', 'status', 'version', )
+        depth = 1
+    
+    def get_generator(self, obj):
+        engine = {}
+        engine['name'] = "AdVISE"
+        engine['version'] = settings.VERSION
+        return {'engine': engine}
+    
+class CSAFDocumentSerializer(serializers.ModelSerializer):
+    category = serializers.ReadOnlyField(default='csaf_security_advisory')
+    csaf_version = serializers.ReadOnlyField(default='2.0')
+    publisher = serializers.SerializerMethodField()
+    #references = CSAFReferenceSerializer()
+    title = serializers.CharField()
+    tracking = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CaseAdvisory
+        fields = ('category', 'csaf_version', 'publisher', 'title', 'tracking', )
+        depth = 1
+
+    def get_publisher(self, obj):
+        data = CSAFPublisherSerializer(obj)
+        return data.data
+
+    def get_tracking(self, obj):
+        data =  CSAFTrackingSerializer(obj)
+        return data.data
+
+
+class CSAFProductSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    product_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ComponentStatus
+        fields = ('name', 'product_id', )
+
+    def get_name(self, obj):
+        vendor_name = self.context.get('vendor')
+        return f"{vendor_name} {obj.component.name} {obj.current_revision.version_value}"
+
+    def get_product_id(self, obj):
+        return f"CSAFPID-{obj.component.id:04}"
+    
+class CSAFProductTreeVersionSerializer(serializers.ModelSerializer):
+    category = serializers.ReadOnlyField(default='product_version')
+    name= serializers.CharField(source='current_revision.version_value')
+    product = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ComponentStatus
+        fields = ('category', 'name', 'product', )
+
+    def get_product(self, obj):
+        serializer = CSAFProductSerializer(obj, context=self.context)
+        return serializer.data
+    
+class CSAFProductTreeNameSerializer(serializers.ModelSerializer):
+    category = serializers.ReadOnlyField(default='product_name')
+    name = serializers.CharField(source='component__name')
+    branches = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ComponentStatus
+        fields = ('category', 'name', 'branches', )
+
+    def get_branches(self, obj):
+        #get actual product info
+        vuls = self.context.get('vuls')
+        vendor = self.context.get('vendor')
+        vendor_name = self.context.get('vendor_name')
+        component_name = obj.get('component__name')
+        status = ComponentStatus.objects.filter(vul__in=vuls, component__product_info__supplier__id=vendor, component__name=component_name)
+        products = CSAFProductTreeVersionSerializer(status, many=True, context={'vendor': vendor_name})
+        return products.data
+
+class CSAFProductTreeVendorSerializer(serializers.ModelSerializer):
+    category = serializers.ReadOnlyField(default='vendor')
+    name = serializers.CharField(source='component__product_info__supplier__name')
+    branches = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ComponentStatus
+        fields = ('category', 'name', 'branches', )
+
+    def get_branches(self, obj):
+        logger.debug("in get_branches")
+        logger.debug(obj.get('component__product_info__supplier__id'))
+        vuls = self.context.get('vuls')
+        vendor = obj.get('component__product_info__supplier__id')
+        logger.debug(vendor)
+        logger.debug(vuls)
+        #get products for this vendor
+        components = ComponentStatus.objects.filter(vul__in=vuls, component__product_info__supplier__id=vendor).values('component__name').order_by('component__name').annotate(num_components=Count("id"))
+        logger.debug(components)
+        
+        data = CSAFProductTreeNameSerializer(components, many=True, context={'vuls': vuls, 'vendor': vendor, 'vendor_name': obj.get('component__product_info__supplier__name')})
+        return data.data
+        
+
+class CSAFVulnerabilitySerializer(serializers.ModelSerializer):
+    cve = serializers.CharField()
+    cwe = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
+    title = serializers.CharField(source='description')
+    product_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Vulnerability
+        fields = ('cve', 'cwe', 'notes', 'title', 'product_status', )
+
+    def get_cwe(self, obj):
+        #CSAF only allows 1 for some reason
+        if obj.problem_types:
+            for cwe in obj.problem_types:
+                item = cwe.split(" ", 1)
+                return {'id': item[0],
+                        'name': item[1]}
+        else:
+            return {}
+
+    def get_notes(self, obj):
+        notes = []
+        notes.append({'category': 'summary', 'text': obj.description})
+        return notes
+
+    def get_product_status(self, obj):
+        affected = []
+        status = ComponentStatus.objects.filter(vul=obj).exclude(component__product_info__isnull=True).values_list('component__id', flat=True)
+        for s in status:
+            affected.append(f"CSAFPID-{s:04}")
+        #TODO: Add other statuses!
+        return {'known_affected': affected}
+    
+    
+class CSAFAdvisorySerializer(serializers.ModelSerializer):
+    document = serializers.SerializerMethodField()
+    product_tree = serializers.SerializerMethodField()
+    vulnerabilities = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Case
+        fields = ('document', 'product_tree', 'vulnerabilities', )
+        depth = 1
+
+    def get_document(self, obj):
+        data = CSAFDocumentSerializer(obj.caseadvisory.current_revision)
+        return data.data
+
+    def get_product_tree(self, obj):
+        vuls = Vulnerability.objects.filter(case=obj, cve__isnull=False).values_list('id', flat=True)
+
+        status = ComponentStatus.objects.filter(vul__in=vuls).exclude(component__product_info__isnull=True).values('component__product_info__supplier__id', 'component__product_info__supplier__name').order_by('component__product_info__supplier__id').annotate(num_components=Count("id"))
+        logger.debug(status)
+
+        #sort by vendor
+        
+        data = CSAFProductTreeVendorSerializer(status, many=True, context={'vuls': vuls})
+        return {'branches' : data.data}
+
+    def get_vulnerabilities(self, obj):
+        vuls = Vulnerability.objects.filter(case=obj, cve__isnull=False)
+        data = CSAFVulnerabilitySerializer(vuls, many=True)
+        return data.data
+        
+                                             

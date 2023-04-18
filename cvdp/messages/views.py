@@ -53,6 +53,8 @@ class InboxView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
     def get_context_data(self, **kwargs):
         context = super(InboxView, self).get_context_data(**kwargs)
         context['inboxpage'] = 1
+        if self.kwargs.get('contact'):
+            context['contact'] = self.kwargs['contact']
         return context
 
     

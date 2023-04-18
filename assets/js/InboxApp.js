@@ -29,7 +29,8 @@ const InboxApp = (props) => {
     const [message, setMessage] = useState("");
     const [disableButton, setDisableButton] = useState(false);
     const [coordinator, setCoordinator] = useState(false);
-
+    const [sendMsgContact, setSendMsgContact] = useState(null);
+    
     const fetchInitialData = async () => {
 	try {
             messageapi.getThreads().then((response) => {
@@ -87,7 +88,7 @@ const InboxApp = (props) => {
 
     useEffect(() => {
 	if (threads.length > 0) {
-	    if (curThread == null) {
+	    if (curThread == null && sendMsgContact==null) {
 		setCurThread(threads[0])
 		setLoadingMessages(true);
 		setNewMessage(false);
@@ -108,6 +109,11 @@ const InboxApp = (props) => {
 	if (props.coord == "coord") {
 	    setCoordinator(true);
 	}
+	if (props.contactmsg) {
+	    setNewMessage(true);
+	    setSendMsgContact(props.contactmsg);
+	    console.log(`SENDING MSG ${props.contactmsg}`);
+	}
 
     }, []);
 
@@ -115,6 +121,9 @@ const InboxApp = (props) => {
 	setExpandUsers(false);
 	setLoadingMessages(true);
 	if (curThread) {
+	    /* user must have changed their mind about sending a msg */
+	    setSendMsgContact(null);
+	    setNewMessage(false);
 	    messageapi.getMessages(curThread).then((response) => {
 		setMessages(response);
 	    });
@@ -151,6 +160,10 @@ const InboxApp = (props) => {
     }
 
     const closeMessage = () => {
+	if (sendMsgContact) {
+	    setCurThread(threads[0]);
+	    setSendMsgContact(null);
+	}
 	setNewMessage(false);
     };
 
@@ -244,6 +257,7 @@ const InboxApp = (props) => {
 			 cancelMessage={closeMessage}
 			 coordinator={coordinator}
 			 reload = {fetchInitialData}
+			 sendContact = {sendMsgContact}
 		     />
 		     :
 		     <>

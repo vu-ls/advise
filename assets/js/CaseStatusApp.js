@@ -127,6 +127,7 @@ const CaseStatusApp = (props) => {
 			{props.advisory}
 		    </Badge>
 		</a>
+		{props.advisory !== "NOT STARTED" &&
                 <DropdownButton variant="btn p-0"
                                 title={<i className="fas fa-download"></i>}
 		>
@@ -136,13 +137,14 @@ const CaseStatusApp = (props) => {
 		    <PDFDownloader
 			case_id = {props.case_id}
 		    />
-		    <Dropdown.Item key="csaf" eventKey="csaf">
+		    <Dropdown.Item key="csaf" eventKey="csaf" href={`/advise/api/case/${props.case_id}/advisory/csaf/`}>
 			CSAF
-			</Dropdown.Item>
-		    <Dropdown.Item key="api" eventKey="api">
+		    </Dropdown.Item>
+		    <Dropdown.Item key="api" eventKey="api" href={`/advise/api/case/${props.case_id}/advisory/`}>
 			API
 		    </Dropdown.Item>
 		</DropdownButton>
+		}
 	    </div>
 		
 	)

@@ -17,21 +17,28 @@ const ParticipantModal = (props) => {
     const [caseInfo, setCaseInfo] = useState(null);
     
     const handleSearch = (event) => {
+	let search = "";
+	if (event) {
+	    search = event.target.value;
+	}
 	if (props.allowSelectRole) {
 	    /* only search contacts that have already been added to the case */
-	    contactapi.searchAllContacts(event.target.value).then((response) => {
+	    contactapi.searchAllContacts(search).then((response) => {
 		setSuggested(response);
 	    });
 	} else {
-	    contactapi.searchCaseContacts(props.caseid, event.target.value).then((response) => {
+	    contactapi.searchCaseContacts(props.caseid, search).then((response) => {
                 setSuggested(response);
 	    });
 
 	}
     }
 
+    
+
     const sendInvites = async () => {
 	let participants = selected.map(item => item.uuid);
+	console.log(participants);
 	let thread = props.thread;
 	if (thread) {
 	    threadapi.createThreadParticipants(props.thread, participants, role).then((response) => {
@@ -55,7 +62,8 @@ const ParticipantModal = (props) => {
     useEffect(() => {
 
 	setCaseInfo(props.caseInfo);
-	
+	/* get initial suggestions */
+	handleSearch();
 	if (props.allowSelectRole) {
 	    setRole("vendor");
 	} else {
@@ -161,7 +169,7 @@ const ParticipantModal = (props) => {
 				     if (selected.some(e => e.name == s.name)) {
 					 isChecked=true;
 				     }
-				     if (props.currentParticipants.some(e=> e.participant.uuid == s.uuid)) {
+				     if (props.currentParticipants && props.currentParticipants.some(e=> e.participant.uuid == s.uuid)) {
 					 isChecked=true;
 					 isDisabled="disabled";
 				     }

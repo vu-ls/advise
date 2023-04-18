@@ -532,7 +532,8 @@ if (registration_link := os.environ.get('REGISTRATION_LINK')):
     REGISTRATION_LINK = registration_link #f'{OAUTH_SERVER_BASEURL}/provider/register'
 
 
-
+SERVER_NAME = os.environ.get('APP_SERVER_FQDN', "localhost:8000")
+SERVER_NAME = f'{ACCOUNT_DEFAULT_HTTP_PROTOCOL}://{SERVER_NAME}'
 RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_SITE_KEY')
 RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_SECRET_KEY')
 RECAPTCHA_SUCCESS_SCORE = os.environ.get('RECAPTCHA_SUCCESS_SCORE', 0.5)

@@ -113,6 +113,12 @@ const CaseArtifactApp = (props) => {
 			 <Alert variant="danger">{error}</Alert>
 			}
 		    </>
+
+		    <>
+			{showRemove &&
+			 <div className="d-grid mb-3"><Button variant="danger" size="sm" onClick={(e)=>setShowRemove(false)}>Cancel Remove Files</Button></div>
+			}
+		    </>
 		    
 		    {artifacts.map((a, index) => {
 			return (

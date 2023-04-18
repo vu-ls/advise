@@ -30,15 +30,16 @@
     
       <div class="card overflow-hidden">
         <div class="card-header d-flex justify-content-between pb-0">
-	  <div class="d-flex align-items-start align-items-sm-center gap-4">
+	  <div class="d-flex align-items-center gap-4">
             {% autoescape off %}{{ object|grouplogo:"d-block rounded large-profile" }}{% endautoescape %}
 	    <h3 class="m-0 me-2">{% if object.groupprofile.active %}
               {{ object.name }} (Active)
               {% else %}
               {{ object.name }} (Inactive)
               {% endif %}</h3>
-            <small class="text-muted">
-            </small>
+	    <div class="button-wrapper">
+              <a class="btn btn-primary" href="{% url 'cvdp:msg_contact' object.groupprofile.uuid %}"><i class="fas fa-comment" alt="message group" title="message group"></i> Message Group</a>
+            </div>
           </div>
            <div class="dropdown">
              <button

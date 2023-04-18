@@ -276,6 +276,17 @@ class AdvisoryAPIView(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
+class CSAFAdvisoryAPIView(generics.RetrieveAPIView):
+    serializer_class = CSAFAdvisorySerializer
+    permission_classes = (IsAuthenticated, PendingUserPermission, CaseObjectAccessPermission)
+
+    def get_view_name(self):
+        return "Case Advisory in CSAF format"
+
+    def get_object(self):
+        caseid = self.kwargs['caseid']
+        case = get_object_or_404(Case, case_id=caseid)
+        return case 
 
 class AdviseFilterBackend(DjangoFilterBackend):
     def get_filterset_kwargs(self, request, queryset, view):
@@ -612,7 +623,7 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
         logger.debug(self.request.POST)
         case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         self.check_object_permissions(request, case)
-        names = self.request.POST.getlist('names', [])
+        names = self.request.POST.getlist('names[]', [])
         role = self.request.POST.get('role', 'vendor')
         role = role.lower()
         if not(any(role in i for i in CaseParticipant.CASE_ROLES)):
@@ -685,10 +696,11 @@ class CaseThreadParticipantAPIView(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         logger.debug(self.request.POST)
         thread = get_object_or_404(CaseThread, id=self.kwargs['pk'])
-        if not(is_case_owner(request.user, thread.case)):
+        if not(is_case_owner(request.user, thread.case.id)):
             #only case owners can add participants to a thread
             raise PermissionDenied
-        names = self.request.POST.getlist('names', [])
+        names = self.request.POST.getlist('names[]', [])
+        
         role = self.request.POST.get('role', None)
         if (role):
             role = role.lower()
@@ -706,7 +718,7 @@ class CaseThreadParticipantAPIView(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         participant = get_object_or_404(CaseThreadParticipant, id=self.kwargs['pk'])
-        if not(is_case_owner(request.user, participant.thread.case)):
+        if not(is_case_owner(request.user, participant.thread.case.id)):
             raise PermissionDenied()
 
         if participant.thread.official:
@@ -966,13 +978,17 @@ class CaseArtifactAPIView(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         #get artifact
         ca = get_object_or_404(CaseArtifact, file__uuid=self.kwargs['uuid'])
-        if request.user.is_superuser:
+        if request.user.is_superuser or request.user.is_staff:
             ca.delete()
             return Response({}, status=status.HTTP_202_ACCEPTED)
         if (ca.action.user == request.user):
             ca.shared=False
             ca.save()
             #TODO - ADD AUDIT LOG
+            return Response({}, status.HTTP_202_ACCEPTED)
+        if (is_case_owner(self.request.user, ca.case.id)):
+            ca.shared=False
+            ca.save()
             return Response({}, status.HTTP_202_ACCEPTED)
         raise PermissionDenied()
 

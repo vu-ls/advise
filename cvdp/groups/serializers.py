@@ -90,7 +90,7 @@ class ContactSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Contact
-        fields = ['email', 'phone', 'name', 'type', 'user_name', 'url']
+        fields = ['email', 'phone', 'name', 'type', 'user_name', 'url', 'uuid']
 
     def get_user_name(self, obj):
         if obj.user:

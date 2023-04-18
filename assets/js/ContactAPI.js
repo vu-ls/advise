@@ -48,7 +48,12 @@ export default class ContactAPI{
         return axios.get(url);
     }
 
-    
+    getContact(c) {
+	const url = `${API_URL}/api/contact/${c}/`;
+	return axios.get(url);
+    }
+	
+
     getMyGroup(c) {
 	const url = `${API_URL}/api/manage/group/${c}/admin/`;
 	return axios.get(url);

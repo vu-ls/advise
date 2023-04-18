@@ -133,7 +133,7 @@ class GroupSearchView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView)
         thread = self.request.POST.get('thread')
         case = self.request.POST.get('case')
         groups = Group.objects.filter(name__icontains=search).exclude(groupprofile__active=False).exclude(groupprofile__isnull=True)
-        contacts = Contact.objects.filter(Q(name__icontains=search)|Q(email__icontains=search)).exclude(user__api_account=True).exclude(user__is_active=False)
+        contacts = Contact.objects.filter(Q(name__icontains=search)|Q(email__icontains=search)|Q(user__screen_name__icontains=search)).exclude(user__api_account=True).exclude(user__is_active=False)
         results = []
         if case:
             cp = CaseParticipant.objects.filter(case__case_id=case).values_list('group__groupprofile__uuid', flat=True)
@@ -151,10 +151,10 @@ class GroupSearchView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView)
             contacts = contacts.exclude(id__in=cc)
         
 
-        for g in groups:
-            results.append({'name':g.name, 'logo':g.groupprofile.get_logo(), 'color':g.groupprofile.icon_color, 'uuid':g.groupprofile.uuid})
-        for c in contacts:
-            results.append({'name':c.get_name(), 'color':c.get_color(), 'logo': c.get_photo(), 'uuid': c.uuid})
+        for g in groups[:10]:
+            results.append({'name':g.name, 'photo':g.groupprofile.get_logo(), 'logocolor':g.groupprofile.icon_color, 'uuid':g.groupprofile.uuid})
+        for c in contacts[:10]:
+            results.append({'name':c.get_name(), 'logocolor':c.get_color(), 'photo': c.get_photo(), 'uuid': c.uuid})
 
         return JsonResponse(results, safe=False, status=200)
 
@@ -408,6 +408,28 @@ class ContactAPIView(viewsets.ModelViewSet):
     filterset_fields = ['email', 'phone', 'name']
 
 
+class GetContactAPIView(generics.RetrieveAPIView):
+    permission_classes = (IsAuthenticated, CoordinatorPermission)
+
+    def get_view_name(self):
+        return "Retrieve Contact"
+
+    def get_serializer_class(self):
+        contact = Contact.objects.filter(uuid=self.kwargs['contact']).first()
+        if contact:
+            return ContactSerializer
+        else:
+            return GroupSerializer
+    
+    def get_object(self):
+        contact = Contact.objects.filter(uuid=self.kwargs['contact']).first()
+        if contact:
+            return contact
+        group = get_object_or_404(Group, groupprofile__uuid=self.kwargs['contact'])
+        return group
+            
+    
+    
 class ContactAssociationAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, GroupAdminLevelPermission)
     serializer_class = ContactAssociationSerializer

@@ -54,6 +54,7 @@ urlpatterns = [
     re_path('^report/add/case/(?P<caseid>\d+)/$', reportviews.AddReportView.as_view(), name='addreport'),
     re_path('^report/case/(?P<caseid>\d+)/add/$', reportviews.AddCaseReportView.as_view(), name='add_case_report'),
     path('inbox/', msgviews.InboxView.as_view(), name='inbox'),
+    re_path('^inbox/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/$', msgviews.InboxView.as_view(), name='msg_contact'),
     re_path('^artifact/(?P<path>.*)/$', views.ArtifactView.as_view(), name='artifact'),
     path('api/form/submissions/', reportviews.ReportsAPIView.as_view({'get': 'list'}), name='reportsapi'),
     path('api/inbox/unread/', msgviews.UnreadMessageAPI.as_view(), name='unread'),
@@ -77,7 +78,7 @@ urlpatterns = [
     path('api/groups/', groupviews.GroupAPIView.as_view(), name='groupapi'),
     re_path('^api/groups/(?P<pk>[0-9]+)/contacts/$', groupviews.ContactAssociationAPIView.as_view({'get':'list', 'post':'create'}), name='assoc_api'),
     re_path('^api/groups/contacts/(?P<pk>[0-9]+)/$', groupviews.ContactAssociationAPIView.as_view({'patch': 'partial_update', 'delete':'destroy'}), name='assoc_api_detail'),
-
+    re_path('^api/contact/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/$', groupviews.GetContactAPIView.as_view(), name='get_contact_api'),
 
     
     re_path('^case_search/$', caseviews.CaseFilter.as_view(), name='casesearch'),
@@ -88,6 +89,7 @@ urlpatterns = [
 
     re_path('^api/case/(?P<caseid>[0-9]+)/advisory/latest/$', caseviews.AdvisoryAPIView.as_view({'get': 'retrieve', 'patch': 'partial_update'}), name='advisoryapi'),
     re_path('^api/case/(?P<caseid>[0-9]+)/advisory/$', caseviews.AdvisoryAPIView.as_view({'get': 'list', 'post': 'create'}), name='advisoryapi-list'),
+    re_path('^api/case/(?P<caseid>[0-9]+)/advisory/csaf/$', caseviews.CSAFAdvisoryAPIView.as_view(), name='csafapi'),
     #path('case/search/results/', caseviews.CaseFilterResults.as_view(), name='caseresults'),
     #re_path('^case/(?P<caseid>[0-9]+)?/post/filter/', caseviews.CasePostFilterView.as_view(), name='searchposts'),
     re_path('^case/(?P<caseid>[0-9]+)/participants/$', caseviews.ManageCaseParticipants.as_view(), name='caseparticipants'),

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import Group
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 from django.utils import timezone
@@ -125,9 +126,16 @@ class Component(AbstractComponent):
     def get_absolute_url(self):
         return reverse('cvdp:components')
 
+    def get_vendor(self):
+        try:
+            return self.product_info.supplier.name
+        except ObjectDoesNotExist:
+            return self.supplier
+        
+
 class Product(models.Model):
 
-    component = models.ForeignKey(
+    component = models.OneToOneField(
         Component,
         related_name='product_info',
         on_delete=models.CASCADE
@@ -278,7 +286,6 @@ class ComponentStatus(models.Model):
             new_revision.revision_number = 0
         new_revision.component_status = self
         new_revision.previous_revision = self.current_revision
-        logger.debug("IN CEATLKJDFJDSF")
         if save:
             new_revision.save()
         self.current_revision = new_revision
@@ -287,6 +294,6 @@ class ComponentStatus(models.Model):
             
     def __str__(self):
         if self.current_revision:
-            return self.current_revision.get_status_display()
+            return f"{self.component.name} {self.current_revision.get_status_display()}"
         obj_name = _('Status Unknown')
         return str(obj_name)

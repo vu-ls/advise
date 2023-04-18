@@ -169,7 +169,9 @@ export default class CaseThreadAPI{
     createThreadParticipants(thread, participants, role) {
 	let formField = new FormData();
 	const url = `${API_URL}/api/case/thread/${thread}/participants/`;
-	formField.append('names', participants);
+	for (var i = 0; i < participants.length; i++) {
+	    formField.append('names[]', participants[i]);
+	}
 	formField.append('role', role);
 	console.log(formField);
 	return axios.post(url, formField).then(response=> response.data);
@@ -177,8 +179,10 @@ export default class CaseThreadAPI{
     createCaseParticipants(c, participants, role) {
 	let formField = new FormData();
 	const url = `${API_URL}/api/case/${c.case}/participants/`;
-	formField.append('names', participants);
-	formField.append('role', role);
+	for (var i = 0; i < participants.length; i++) {
+	    formField.append('names[]', participants[i]);
+	}
+    	formField.append('role', role);
 	console.log(formField);
 	return axios.post(url, formField).then(response=> response.data);
     }

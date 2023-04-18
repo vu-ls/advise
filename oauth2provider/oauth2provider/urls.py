@@ -29,6 +29,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('logout/', RedirectView.as_view(url='/accounts/logout/'), name='account_logout'),
     re_path(r'^accounts/login', views.LoginView.as_view(), name='login'),
+    path('accounts/password_change/done/', views.PasswordChangeDoneView.as_view(), name='password_change_done'),
     re_path(r'^accounts/', include('django.contrib.auth.urls')),
     re_path(r'^profile/$', views.profile),
 ]

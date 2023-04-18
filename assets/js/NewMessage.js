@@ -25,8 +25,8 @@ function makeAndHandleRequest(query, page = 1) {
 	const options = items.map((i) => ({
 	    name: i.name,
 	    uuid: i.uuid,
-	    color: i.color,
-	    logo: i.logo
+	    color: i.logocolor,
+	    logo: i.photo
 	}));
 	console.log(options);
 	return {options, total_count};
@@ -48,7 +48,8 @@ const NewMessage = (props) => {
     const [displayConfirmationModal, setDisplayConfirmationModal] = useState(false);
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [allowSelectUser, setAllowSelectUser] = useState(false);
-    
+
+
     const closeMessage = (e) => {
 	console.log("close message");
 	setDeleteMessage("Your message is unsent.  Do you really want to cancel?")
@@ -67,17 +68,39 @@ const NewMessage = (props) => {
 	}), []
     );
 
-  const handleInputChange = (q) => {
-      setQuery(q);
-  };
+    const handleInputChange = (q) => {
+	setQuery(q);
+    };
 
     const clearText = () => {
         setMessage('');
     }
 
+    const lookupContact = async(contact) => {
+	console.log("IN LOOKUP CONTACT!")
+
+	await contactapi.getContact(contact).then((response) => {
+	    console.log(response.data);
+	    if (response.data.user_name) {
+		setMessageTo([{'uuid':response.data.uuid, 'name':response.data.user_name, 'color': response.data.logocolor}]);
+	    } else {
+		setMessageTo([{'uuid':response.data.uuid, 'name':response.data.name, 'color': response.data.logocolor}]);
+	    }
+	    setIsLoading(false);
+
+	}).catch(err => {
+	    setError("Can't find user.");
+	    console.log(err);
+	});
+    }
+
     useEffect(() => {
 	if (props.coordinator) {
 	    setAllowSelectUser(true);
+	}
+	if (props.sendContact) {
+	    setIsLoading(true)
+	    lookupContact(props.sendContact)
 	}
     }, [props]);
 
@@ -151,8 +174,11 @@ const NewMessage = (props) => {
 	console.log(formField);
 
 	await messageapi.createThread(formField).then((response) => {
-	    console.log(response);
+	    if (props.sendContact) {
+		window.location.href="/advise/inbox";
+	    }
 	    props.reload();
+	    
 	}).catch(err => {
 	    setError(`Error sending message: ${err.response.data.message}`);
 	});
@@ -183,7 +209,7 @@ const NewMessage = (props) => {
 			     <AsyncTypeahead
 				 id="messageto"
 				 multiple
-			    options = {options}
+				 options = {options}
 				 isLoading={isLoading}
 				 onPaginate={handlePagination}
 				 onSearch={handleSearch}
@@ -191,18 +217,19 @@ const NewMessage = (props) => {
 				 onChange={setMessageTo}
 				 onInputChange={handleInputChange}
 				 labelKey="name"
+				 selected = {messageTo}
 				 isInvalid={invalidMessageTo}
 				 placeholder="Search for a user"
 				 renderMenuItemChildren={(option) => (
 				<div className="d-flex align-items-center gap-2">
 				    <DisplayLogo
 					name={option.name}
-					photo={option.photo}
+					photo={option.logo}
 					color={option.color}
 				    />
 				    <span className="participant">{option.name}</span>
 				</div>
-				     
+
 				 )}
 				 useCache={false}
 			     />

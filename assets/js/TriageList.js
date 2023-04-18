@@ -166,6 +166,7 @@ const TriageList = () => {
 				 return (
 				     <div className="d-flex justify-content-between mt-2 mb-2" key={`user-${user.id}`}>
 
+					 <a href={`/advise/contact/${user.contact}/`}>
 					 <div className="d-flex align-items-center gap-2">
     					     <DisplayLogo
 						 name={user.name}
@@ -176,6 +177,7 @@ const TriageList = () => {
 						 {user.name}
 					     </span>
 					 </div>
+					 </a>
 					 <Button variant="outline-primary" onClick={(e)=>approveUser(user)}>
 					     Approve
 					 </Button>
@@ -195,20 +197,22 @@ const TriageList = () => {
                          <>
                              {newUsers.map((user) => {
                                  return (
-                                     <div className="d-flex align-items-center gap-2 mb-3">
-                                         <DisplayLogo
-                                             name={user.name}
-                                             color={user.logocolor}
-                                             photo={user.photo}
+				     <a href={`/advise/contact/${user.contact}/`}>   
+					 <div className="d-flex align-items-center gap-2 mb-3">
+                                             <DisplayLogo
+						 name={user.name}
+						 color={user.logocolor}
+						 photo={user.photo}
                                              />
-                                         <span className="participant">
-					     {user.name ?
-                                              <>{user.name}</>
-					      :
-					      <>{user.email}</>
-					     }
-                                         </span>
-                                     </div>
+                                             <span className="participant">
+						 {user.name ?
+						  <>{user.name}</>
+						  :
+						  <>{user.email}</>
+						 }
+                                             </span>
+					 </div>
+				     </a>
                                  )
                              })}
                          </>

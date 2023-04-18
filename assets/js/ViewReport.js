@@ -12,8 +12,8 @@ const ViewReport = (report) => {
 
     return (
         <div>                                                                                           
-            <Alert variant="secondary">                                                                 
-                This report was received on {format(date, 'yyyy-MM-dd')}                                
+            <Alert variant="secondary">
+                This report was submitted by <b>{orig_report.submitter}</b> on {format(date, 'yyyy-MM-dd')}
             </Alert>                                                                                    
             <Row>                                                                                       
             {orig_report.report.map((r, index) => {

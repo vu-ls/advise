@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django.utils.translation import gettext_lazy as _
 from django_otp.forms import OTPAuthenticationFormMixin
-from django.core.exceptions import ValidationError
+import traceback
 import logging
 
 User = get_user_model()
@@ -19,30 +19,11 @@ logger.setLevel(logging.DEBUG)
 
 class ProviderAuthenticationForm(AuthenticationForm):
     
-    def get_invalid_login_error(self):
-        user = User.objects.get(username=self.cleaned_data.get('username'))
-
-        if not user.email_confirmed:
-            raise ValidationError(
-                _("The email associated with this account has not been confirmed. Please confirm the email before logging in."),
-                code='email_unconfirmed',
-            )
-        if not user.is_active:
-            raise ValidationError(
-                _("This account is inactive."),
-                code='inactive',
-            )
-    
     def confirm_login_allowed(self, user):
         if not user.email_confirmed:
-            raise ValidationError(
+            raise forms.ValidationError(
 		_("The email associated with this account has not been confirmed. Please confirm the email before logging in."),
                 code='email_unconfirmed',
-            )
-        if not user.is_active:
-            raise ValidationError(
-                _("This account is inactive."),
-                code='inactive',
             )
         
         
@@ -56,8 +37,8 @@ class SignUpForm(UserCreationForm):
         label=_("Screen name"),
 	max_length=100,
         regex=r'^[-\w\+]+(\s[-\w\+]+)*$',
-        error_messages={'invalid':_("Invalid username. Your display name may only contain 1 space and may not contain certain special characters.")},
-        help_text=_('The name visible to other users. It may only contain 1 space and may not contain certain special characters. (You can modify this later)'),
+        error_messages={'invalid':_("Invalid username. Your display name may not contain certain special characters.")},
+        help_text=_('The name visible to other users. Your display may not contain certain special characters. (You can modify this later)'),
         widget=forms.TextInput(
             attrs={}
 	),

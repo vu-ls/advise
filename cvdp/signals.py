@@ -42,7 +42,7 @@ def send_message_notification(sender, message, thread, reply, **kwargs):
         template = 'reply_message'
     else:
         template = 'new_message'
-    email_context = {'template': template, 'sender': message.sender.screen_name, 'url': message.thread.get_absolute_url()}
+    email_context = {'template': template, 'sender': message.sender.screen_name, 'url': f'{settings.SERVER_NAME}{message.thread.get_absolute_url()}'}
     
     recipients = []
     for recip in thread.userthread_set.exclude(user=message.sender):
@@ -61,7 +61,7 @@ def send_post_notification(sender, instance, created, **kwargs):
 
             print(participants)
             
-            email_context = {'url': instance.post.thread.case.get_absolute_url()}
+            email_context = {'url': f'{settings.SERVER_NAME}{instance.post.thread.case.get_absolute_url()}'}
             try:
                 #remove author from list
                 participants.remove(instance.post.author.email)

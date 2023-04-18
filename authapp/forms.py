@@ -40,10 +40,10 @@ class ProfileForm(forms.Form):
     screen_name = forms.RegexField(
         label=_("Screen name"),
         max_length=254,
-        help_text=_('The name displayed to other users within the system. It may only contain 1 space and may not contain certain special characters.'),
+        help_text=_('The name displayed to other users within the system. It may not contain certain special characters.'),
         regex=r'^[-\w\+]+(\s[-\w\+]+)*$',
         required=True,
-        error_messages={'invalid':_("Invalid username. Your display name may only contain 1 space and may not contain certain special characters.")})
+        error_messages={'invalid':_("Invalid username. Your display name may not contain certain special characters.")})
     
     org = forms.CharField(
         max_length=200,
@@ -78,8 +78,8 @@ class AdviseSignUpForm(SignupForm):
         label=_("Screen name"),
         max_length=100,
         regex=r'^[-\w\+]+(\s[-\w\+]+)*$',
-        error_messages={'invalid':_("Invalid username. Your display name may only contain 1 space and may not contain certain special characters.")},
-        help_text=_('The name visible to other users. It may only contain 1 space and may not contain certain special characters. (You can modify this later)'),
+        error_messages={'invalid':_("Invalid username. It not contain certain special characters.")},
+        help_text=_('The name visible to other users. Your display name may not contain certain special characters. (You can modify this later)'),
         widget=forms.TextInput(
             attrs={"placeholder": _("Username"), "autocomplete": "username"}
         ),

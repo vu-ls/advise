@@ -51,7 +51,7 @@
 		    id="uploadedAvatar"
 		    />-->
 		<div class="button-wrapper">
-		  <a class="btn btn-primary me-2 mb-4" href=""><i class="fas fa-comment" alt="message user" title="message user"></i> Message User</a>
+		  <a class="btn btn-primary me-2 mb-4" href="{% url 'cvdp:msg_contact' object.user.contact.uuid %}"><i class="fas fa-comment" alt="message user" title="message user"></i> Message User</a>
 		</div>
               </div>
             </div>

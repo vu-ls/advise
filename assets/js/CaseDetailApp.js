@@ -136,9 +136,10 @@ const CaseDetailApp = (props) => {
 	}
     };
 
-    
-
-
+    const setActiveTabNow = (props) => {
+	setFeedback(null);
+	setActiveTab(props);
+    }
     
     return (
 	caseInfo && owner ?
@@ -148,7 +149,7 @@ const CaseDetailApp = (props) => {
 		    activeKey={activeTab}
                     id="report"
                     className="mb-3"
-		    onSelect={(e)=>(setFeedback(null),setActiveTab(e.eventKey))}
+		    onSelect={setActiveTabNow}
                 >
                     <Nav variant="pills" className="mb-3" fill justify>
 			{caseInfo.report ?
