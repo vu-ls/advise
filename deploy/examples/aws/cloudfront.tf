@@ -135,7 +135,7 @@ resource "aws_cloudfront_distribution" "advise_oauth" {
 # should be the same for both oauth and app at this point
 resource "aws_cloudfront_cache_policy" "advise_app_endpoints" {
   name        = "${local.name_prefix}-advise-endpoints-cache-policy-${local.unique_id}"
-  default_ttl = 60
+  default_ttl = 0
   max_ttl     = 86400
   min_ttl     = 0
 

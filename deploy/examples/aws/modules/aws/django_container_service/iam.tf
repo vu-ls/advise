@@ -4,6 +4,12 @@ resource "aws_iam_role" "ecs_task" {
   assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
 }
 
+resource "aws_iam_role_policy" "ecs_task_cloudwatch_policy" {
+  name   = "${var.name_prefix}-ecs-task-cloudwatch-policy-${local.unique_id}"
+  policy = data.aws_iam_policy_document.cloudwatch_create_log_group_role.json
+  role   = aws_iam_role.ecs_task.id
+}
+
 # ECS task execution role
 resource "aws_iam_role" "ecs_task_exe" {
   name               = "${var.name_prefix}-ecs-task-exe-role-${local.unique_id}"
@@ -15,8 +21,8 @@ resource "aws_iam_role_policy_attachment" "ecs_task_exe_attach" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-resource "aws_iam_role_policy" "ecs_task_cloudwatch_policy" {
-  name   = "${var.name_prefix}-ecs-task-cloudwatch-policy-${local.unique_id}"
+resource "aws_iam_role_policy" "ecs_task_exe_cloudwatch_policy" {
+  name   = "${var.name_prefix}-ecs-task-exe-cloudwatch-policy-${local.unique_id}"
   policy = data.aws_iam_policy_document.cloudwatch_create_log_group_role.json
   role   = aws_iam_role.ecs_task_exe.id
 }

@@ -110,6 +110,29 @@ variable "advise_contact_address" {
   type        = string
 }
 
+variable "advise_use_provider" {
+  description = "Name of AdVISE OAuth provider to use as primary login source"
+  type        = string
+  default     = null
+}
+
+variable "advise_registration_link" {
+  description = "Link to registration page (if using advise_use_provider)"
+  type        = string
+  default     = null
+}
+
+variable "advise_recaptcha_site_key" {
+  description = "AdVISE ReCAPTCHA site key"
+  type        = string
+  default     = null
+}
+variable "advise_recaptcha_secret_key" {
+  description = "AdVISE ReCAPTCHA secret key"
+  type        = string
+  default     = null
+}
+
 variable "oauth_email_backend" {
   description = "OAuth Django email backend (defaults to console)"
   type        = string
@@ -121,9 +144,21 @@ variable "oauth_contact_address" {
   type        = string
 }
 
+variable "account_email_verification" {
+  description = "Configure account email verification (mandatory, optional, or none)"
+  type        = string
+  default     = "mandatory"
+}
+
 variable "multi_az" {
   type    = bool
   default = false
+}
+
+variable "log_retention_days" {
+  description = "Number of days to retain logs"
+  type        = number
+  default     = 90
 }
 
 variable "bastion_instance_type" {

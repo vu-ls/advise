@@ -102,6 +102,12 @@ variable "proxy_env_vars" {
   }))
 }
 
+variable "log_retention_days" {
+  description = "Number of days to retain logs (default: 0 (never expire))"
+  type        = number
+  default     = 0
+}
+
 variable "rotation_key" {
   description = "Protection header random id value will rotate when this value is changed"
   type        = string

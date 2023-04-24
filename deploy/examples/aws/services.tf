@@ -17,6 +17,7 @@ module "app_service" {
   proxy_image_version     = var.advise_proxy_image_version
   app_log_group_name      = "/ecs/${local.name_prefix}-app-${local.unique_id}"
   proxy_log_group_name    = "/ecs/${local.name_prefix}-proxy-${local.unique_id}"
+  log_retention_days      = var.log_retention_days
   desired_count           = 1
   minimum_healthy_percent = 100
   maximum_percent         = 200
@@ -82,7 +83,7 @@ module "app_service" {
     },
     {
       name  = "ACCOUNT_EMAIL_VERIFICATION"
-      value = "optional"
+      value = var.account_email_verification
     },
     {
       name  = "ACCOUNT_DEFAULT_HTTP_PROTOCOL"
@@ -91,6 +92,14 @@ module "app_service" {
     {
       name  = "AWS_STORAGE_BUCKET_NAME"
       value = "${module.app_static_bucket.id}"
+    },
+    {
+      name  = "AWS_ATTACHMENT_FILES_STORAGE_BUCKET_NAME"
+      value = "${module.app_attachments_bucket.id}"
+    },
+    {
+      name  = "AWS_MEDIA_FILES_STORAGE_BUCKET_NAME"
+      value = "${module.app_media_bucket.id}"
     },
     {
       name  = "DEBUG"
@@ -115,6 +124,26 @@ module "app_service" {
     {
       name  = "CONTACT_EMAIL"
       value = "${var.advise_contact_address}"
+    },
+    {
+      name  = "USE_PROVIDER"
+      value = "${var.advise_use_provider}"
+    },
+    {
+      name  = "REGISTRATION_LINK"
+      value = "${var.advise_registration_link}"
+    },
+    {
+      name  = "RECAPTCHA_SITE_KEY"
+      value = "${var.advise_recaptcha_site_key}"
+    },
+    {
+      name  = "RECAPTCHA_SECRET_KEY"
+      value = "${var.advise_recaptcha_secret_key}"
+    },
+    {
+      name  = "ADVISE_LOG_GROUP_NAME"
+      value = "${local.name_prefix}-app-${local.unique_id}"
     }
   ]
 
@@ -155,6 +184,7 @@ module "oauth_service" {
   proxy_image_version     = var.oauth_proxy_image_version
   app_log_group_name      = "/ecs/${local.name_prefix}-oauth-${local.unique_id}"
   proxy_log_group_name    = "/ecs/${local.name_prefix}-oauth-proxy-${local.unique_id}"
+  log_retention_days      = var.log_retention_days
   desired_count           = 1
   minimum_healthy_percent = 100
   maximum_percent         = 200
@@ -211,6 +241,10 @@ module "oauth_service" {
       value = "https://${local.oauth_fqdn}"
     },
     {
+      name  = "DASHBOARD_LINK"
+      value = "https://${local.app_fqdn}/advise/dashboard/"
+    },
+    {
       name  = "DEPLOYMENT_TYPE"
       value = "AWS"
     },
@@ -220,7 +254,7 @@ module "oauth_service" {
     },
     {
       name  = "ACCOUNT_EMAIL_VERIFICATION"
-      value = "optional"
+      value = var.account_email_verification
     },
     {
       name  = "ACCOUNT_DEFAULT_HTTP_PROTOCOL"
@@ -235,7 +269,7 @@ module "oauth_service" {
       value = "${var.advise_django_debug}"
     },
     {
-      name  = "ADVISE_SECRET_KEY"
+      name  = "OAUTH2PROVIDER_SECRET_KEY"
       value = "${var.advise_oauth_secret_key}"
     },
     {
@@ -253,6 +287,18 @@ module "oauth_service" {
     {
       name  = "CONTACT_EMAIL"
       value = "${var.oauth_contact_address}"
+    },
+    {
+      name  = "RECAPTCHA_SITE_KEY"
+      value = "${var.advise_recaptcha_site_key}"
+    },
+    {
+      name  = "RECAPTCHA_SECRET_KEY"
+      value = "${var.advise_recaptcha_secret_key}"
+    },
+    {
+      name  = "OAUTH_LOG_GROUP_NAME"
+      value = "${local.name_prefix}-oauth-${local.unique_id}"
     }
   ]
 
