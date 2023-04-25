@@ -203,6 +203,7 @@ class UploadProfilePhotoForm(forms.Form):
             
 
 class PreferencesForm(forms.Form):
+
     email_preference = forms.ChoiceField(
         choices=[(1, 'HTML'), (2, 'Plain Text')],
         label='Which email format do you prefer?',
@@ -217,6 +218,36 @@ class PreferencesForm(forms.Form):
         required=False
     )
 
+    email_case_changes = forms.BooleanField(
+        label=_('Case updates'),
+        help_text=_('We will let you know if anyone makes changes to your cases.'),
+        required=False,
+    )
+
+    email_new_posts = forms.BooleanField(
+        label=_('New posts'),
+        help_text=_('We will let you know if there are new posts in your cases.'),
+        required=False,
+    )
+
+    email_new_messages = forms.BooleanField(
+        label=_('New messages'),
+        help_text=_('We will let you know when you have new messages.'),
+        required=False,
+    )
+
+    email_new_group_messages = forms.BooleanField(
+        label=_('New group messages'),
+        help_text=_('We will send you an email when your group is sent a new message.'),
+        required=False,
+    )
+
+    email_new_status = forms.BooleanField(
+        label=_('New vendor status'),
+        help_text=_('We will let you know when a status has been added to your case.'),
+        required=False,
+    )
+    
     def __init__(self, *args, **kwargs):
         super(PreferencesForm, self).__init__(*args, **kwargs)
         #if setting is not set for this user, set to default

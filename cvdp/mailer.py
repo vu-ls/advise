@@ -141,13 +141,14 @@ def send_templated_mail(template_name,
 
     footer_file = os.path.join('cvdp-email', locale, 'email_text_footer.txt')
 
+    context['logo'] = f"{settings.STATIC_URL}cvdp/css/images/CVDP.png"
+    context['button_link'] = context.get('url', None)
+    context['email_signature'] = f"Your {settings.ORG_NAME} Coordination Team"
+    context['homepage'] = f"{settings.SERVER_NAME}/advise/dashboard/"
 
     text_part = from_string(
         "%s{%% include '%s' %%}" % (t.plain_text, footer_file)
     ).render(context)
-
-    context['button_link'] = context.get('url', None)
-    context['email_signature'] = f"Your {settings.ORG_NAME} Coordination Team"
 
     email_html_base_file = os.path.join('cvdp-email', locale, 'email_html_bootstrap.html')
 

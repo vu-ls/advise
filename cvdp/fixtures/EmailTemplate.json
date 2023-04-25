@@ -5,13 +5,13 @@
   "fields": {
     "template_name": "case_new_post",
     "template_type": 4,
-    "title": null,
+    "title": "New Post",
     "subject": "New Post",
     "plain_text": "Hello,\r\n\r\nThis is a courtesy e-mail to let you know that a case you are working on has a new post.",
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that a case you are working on has a new post. </p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-27T19:48:34.762Z"
+    "modified": "2023-04-19T21:03:16.188Z"
   }
 },
 {
@@ -26,7 +26,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p> <p style=\"font-family: sans-serif; font-size:1em;\">This is a courtesy e-mail to let you know that multi-factor authentication (MFA) was successfully enabled on your account.</p>\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">\r\nIf you did not initiate this change, please let us know as soon as possible.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-01-20T14:32:21.868Z"
+    "modified": "2023-04-12T15:49:18.060Z"
   }
 },
 {
@@ -41,7 +41,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p> <p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that multi-factor authentication (MFA) was successfully disabled on your account.</p>\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">\r\nIf you did not initiate this change, please let us know as soon as possible.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-01-20T14:33:28.264Z"
+    "modified": "2023-04-12T15:49:18.061Z"
   }
 },
 {
@@ -56,7 +56,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that {{ sender }} has sent you a message.  Please login to view the message. </p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-27T15:04:47.019Z"
+    "modified": "2023-04-12T15:49:18.062Z"
   }
 },
 {
@@ -71,7 +71,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that you were mentioned in a post.\r\n</p>\r\n\r\n\r\n<p>If you would prefer to not receive email notifications, please login to change your email preferences.</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-28T00:59:54.079Z"
+    "modified": "2023-04-12T15:49:18.063Z"
   }
 },
 {
@@ -86,7 +86,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that your organization was tagged in a case post.\r\n</p>\r\n\r\n<p>If you would prefer to not receive email notifications, please login to change your email preferences.</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-28T01:00:04.790Z"
+    "modified": "2023-04-12T15:49:18.065Z"
   }
 },
 {
@@ -101,7 +101,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that {{ sender }} has replied to a message.  Please login to view the message. </p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-27T15:06:57.663Z"
+    "modified": "2023-04-12T15:49:18.065Z"
   }
 },
 {
@@ -116,7 +116,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">\r\nWe have new information about a vulnerability that may affect your products. We have opened a new to case to share this information. Please login to view the case and the information regarding this vulnerability.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-28T18:43:10.717Z"
+    "modified": "2023-04-12T15:49:18.066Z"
   }
 },
 {
@@ -131,7 +131,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">\r\nJust a friendly reminder! We have new information about a vulnerability that may affect your products. We have opened a new to case to share this information. Please login to view the case and the information regarding this vulnerability.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-28T18:43:49.179Z"
+    "modified": "2023-04-12T15:49:18.067Z"
   }
 },
 {
@@ -146,7 +146,7 @@
     "html": "<p style=\\\"font-family: sans-serif; font-size: 1em;\\\">Hello,</p>\r\n\r\n<p style=\\\"font-family: sans-serif; font-size: 1em;\\\">\r\nThis is a courtesy e-mail to let you know that a case has been assigned to you by {{ assignee}}.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-29T01:25:10.939Z"
+    "modified": "2023-04-12T15:49:18.069Z"
   }
 },
 {
@@ -161,7 +161,7 @@
     "html": "<p style=\\\"font-family: sans-serif; font-size: 1em;\\\">Hello,</p>\r\n\r\n<p style=\\\"font-family: sans-serif; font-size: 1em;\\\">\r\nYou have a new message in case {{ caseid}} from {{ assignee}}.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-29T01:43:51.132Z"
+    "modified": "2023-04-12T15:49:18.071Z"
   }
 },
 {
@@ -176,7 +176,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that your account password has recently changed.  If you did not initiate this change, please let us know as soon as possible.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-29T13:34:44.944Z"
+    "modified": "2023-04-12T15:49:18.072Z"
   }
 },
 {
@@ -191,7 +191,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that your account password has recently been reset.  If you did not initiate this change, please let us know as soon as possible.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-29T13:37:27.255Z"
+    "modified": "2023-04-12T15:49:18.073Z"
   }
 },
 {
@@ -206,7 +206,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that a new e-mail, <b>{{ email}}</b>, has been added to your AdVISE account.  If you did not initiate this change, please let us know as soon as possible.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-04-12T14:38:43.933Z"
+    "modified": "2023-04-12T15:49:18.075Z"
   }
 },
 {
@@ -221,7 +221,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that a new e-mail, <b>{{ email}}</b>, has been removed from your AdVISE account.  If you did not initiate this change, please let us know as soon as possible.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-03-29T13:41:11.580Z"
+    "modified": "2023-04-12T15:49:18.076Z"
   }
 },
 {
@@ -236,7 +236,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\">This is a courtesy e-mail to let you know that you were recently added to a new group, <b>{{ group }}</b>, by the group admin {{ added_by }}.  If you believe this is a mistake, please let us know as soon as possible.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-04-12T15:09:31.728Z"
+    "modified": "2023-04-12T15:49:18.077Z"
   }
 },
 {
@@ -251,7 +251,7 @@
     "html": "<p style=\"font-family: sans-serif; font-size: 1em;\">Hello,</p>\r\n\r\n<p style=\"font-family: sans-serif; font-size: 1em;\"> You were recently requested to join the <b>{{ group }}</b> in AdVISE, by the group admin {{ added_by }}.  To accept this invitation, please follow the link below to create an account and you will be automatically added to the group.\r\n</p>",
     "locale": "en",
     "user": null,
-    "modified": "2023-04-12T15:09:52.576Z"
+    "modified": "2023-04-12T15:49:18.079Z"
   }
 }
 ]

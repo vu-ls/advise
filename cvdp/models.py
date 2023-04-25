@@ -740,7 +740,7 @@ class Message(models.Model):
         thread.userthread_set.exclude(user=user).update(deleted=False, unread=True)
         thread.groupthread_set.update(deleted=False, unread=True)
         thread.userthread_set.filter(user=user).update(deleted=False, unread=False)
-        message_sent.send(sender=cls, message=msg, thread=thread, reply=True)
+        message_sent.send(sender=cls, message=msg, thread=thread, reply=True, from_group=None)
         return msg
 
 
@@ -758,7 +758,7 @@ class Message(models.Model):
         if not from_group:            
             thread.userthread_set.create(user=from_user, deleted=True, unread=False)
         msg = cls.objects.create(thread=thread, sender=from_user, content=content)
-        message_sent.send(sender=cls, message=msg, thread=thread, reply=False)
+        message_sent.send(sender=cls, message=msg, thread=thread, reply=False, from_group=from_group)
         return msg
 
         
@@ -775,7 +775,7 @@ class Message(models.Model):
         if not from_group:
             thread.userthread_set.create(user=from_user, deleted=True, unread=False)
         msg = cls.objects.create(thread=thread, sender=from_user, content=content)
-        message_sent.send(sender=cls, message=msg, thread=thread, reply=False)
+        message_sent.send(sender=cls, message=msg, thread=thread, reply=False, from_group=from_group)
         return msg
     
     @classmethod
@@ -796,7 +796,7 @@ class Message(models.Model):
         if not from_group:
             thread.userthread_set.create(user=from_user, deleted=True, unread=False)
         msg = cls.objects.create(thread=thread, sender=from_user, content=content)
-        message_sent.send(sender=cls, message=msg, thread=thread, reply=False)
+        message_sent.send(sender=cls, message=msg, thread=thread, reply=False, from_group=from_group)
         return msg
 
     class Meta:

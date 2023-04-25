@@ -87,6 +87,7 @@ const StatusAddForm = (props) => {
     const [invalidComponent, setInvalidComponent] = useState(false);
     const [version, setVersion] = useState("");
     const [status, setStatus] = useState("");
+    const [versionRange, setVersionRange]=useState(null);
     const [endVersion, setEndVersion] = useState("");
     const [checkedVuls, setCheckedVuls] = useState([]);
     const [invalidVersion, setInvalidVersion] = useState(false);
@@ -178,6 +179,7 @@ const StatusAddForm = (props) => {
 	setVersion(q.version);
 	setEndVersion(q.version_end_range);
 	setVulStatement(q.statement);
+	setVersionRange(q.version_range);
 	setCheckedVuls([q.vul.id]);
 	setStatus(q.status);
         setFormTitle(`Edit status for ${c.component.name} ${q.version}`)
@@ -381,7 +383,7 @@ const StatusAddForm = (props) => {
 
                             </Accordion.Header>
                             <Accordion.Body>
-				<Table>
+				<Table responsive>
 				    <thead>
 					<tr>
 					    <th>
@@ -609,7 +611,7 @@ const StatusAddForm = (props) => {
 				 </Col>
 				 <Col lg={4} md={6} sm={12}>
 				     <Form.Label>Version Range</Form.Label>
-				     <Form.Select name="version_affected" aria-label="Range Select">
+				     <Form.Select name="version_affected" value={versionRange} onChange={(e)=>setVersionRange(e.target.value)} aria-label="Range Select">
 					 {VERSION_RANGE_CHOICES.map((choice) => (
 					     <option key={choice.val} value={choice.val}>{choice.desc} </option>
 					 ))}

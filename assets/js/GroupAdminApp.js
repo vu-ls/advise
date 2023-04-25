@@ -558,7 +558,7 @@ const GroupAdminApp = (props) => {
 					      {keys.map((k, index) => {
 
 						  let created = new Date(k.created);
-						  let last_used = k.last_used ? formatDistance(new Date(k.last_used), newDate(), {addSuffix: true}) : "Not used";
+						  let last_used = k.last_used ? formatDistance(new Date(k.last_used), new Date(), {addSuffix: true}) : "Not used";
 						  
 						  return (
 						      <tr key={k.last_four}>

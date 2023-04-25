@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import {Card, Alert, NavDropdown, DropdownButton, Dropdown, InputGroup, FloatingLabel, Form, Container, Row, Col, Badge, Button} from 'react-bootstrap';
+import {Card, Alert, NavDropdown, DropdownButton, Dropdown, InputGroup, FloatingLabel, Form, Container, Row, Col, Badge, Button, OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {createEvent} from 'ics';
 import { format, formatDistance } from 'date-fns'
 import CaseThreadAPI from './ThreadAPI';
 import '../css/casethread.css';
@@ -51,6 +52,46 @@ const CaseStatusApp = (props) => {
         });
     };
 
+
+
+    async function downloadCalendar () {
+	const filename = `${caseInfo.case_identifier}.ics`;
+	console.log(dateDue);
+	const dueDate = [dateDue.getFullYear(), dateDue.getMonth()+1, dateDue.getDate(), 9, 0];
+	console.log(dueDate);
+	const event = {
+	    start: dueDate,
+	    title: `${caseInfo.case_identifier}: ${caseInfo.title}`,
+	    description: `${caseInfo.summary}`,
+	    url: window.location.href,
+	    status: 'TENTATIVE',
+	    organizer: { name: 'AdVISE', email: '' },
+	}
+	const file = await new Promise((resolve, reject) => {
+	    createEvent(event, (error, value) => {
+		if (error) {
+		    reject(error)
+	  }
+		
+		resolve(new File([value], filename, { type: 'plain/text' }))
+	    })
+	})
+	const url = URL.createObjectURL(file);
+	
+	// trying to assign the file URL to a window could cause cross-site
+	// issues so this is a workaround using HTML5
+	const anchor = document.createElement('a');
+	anchor.href = url;
+	anchor.download = filename;
+	
+	document.body.appendChild(anchor);
+	anchor.click();
+	document.body.removeChild(anchor);
+  
+	URL.revokeObjectURL(url);
+    }
+    
+    
     const shareAdvisory = async() => {
 	threadapi.shareAdvisory(caseInfo.case_id).then(response => {
 	    props.updateStatus();
@@ -373,7 +414,7 @@ const CaseStatusApp = (props) => {
                         </Col>
                         <Col sm={8}>
 			    {dateDue ?
-			     format(dateDue, 'yyyy-MM-dd')
+			     <>{format(dateDue, 'yyyy-MM-dd')}<OverlayTrigger overlay={<Tooltip>Download Calendar reminder</Tooltip>}><a href="#" onClick={(e)=>downloadCalendar()}><i class="mx-2 fas fa-calendar-plus"></i></a></OverlayTrigger></>
 			     :
 			     <b>TBD</b>
 			    }

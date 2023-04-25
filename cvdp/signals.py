@@ -1,4 +1,4 @@
-
+from authapp.models import User
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from cvdp.models import UserProfile, Case, CaseThread, Contact, message_sent, PostRevision
@@ -37,7 +37,7 @@ def create_case_officialthread(sender, instance, created, **kwargs):
 
     
 @receiver(message_sent)
-def send_message_notification(sender, message, thread, reply, **kwargs):
+def send_message_notification(sender, message, thread, reply, from_group, **kwargs):
     if reply:
         template = 'reply_message'
     else:
@@ -47,6 +47,17 @@ def send_message_notification(sender, message, thread, reply, **kwargs):
     recipients = []
     for recip in thread.userthread_set.exclude(user=message.sender):
         recipients.append(recip.user.email)
+
+    if from_group:
+        groups = thread.groupthread_set.exclude(group=from_group)
+    else:
+        groups = thread.groupthread_set.all()
+            
+    for g in groups:
+        users = User.objects.filter(groups=g.group).exclude(id=message.sender.id)
+        for u in users:
+            if u.email not in recipients:
+                recipients.append(u.email)
     cvdp_send_email(None, None, recipients, **email_context)
 
 
@@ -59,9 +70,7 @@ def send_post_notification(sender, instance, created, **kwargs):
             #edits are ignored
             participants = get_casethread_user_participants(instance.post.thread)
 
-            print(participants)
-            
-            email_context = {'url': f'{settings.SERVER_NAME}{instance.post.thread.case.get_absolute_url()}'}
+            email_context = {'url': f'{settings.SERVER_NAME}{instance.post.thread.case.get_absolute_url()}', 'prepend': instance.post.thread.case.caseid}
             try:
                 #remove author from list
                 participants.remove(instance.post.author.email)

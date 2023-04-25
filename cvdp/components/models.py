@@ -183,11 +183,11 @@ VUL_STATUS_CHOICES = (
 
 VERSION_RANGE_CHOICES = (
     (None, 'None'),
-    ('<', '< (affects X versions prior to n)'),
-    ('<=', '<= (affects X versions up to n)'),
-    ('=', '= (affects n)'),
-    ('>', '> (affects X versions above n)'),
-    ('>=', '>= (affects X versions n and above)')
+    ('<', '<'),
+    ('<=', '<='),
+    ('=', '='),
+    ('>', '>'),
+    ('>=', '>='),
 )
 
 

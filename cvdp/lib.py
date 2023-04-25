@@ -226,7 +226,7 @@ def add_new_case_participant(thread, name, user, role):
         """
                 
     if ((created or role_change) and role == "owner"):
-        email_context = {'url': f'{settings.SERVER_NAME}{thread.case.get_absolute_url()}', 'case': thread.case.caseid, 'template': "case_assignment", 'assignee': user.screen_name}
+        email_context = {'url': f'{settings.SERVER_NAME}{thread.case.get_absolute_url()}', 'case': thread.case.caseid, 'template': "case_assignment", 'assignee': user.screen_name, 'prepend': thread.case.caseid}
         #if this user assigned themselves, don't send an email
         if contact and (contact.email != user.email):
             #send email to newly assigned user
@@ -242,7 +242,7 @@ def notify_case_participant(participant, subject, content, user):
      #is this uuid a contact or group?   
     participant.notified = timezone.now()
     participant.save()
-    email_context={'url': f'{settings.SERVER_NAME}{participant.case.get_absolute_url()}', 'case': participant.case.caseid}
+    email_context={'url': f'{settings.SERVER_NAME}{participant.case.get_absolute_url()}', 'case': participant.case.caseid, 'prepend':participant.case.caseid}
     if participant.contact:
         cvdp_send_email(subject, content, [participant.contact.email], **email_context)
     else:

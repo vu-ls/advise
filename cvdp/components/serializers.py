@@ -71,7 +71,7 @@ class StatusSerializer(serializers.ModelSerializer):
     status = ChoiceField(VUL_STATUS_CHOICES)
     version = serializers.CharField(source='version_value')
     version_end_range = serializers.CharField(source='version_name', required=False, allow_blank=True)
-    version_affected = ChoiceField(VERSION_RANGE_CHOICES, required=False, allow_blank=True)
+    version_affected = serializers.ChoiceField(VERSION_RANGE_CHOICES, required=False, allow_blank=True)
     statement = serializers.CharField(required=False, allow_blank=True)
     
     class Meta:
