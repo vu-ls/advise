@@ -168,7 +168,9 @@ const ParticipantTable = (caseid) => {
 	let participants = selectedRows.map(item => item.original.id);
 	formField.append('subject', subject);
 	formField.append('content', content);
-	formField.append('participants', participants);
+	for (var i = 0; i < participants.length; i++) {
+            formField.append('participants[]', participants[i]);
+        }
 	console.log(formField);
 
 	try {

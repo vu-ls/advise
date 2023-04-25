@@ -16,11 +16,13 @@ const messageapi = new MessageAPI();
 
 const InboxApp = (props) => {
 
+    const isInitialMount = useRef(true);
+    
     const [threads, setThreads] = useState([]);
     const [messages, setMessages] = useState([]);
     const [curThread, setCurThread] = useState(null);
-    const [search, setSearch] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [search, setSearch] = useState(null);
     const [itemsCount, setItemsCount] = useState(0);
     const [apiError, setApiError] = useState(null);
     const [loadingMessages, setLoadingMessages] = useState(true);
@@ -30,14 +32,32 @@ const InboxApp = (props) => {
     const [disableButton, setDisableButton] = useState(false);
     const [coordinator, setCoordinator] = useState(false);
     const [sendMsgContact, setSendMsgContact] = useState(null);
+    const [feedback, setFeedback] = useState(null);
+    const [sentMessage, setSentMessage] = useState(false);
     
-    const fetchInitialData = async () => {
+    const fetchInitialData = async (msg) => {
+	if (msg) {
+	    setFeedback(msg);
+	    setSentMessage(true);
+	} else {
+	    setFeedback(null);
+	}
+
 	try {
-            messageapi.getThreads().then((response) => {
-                console.log(response);
-                setThreads(response.results);
-		setItemsCount(response.count);
-            });
+	    if (props.group) {
+		messageapi.getGroupThreads(props.group).then((response) => {
+		    console.log("GET GROUP THREADS")
+		    console.log(response);
+		    setThreads(response.results);
+		    setItemsCount(response.count);
+		});
+	    } else {
+		messageapi.getThreads().then((response) => {
+                    console.log(response);
+                    setThreads(response.results);
+		    setItemsCount(response.count);
+		});
+	    }
 
         } catch (err) {
             console.log(err);
@@ -48,18 +68,32 @@ const InboxApp = (props) => {
 
     useEffect(()=> {
         console.log("currentPage in use", currentPage);
-        paginationHandler(currentPage);
+	if (isInitialMount.current)  {
+	    console.log("do nothing");
+	} else {
+	    paginationHandler(currentPage);
+	}
+
     }, [currentPage])
 
 
     const paginationHandler = (page) => {
-        console.log("IN PAGINATION HANDLER");
-        messageapi.getThreadsByPage(page).then((response) => {
-	    setThreads(response.results);
-            setItemsCount(response.count);
-        }).catch( err => {
-	    setApiError(err);
-	});
+	console.log("IN PAGINATION HANDLER")
+	if (props.group) {
+	    messageapi.getGroupThreadsByPage(props.group, page).then((response) => {
+		setThreads(response.results);
+		setItemsCount(response.count);
+	    }).catch(err => {
+		setApiError(err);
+	    })
+	} else {
+            messageapi.getThreadsByPage(page).then((response) => {
+		setThreads(response.results);
+		setItemsCount(response.count);
+            }).catch( err => {
+		setApiError(err);
+	    });
+	}
     }
 
     const modules = React.useMemo(
@@ -75,24 +109,34 @@ const InboxApp = (props) => {
     );
 
     useEffect(() => {
-        let urlstr = "";
-        if (search) {
-            urlstr = `search=${search}`
-        }
-	messageapi.searchThreads(urlstr).then((response) => {
-	    setThreads(response.results);
-	    setItemsCount(response.count);
-	});
+	if (isInitialMount.current) {
+	    /* don't search threads on initial mount */
+	    isInitialMount.current = false;
+	} else {
+	    console.log("SEARCH CHANGED", search);
+            let urlstr = "";
+            if (search) {
+		urlstr = `search=${search}`
+		if (props.group) {
+		    urlstr = `${urlstr}&group=${props.group}`
+		}
+            }
+	    messageapi.searchThreads(urlstr).then((response) => {
+		setThreads(response.results);
+		setItemsCount(response.count);
+	    });
+	}
 
     }, [search])
 
     useEffect(() => {
+	console.log(`${props.coord} ${threads}`);
 	if (threads.length > 0) {
-	    if (curThread == null && sendMsgContact==null) {
+	    if ((curThread == null && sendMsgContact == null) || feedback) {
 		setCurThread(threads[0])
 		setLoadingMessages(true);
 		setNewMessage(false);
-	    }
+	    } 
 	} else {
 	    setCurThread(null)
 	    setLoadingMessages(false);
@@ -120,6 +164,11 @@ const InboxApp = (props) => {
     useEffect(()=> {
 	setExpandUsers(false);
 	setLoadingMessages(true);
+	if (sentMessage) {
+	    setSentMessage(false);
+	} else {
+	    setFeedback(null);
+	}
 	if (curThread) {
 	    /* user must have changed their mind about sending a msg */
 	    setSendMsgContact(null);
@@ -196,15 +245,14 @@ const InboxApp = (props) => {
 			</InputGroup>
 			<PerfectScrollbar>
 			    <ul className="list-unstyled mb-0">
-				{threads.length > 0 ?
+				{threads.length > 0 && curThread ?
 				 <>
 			    {threads.map((thread, inbox) => {
 				let date = new Date(thread.last_message.created);
 				let timeago = formatDistance(date, new Date(), {addSuffix: true});
 
 				return (
-
-				    <li className="p-2 border-bottom" key={`inbox-${thread.id}`} style={{ backgroundColor: curThread == thread ? "#eee" : 'inherit'}}>
+				    <li className="p-2 border-bottom" id={`inbox-${thread.id}`} key={`inbox-${thread.id}`} style={{ backgroundColor: curThread.id == thread.id ? "#eee" : 'inherit'}}>
 					<a href="#" onClick={(e)=>setCurThread(thread)} className="d-flex justify-content-between">
 					    <div className="d-flex flex-row gap-2">
 						<DisplayLogo
@@ -249,6 +297,9 @@ const InboxApp = (props) => {
 	    </Col>
 
 	    <Col lg={7} md={6} className="messages-scroll">
+		{feedback &&
+		 <Alert variant="success">{feedback}</Alert>
+		}
 		<PerfectScrollbar
 		    style={{ position: "relative" }}
 		>
@@ -258,6 +309,7 @@ const InboxApp = (props) => {
 			 coordinator={coordinator}
 			 reload = {fetchInitialData}
 			 sendContact = {sendMsgContact}
+			 group={props.group}
 		     />
 		     :
 		     <>
@@ -280,11 +332,23 @@ const InboxApp = (props) => {
 					   />
 				       )
 				   })}
+				       <>
+					   {curThread.groups.map((group, index) => {
+					       return (
+						   <DisplayLogo
+						       name={group.name}
+						       photo={group.photo}
+						       color={group.logocolor}
+						       key={`glogo-${index}`}
+						   />
+					       )
+					   })}
+				       </>
 			       </div>
 			       <div className="d-flex justify-content-center mb-3">
 
-				   {curThread.users.length > 1?
-				    <a href="#" onClick={(e)=>toggleExpandUsers()}>{curThread.users.length} people > </a>
+				   {curThread.users.length + curThread.groups.length > 1?
+				    <a href="#" onClick={(e)=>toggleExpandUsers()}>{curThread.users.length+curThread.groups.length} people > </a>
 				    :
 				    <>1 person</>
 				   }
@@ -304,6 +368,19 @@ const InboxApp = (props) => {
 						</div>
 					    )
 					})}
+					<>
+					    {curThread.groups.map((group, index)	=> {
+                                     		return (
+						    <div key={`threadgroups-${index}`} className="d-flex flex-row gap-2 mb-2">
+							<DisplayLogo
+							    name={group.name}
+							    photo={group.photo}
+							    color={group.logocolor}
+							/>
+							<p className="pt-1">{group.name}</p>
+                                                    </div>
+						)
+                                            })}                                                                                                                      </>         
 				    </div>
 				</div>
 			       }
@@ -315,14 +392,14 @@ const InboxApp = (props) => {
 
 				       return (
 					   <li className="d-flex align-items-start gap-2 mb-4" key={`msg-${message.id}`}>
-					       <div className="align-self-start me-3">
+					       <div className="align-self-start">
 						   <DisplayLogo
 						       name = {message.sender.name}
 						       photo = {message.sender.photo}
 						       color = {message.sender.logocolor}
 						   />
 					       </div>
-					       <Card className="w-100">
+					       <Card className="w-100 mx-3">
 						   <Card.Header className="d-flex justify-content-between p-3 border-bottom">
 						       <p className="fw-bold mb-0">{message.sender.name}</p>
 

@@ -5,6 +5,7 @@ from django.urls import reverse
 from authapp.models import User
 from cvdp.serializers import ChoiceField
 from cvdp.cases.serializers import UserSerializer, ContentSerializerField
+from cvdp.groups.serializers import GroupSerializer
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -22,12 +23,16 @@ class ThreadSerializer(serializers.ModelSerializer):
     last_message = serializers.SerializerMethodField()
     unread = serializers.SerializerMethodField()
     users = UserSerializer(many=True)
+    groups = GroupSerializer(many=True)
     
     class Meta:
         model = MessageThread
-        fields = ('id', 'subject', 'users', 'messages', 'last_message', 'unread')
+        fields = ('id', 'subject', 'users', 'groups', 'messages', 'last_message', 'unread')
 
     def get_unread(self, obj):
+        group = self.context.get('group')
+        if group:
+            return bool(obj.groupthread_set.filter(group=group, unread=True))
         user = self.context.get('user')
         return bool(obj.userthread_set.filter(user=user, unread=True))
         

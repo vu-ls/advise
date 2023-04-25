@@ -17,7 +17,7 @@ class GroupSerializer(serializers.ModelSerializer):
     
     class Meta:
         model=Group
-        fields = ('id', 'name', 'type', 'url', 'photo', 'logocolor', 'uuid',  'support_email', 'support_phone', 'website', 'mailing_address')
+        fields = ('id', 'name', 'type', 'url', 'photo', 'logocolor', 'uuid',  'support_email', 'support_phone', 'website', 'mailing_address',)
 
     def get_url(self, obj):
         return reverse("cvdp:group", args=[obj.id])

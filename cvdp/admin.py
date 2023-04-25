@@ -8,7 +8,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
-from cvdp.models import UserProfile, GroupProfile, Contact, CaseThreadParticipant, CaseParticipant, EmailTemplate, Case, AssignmentRole, UserAssignmentWeight, CaseReport
+from cvdp.models import UserProfile, GroupProfile, Contact, CaseThreadParticipant, CaseParticipant, EmailTemplate, Case, AssignmentRole, UserAssignmentWeight, CaseReport, GlobalSettings, MessageThread, UserThread
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
@@ -107,11 +107,14 @@ class ContactAdmin(admin.ModelAdmin):
 
     
 admin.site.register(User, CustomUserAdmin)
+admin.site.register(GlobalSettings)
 admin.site.unregister(Group)
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Contact, ContactAdmin)
 admin.site.register(CaseThreadParticipant)
 admin.site.register(CaseParticipant)
 admin.site.register(AssignmentRole)
+admin.site.register(MessageThread)
 admin.site.register(UserAssignmentWeight)
 admin.site.register(CaseReport)
+admin.site.register(UserThread)

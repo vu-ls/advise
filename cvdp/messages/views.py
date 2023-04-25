@@ -34,7 +34,14 @@ class UnreadMessageAPI(APIView):
     def get(self, request, format=None):
         data = {}
         data['unread'] = len(MessageThread.ordered(MessageThread.unread(self.request.user)))
+        data['user'] = data['unread']
+        for group in self.request.user.groups.all():
+            count = len(MessageThread.ordered(MessageThread.group_unread(group)))
+            data['unread'] = data['unread'] + count
+            data[str(group.groupprofile.uuid)] = count
         return Response(data)
+
+
 
 
 class StandardResultsPagination(PageNumberPagination):
@@ -55,6 +62,10 @@ class InboxView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
         context['inboxpage'] = 1
         if self.kwargs.get('contact'):
             context['contact'] = self.kwargs['contact']
+        #get coord team
+        context['team'] = GlobalSettings.objects.all().first()
+        
+            
         return context
 
     
@@ -64,17 +75,33 @@ class ThreadAPIView(viewsets.ModelViewSet):
     pagination_class = StandardResultsPagination
 
     def list(self, request, *args, **kwargs):
+        logger.debug("IN PAGINATE")
         content = self.get_queryset()
         page = self.paginate_queryset(content)
+        if self.request.GET.get('group'):
+            group = get_object_or_404(Group, groupprofile__uuid=self.request.GET.get('group'))
+            if not self.request.user.groups.filter(id=group.id).exists():
+                group = None
+        else:
+            group = None
         if page is not None:
-            serializer = self.get_serializer(page, many=True, context={'user': request.user})
+            serializer = self.get_serializer(page, many=True, context={'user': request.user, 'group': group})
             return self.get_paginated_response(serializer.data)
         return Response(self.serializer_class(content, many=True,
-                                           context={'user': request.user}).data)
+                                           context={'user': request.user, 'group': group}).data)
     
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return MessageThread.objects.none()
+
+        #if group
+        if self.request.GET.get('group'):
+            group = get_object_or_404(Group, groupprofile__uuid=self.request.GET.get('group'))
+            if self.request.user.groups.filter(id=group.id).exists():
+                if self.request.GET.get('search'):
+                    return MessageThread.ordered(MessageThread.group(group).filter(messages__content__icontains=self.request.GET['search']))
+                return MessageThread.ordered(MessageThread.group(group))
+        
         # get cases I have access to
         if self.request.GET.get('search'):
             qs = MessageThread.all(self.request.user).filter(messages__content__icontains=self.request.GET['search'])
@@ -86,26 +113,51 @@ class ThreadAPIView(viewsets.ModelViewSet):
 
         content = request.data.get('content', None)
         if not content:
-            return Response({'content': 'Not message content present'},
+            return Response({'message': 'No message content present'},
                             status=status.HTTP_400_BAD_REQUEST)
             
-        
+
+        from_group = request.data.get('from')
         user_list = []
+        group_list = []
+        if from_group:
+            from_group = Group.objects.filter(groupprofile__uuid=from_group).first()
+            if from_group:
+                group_list.append(from_group)
         #get all users
         for user in request.data.getlist('users'):
             contact = Contact.objects.filter(uuid=user).first()
             if (contact):
                 user_list.append(contact.user)
             else:
-                return Response({'invalid user': 'user does not exist'},
-                                status=status.HTTP_400_BAD_REQUEST)
-        
-        msg = Message.new_message(self.request.user, user_list, None, "", request.data['content'])
+                #lookup group
+                group = Group.objects.filter(groupprofile__uuid=user).first()
+                if (group):
+                    group_list.append(group)
+                else:
+                    return Response({'message': 'invalid to: user/group does not exist'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+        if not request.data.getlist('users'):
+            #get coordination team
+            group = GlobalSettings.objects.all().first()
+            if not group:
+                return Response({'message': 'Invalid Group: AdVISE improperly configured'},
+                                status = status.HTTP_400_BAD_REQUEST)
+            #this is a message to the coordinators
+            msg = Message.new_group_message(self.request.user, None, [group.group], None, "", request.data['content'])
+        else:
+            if user_list and group_list:
+                msg = Message.new_group_user_message(self.request.user, from_group,  user_list, group_list, None, "", request.data['content'])
+            elif user_list:
+                msg = Message.new_message(self.request.user, from_group, user_list, None, "", request.data['content'])
+            else:
+                msg = Message.new_group_message(self.request.user, from_group, group_list, None, "", request.data['content'])
+
         if msg:
             serializer = ThreadSerializer(msg.thread)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
-            return Response({'error': 'Error creating message'},
+            return Response({'message': 'Error creating message'},
                             status=status.HTTP_400_BAD_REQUEST)
     
 
@@ -118,9 +170,16 @@ class MessageAPIView(viewsets.ModelViewSet):
             return Message.objects.none()
         thread = get_object_or_404(MessageThread, id=self.kwargs['pk'])
         if not UserThread.objects.filter(thread=thread, user=self.request.user).exists():
-            #this isn't your thread, yo
-            return Http404
-        thread.userthread_set.filter(user=self.request.user).update(unread=False)
+            gt = GroupThread.objects.filter(thread=thread).first()
+            if not self.request.user.groups.filter(id=gt.group.id).exists():
+                #this isn't your thread, yo
+                return Http404
+            else:
+                logger.debug("MARK THIS THREAD AS READ!")
+                gt.unread=False
+                gt.save()
+        else:
+            thread.userthread_set.filter(user=self.request.user).update(unread=False)
         return Message.objects.filter(thread=thread)
 
     def create(self, request, *args, **kwargs):

@@ -21,7 +21,9 @@
     transform: translateY(-50%);
 }
 
-
+#app .tab-content {
+    border: solid 2px #FFF;
+}
 
 .api_token {
     cursor: pointer;
@@ -44,7 +46,7 @@ pre.cvejson {
 }
 
 .messages-scroll {
-    height: 100vh;
+    min-height: 100vh;
 }
 
 /*.btn {

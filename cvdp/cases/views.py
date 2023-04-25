@@ -1146,7 +1146,7 @@ class NotifyVendorsView(LoginRequiredMixin, UserPassesTestMixin, generic.Templat
     def post(self, request, *args, **kwargs):
         logger.debug(f"{self.__class__.__name__} post: {self.request.POST}")
         case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
-        participants = self.request.POST.getlist('participants', None)
+        participants = self.request.POST.getlist('participants[]', None)
         subject = self.request.POST.get('subject', None);
         content = self.request.POST.get('content', None);
         if not participants or not subject or not content:

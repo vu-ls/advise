@@ -154,7 +154,7 @@ class GroupSearchView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView)
         for g in groups[:10]:
             results.append({'name':g.name, 'photo':g.groupprofile.get_logo(), 'logocolor':g.groupprofile.icon_color, 'uuid':g.groupprofile.uuid})
         for c in contacts[:10]:
-            results.append({'name':c.get_name(), 'logocolor':c.get_color(), 'photo': c.get_photo(), 'uuid': c.uuid})
+            results.append({'name':c.get_name(), 'email': c.email, 'logocolor':c.get_color(), 'photo': c.get_photo(), 'uuid': c.uuid})
 
         return JsonResponse(results, safe=False, status=200)
 

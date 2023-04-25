@@ -24,6 +24,7 @@ function makeAndHandleRequest(query, page = 1) {
 	let total_count = items.length;
 	const options = items.map((i) => ({
 	    name: i.name,
+	    email: i.email,
 	    uuid: i.uuid,
 	    color: i.logocolor,
 	    logo: i.photo
@@ -172,14 +173,19 @@ const NewMessage = (props) => {
 	    formField.append('users', users);
 	}
 	console.log(formField);
+	if (props.group) {
+	    formField.append('from', props.group);
+	}
 
 	await messageapi.createThread(formField).then((response) => {
 	    if (props.sendContact) {
 		window.location.href="/advise/inbox";
 	    }
-	    props.reload();
-	    
+	    setMessage('');
+	    props.reload("Got it! Your message has been sent!");
+
 	}).catch(err => {
+	    console.log(err);
 	    setError(`Error sending message: ${err.response.data.message}`);
 	});
 
@@ -216,7 +222,10 @@ const NewMessage = (props) => {
 				 paginate
 				 onChange={setMessageTo}
 				 onInputChange={handleInputChange}
-				 labelKey="name"
+				 labelKey={(option) => (option.email ? `${option.name} (${option.email})` :
+							`${option.name}`)}
+
+				 filterBy={["name", "email"]}
 				 selected = {messageTo}
 				 isInvalid={invalidMessageTo}
 				 placeholder="Search for a user"
@@ -227,7 +236,7 @@ const NewMessage = (props) => {
 					photo={option.logo}
 					color={option.color}
 				    />
-				    <span className="participant">{option.name}</span>
+				    <span className="participant">{option.name} {option.email && `(${option.email})`}</span>
 				</div>
 
 				 )}

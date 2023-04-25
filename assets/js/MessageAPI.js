@@ -13,6 +13,16 @@ export default class MessageAPI{
         return axios.get(url).then(response => response.data);
     }
 
+    getGroupThreads(group) {
+	const url = `${API_URL}/api/inbox/?group=${group}`
+        return axios.get(url).then(response => response.data);
+    }
+
+    getGroupThreadsByPage(group, page) {
+        const url = `${API_URL}/api/inbox/?group=${group}&page=${page}`;
+        return axios.get(url).then(response => response.data);
+    }
+    
     getThreadsByPage(page) {
         const url = `${API_URL}/api/inbox/?page=${page}`;
         return axios.get(url).then(response => response.data);

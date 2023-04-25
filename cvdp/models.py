@@ -9,6 +9,7 @@ from .utils import cached_attribute
 from cvdp.manage.models import FormEntry, CVEServicesAccount
 from django.utils.functional import cached_property
 from django.dispatch import Signal
+from django.core.exceptions import ValidationError
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 import advise.storage_backends
@@ -42,6 +43,28 @@ def user_logo_path(instance, filename):
     except:
         return f'user_logos/unknown/{filename}'
 
+
+class GlobalSettings(models.Model):
+
+    group = models.ForeignKey(
+        Group,
+        on_delete = models.SET_NULL,
+        blank=True,
+        null=True,
+        help_text=_('The main coordination group for this AdVISE instance'),
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.pk and GlobalSettings.objects.exists():
+            raise ValidationError("Only one settings instance is permitted")
+        return super(GlobalSettings, self).save(*args, **kwargs)
+    
+    def __str__(self):
+        if self.group:
+            return self.group.name
+        else:
+            return "Improperly Configured"
+    
 class UserProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL,
                                 related_name="userprofile",
@@ -556,7 +579,13 @@ class MessageThread(models.Model):
 
     users = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
+        blank=True,
         through="UserThread")
+
+    groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        through="GroupThread")
 
     case = models.ForeignKey(
         Case,
@@ -571,6 +600,10 @@ class MessageThread(models.Model):
     def all(cls, user):
         return cls.objects.filter(userthread__user=user).distinct()
 
+    @classmethod
+    def group(cls, group):
+        return cls.objects.filter(groupthread__group=group).distinct()
+    
     @classmethod
     def inbox(cls, user):
         return cls.objects.filter(userthread__user=user, userthread__deleted=False).distinct()
@@ -587,6 +620,10 @@ class MessageThread(models.Model):
     def unread(cls, user):
         return cls.objects.filter(userthread__user=user, userthread__deleted=False, userthread__unread=True).distinct()
 
+    @classmethod
+    def group_unread(cls, group):
+        return cls.objects.filter(groupthread__group=group, groupthread__deleted=False, groupthread__unread=True).distinct()
+    
     def __str__(self):
         return "{}: {}".format(
             self.subject,
@@ -643,6 +680,23 @@ class UserThread(models.Model):
 
     deleted = models.BooleanField()
 
+    def __str__(self):
+        return "%s" % self.thread.num_messages
+
+class GroupThread(models.Model):
+
+    thread = models.ForeignKey(
+        MessageThread,
+        on_delete=models.CASCADE)
+
+    group = models.ForeignKey(
+        Group,
+        on_delete=models.CASCADE)
+
+    unread = models.BooleanField()
+
+    deleted = models.BooleanField()
+    
 
 class MessageManager(models.Manager):
     def search(self, case=None, query=None, author_list=None):
@@ -684,12 +738,48 @@ class Message(models.Model):
         """
         msg = cls.objects.create(thread=thread, sender=user, content=content)
         thread.userthread_set.exclude(user=user).update(deleted=False, unread=True)
+        thread.groupthread_set.update(deleted=False, unread=True)
         thread.userthread_set.filter(user=user).update(deleted=False, unread=False)
         message_sent.send(sender=cls, message=msg, thread=thread, reply=True)
         return msg
 
+
     @classmethod
-    def new_message(cls, from_user, to_users, case, subject, content, signal=True):
+    def new_group_user_message(cls, from_user, from_group, to_users, to_groups, case, subject, content, signal=True):
+        """
+        Create a new message to multiple groups/users
+        Mark thread as unread for everyone but sender
+        """
+        thread = MessageThread.objects.create(subject=subject)
+        for group in to_groups:
+            thread.groupthread_set.create(group=group, deleted=False, unread=True)
+        for user in to_users:
+            thread.userthread_set.create(user=user, deleted=True, unread=True)
+        if not from_group:            
+            thread.userthread_set.create(user=from_user, deleted=True, unread=False)
+        msg = cls.objects.create(thread=thread, sender=from_user, content=content)
+        message_sent.send(sender=cls, message=msg, thread=thread, reply=False)
+        return msg
+
+        
+    
+    @classmethod
+    def new_group_message(cls, from_user, from_group, groups, case, subject, content, signal=True):
+        """
+        Create a new message to groups
+        Mark thread as unread for group and mark thread as read for sender
+        """
+        thread = MessageThread.objects.create(subject=subject)
+        for group in groups:
+            thread.groupthread_set.create(group=group, deleted=False, unread=True)
+        if not from_group:
+            thread.userthread_set.create(user=from_user, deleted=True, unread=False)
+        msg = cls.objects.create(thread=thread, sender=from_user, content=content)
+        message_sent.send(sender=cls, message=msg, thread=thread, reply=False)
+        return msg
+    
+    @classmethod
+    def new_message(cls, from_user, from_group, to_users, case, subject, content, signal=True):
         """
         Create a new Message and MessageThread.
         Mark thread as unread for all recipients, and
@@ -703,7 +793,8 @@ class Message(models.Model):
         thread = MessageThread.objects.create(subject=subject)
         for user in to_users:
             thread.userthread_set.create(user=user, deleted=False, unread=True)
-        thread.userthread_set.create(user=from_user, deleted=True, unread=False)
+        if not from_group:
+            thread.userthread_set.create(user=from_user, deleted=True, unread=False)
         msg = cls.objects.create(thread=thread, sender=from_user, content=content)
         message_sent.send(sender=cls, message=msg, thread=thread, reply=False)
         return msg
