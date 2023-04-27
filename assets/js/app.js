@@ -1,6 +1,8 @@
 import MessageAPI from './MessageAPI';
+import CaseThreadAPI from './ThreadAPI';
 
 const messageapi = new MessageAPI();
+const caseapi = new CaseThreadAPI();
 
 function getCookie(name) {
     var cookieValue = null;
@@ -62,7 +64,23 @@ $(function () {
 	}
     });
 
-
+    caseapi.getCaseNotifications().then(response => {
+	console.log(response);
+	if (response.length) {
+	    $("#notify_count").html(`<span class=\"badge rounded-pill bg-danger\">${response.length}</span>`);
+	    var notifications = "";
+	    response.map((r, index) => {
+		notifications = notifications + `<li>
+			<a class="dropdown-item" href="${r.url}">${r.text}</a></li>`;
+		if (index != response.length) {
+		    notifications + '<li><div class="dropdown-divider"></div></li>';
+		}
+	    });
+	    console.log(notifications);
+	    $("#notify_list").html(notifications);
+	}
+    });
+    
     $(document).on("click", ".confirmrm", function(event) {
         event.preventDefault();
         $modal.modal('hide');

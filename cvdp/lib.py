@@ -234,7 +234,7 @@ def add_new_case_participant(thread, name, user, role):
         #TODO: can a group be an owner?
         
     if created:
-        return cp.id
+        return cp
 
     return None
 
@@ -324,3 +324,26 @@ def get_post_mentions(post):
     return user_emails, group_emails
 
 
+def create_case_action(title, user, case, share=False):
+    action = CaseAction(case = case,
+                        user=user,
+                        title=title,
+                        created=timezone.now())
+    if share:
+        action.action_type=1
+    action.save()
+    return action
+
+
+def create_case_change(action, field, old_value, new_value):
+
+    if (not old_value and not new_value):
+        #ignore if change is going from null to [] or vice versa
+        return
+    
+    change = CaseChange(action=action,
+                        field = field,
+                        old_value=old_value,
+                        new_value=new_value)
+    change.save()
+    return change

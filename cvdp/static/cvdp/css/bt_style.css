@@ -150,6 +150,11 @@
   margin-bottom: 1rem;
 }
 
+.font-detail {
+    font-weight:600;
+    padding-left: 40px;
+}
+
 .tag-cloud {
   margin: 0 0 1rem 0;
   display:inline-block;

@@ -18,8 +18,6 @@ class ChoiceField(serializers.ChoiceField):
         self.fail('invalid_choice', input=data)
 
 
-
-    
         
 class GenericSerializer(serializers.Serializer):
     type = serializers.SerializerMethodField()

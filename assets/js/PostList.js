@@ -140,6 +140,7 @@ export default function PostList(props) {
 
     const getAllPosts=() => {
 	setIsLoading(true);
+	props.update();
         threadapi.getPosts(thread).then((response) => {
 	    setNextUrl(response.next);
 	    setPreviousUrl(response.previous);
@@ -198,6 +199,7 @@ export default function PostList(props) {
 			deletePost = {showDeleteModal}
 			replyToPost = {setReplyToPost}
 			viewPostDiff = {showDiffModal}
+			participants = {props.participants}
 		    />
 		)}
 	    </div>
@@ -225,6 +227,7 @@ export default function PostList(props) {
 		    replyToPost = {setReplyToPost}
 		    search = {search}
 		    viewPostDiff = {showDiffModal}
+		    participants = {props.participants}
 		/>
 		)}
 	    </div>

@@ -265,6 +265,12 @@ const StatusAddForm = (props) => {
     useEffect(() => {
 	setIsLoading(false);
     }, [vuls]);
+    
+    useEffect(() => {
+	setIsLoading(true);
+	setVuls(props.vuls);
+
+    }, [props.vuls]);
 
     useEffect(() => {
 	setIsLoading(true);
@@ -274,7 +280,7 @@ const StatusAddForm = (props) => {
 	if (['owner', 'vendor'].includes(props.user.role)) {
 	    setAllowAddStatus(true);
 	}
-    }, [props])
+    }, [])
 
 
     const getSelectedComponents = async () => {

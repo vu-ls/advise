@@ -15,11 +15,26 @@ export default class CaseThreadAPI{
 	return axios.get(url).then(response => response.data);
     }
 
+    getCaseNotifications() {
+	const url = `${API_URL}/api/case/notifications/`;
+        return axios.get(url).then(response => response.data);
+    }
+    
     getUserAssignments() {
 	const url = `${API_URL}/api/user/assignments/`;
         return axios.get(url).then(response => response.data);
     }
 
+    getCaseActivity(c) {
+	const url = `${API_URL}/api/case/${c.case_id}/activity/`;
+	return axios.get(url).then(response => response.data);
+    }
+
+    getMyActivity() {
+	const url = `${API_URL}/api/case/activity/`;
+        return axios.get(url).then(response => response.data);
+    }
+    
     assignCase(c, name) {
 	const url = `${API_URL}/api/case/${c}/assign/`;
 	let formField = new FormData();

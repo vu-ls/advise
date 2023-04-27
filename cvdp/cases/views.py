@@ -5,8 +5,12 @@ from django.contrib import messages
 from django.urls import reverse, reverse_lazy
 from django.views import generic, View
 from django.utils.timesince import timesince
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
 from django.views.generic.edit import FormView, UpdateView, FormMixin, CreateView
+from django.utils.decorators import method_decorator
 from django.http import HttpResponse, Http404, JsonResponse, HttpResponseNotAllowed, HttpResponseServerError, HttpResponseForbidden, HttpResponseRedirect, HttpResponseBadRequest
+from itertools import chain
 from authapp.models import User
 from django.utils.safestring import mark_safe
 from cvdp.md_utils import markdown as md
@@ -22,6 +26,7 @@ import difflib
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.views import APIView
 from cvdp.permissions import *
 from cvdp.cases.serializers import *
 from cvdp.lib import *
@@ -74,36 +79,57 @@ def _my_case_threads(user, case):
     ctp = CaseThreadParticipant.objects.filter(participant__in=participants).values_list('thread__id', flat=True)
     return CaseThread.objects.filter(id__in=ctp)
 
+def _my_threads(user):
+    user_groups = user.groups.values_list('id', flat=True)
+    #get my contact
+    contact = Contact.objects.filter(user=user).first()
+    if user_groups:
+        cps = CaseThreadParticipant.objects.filter(Q(participant__contact=contact) | Q(participant__group__in=user_groups)).values_list('thread__id', flat=True)
+    else:
+        cps = CaseThreadParticipant.objects.filter(participant__contact=contact).values_list('thread__id', flat=True)
+    return CaseThread.objects.filter(id__in=cps)
 
 @login_required(login_url="authapp:login")
 @user_passes_test(is_staff_member, login_url='authapp:login')
 def assign_case(request, caseid):
     case = get_object_or_404(Case, case_id=caseid)
     logger.debug(request.POST)
+    title = ""
+    old_value = None
     if request.POST.get('user'):
         u_id = request.POST['user']
         if u_id == '-1':
             #UNASSIGN
+            title = "unassigned case"
             participant = CaseParticipant.objects.filter(case=case).first()
+            old_value = participant.contact.user.screen_name
 	    # get all threads
             threads = CaseThreadParticipant.objects.filter(participant=participant)
             for t in threads:
                 t.delete()
             participant.delete()
+            action = create_case_action(title, request.user, case)
+            create_case_change(action, "owner", old_value, None)
             return JsonResponse({'status': 'success'}, status=200)
         else:
             user = get_object_or_404(User, id=request.POST.get('user'))
+            title = f"assigned case to {user.screen_name}"
     elif request.POST.get('role'):
         #get role
         role = get_object_or_404(AssignmentRole, role=request.POST.get('role'))
         user = auto_assignment(role.id)
+        title = f"auto assigned case to {user.screen_name}"
     else:
         return Http404
+    title = title + f" to {user.screen_name}"
     contact = Contact.objects.filter(user=user).first()
     if contact == None:
         return Http404
     thread = CaseThread.objects.filter(case=case, official=True).first()
     add_new_case_participant(thread, contact.uuid, request.user, 'owner')
+    action = create_case_action(title, request.user, case)
+    #create the case change
+    create_case_change(action, "owner", old_value, user.screen_name)
     return JsonResponse({'status':'success'}, status=200)
 
 def generate_case_id():
@@ -119,6 +145,45 @@ class StandardResultsPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size= 100
 
+
+class CaseNotificationAPI(APIView):
+    # With cookie: cache requested url for each user for a minute
+    permission_classes = (IsAuthenticated, PendingUserPermission)
+
+    @method_decorator(cache_page(60))
+    @method_decorator(vary_on_cookie)
+    def get(self, request, format=None):
+        data = []
+        #any new posts?
+        #should this be assigned cases for coordinators?
+        cases = my_cases(request.user)
+        for case in cases:
+            cv = CaseViewed.objects.filter(case=case, user=request.user).first()
+            if cv:
+                threads = _my_case_threads(request.user, case)
+                unseen_posts = Post.objects.filter(thread__in=threads, created__gte=cv.date_viewed).exclude(author__user=request.user).count()
+                if unseen_posts:
+                    data.append({'case': case, 'text': f'You have {unseen_posts} new post in {case.caseid}'})
+
+                advisory = AdvisoryRevision.objects.filter(advisory__case=case, date_shared__gte=cv.date_viewed).exclude(date_shared__isnull=True)
+                if advisory:
+                    data.append({'case': case, 'text': f'There is a new draft of the advisory in {case.caseid} to view'})
+
+                vuls = Vulnerability.objects.filter(case=case, date_added__gte=cv.date_viewed).exclude(user=request.user)
+                if vuls:
+                    data.append({'case': case, 'text': f'There is {len(vuls)} new vulnerabilities in {case.caseid} to view'})
+                artifacts = CaseArtifact.objects.filter(case=case, shared=True, action__created__gte=cv.date_viewed).exclude(action__user=request.user)
+                if artifacts:
+                    data.append({'case': case, 'text': f'There are {len(artifacts)} new files in {case.caseid}'})
+                
+            else:
+                data.append({'case': case, 'text': f'You have a new case to view: {case.caseid}.'})
+
+        serializer = NotificationSerializer(data, many=True)
+        return Response(serializer.data)
+    
+            
+    
 class CreateNewCaseView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     form_class = CreateCaseForm
     template_name = "cvdp/newcase.html"
@@ -186,6 +251,9 @@ class EditCaseView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     def get_object(self, queryset=None):
         return Case.objects.get(case_id=self.kwargs.get('caseid'))
 
+    def form_valid(self, form):
+        case = form.save(user=self.request.user)
+        return HttpResponseRedirect(case.get_absolute_url())
 
 class EditAdvisoryView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
     login_url = "authapp:login"
@@ -286,7 +354,7 @@ class CSAFAdvisoryAPIView(generics.RetrieveAPIView):
     def get_object(self):
         caseid = self.kwargs['caseid']
         case = get_object_or_404(Case, case_id=caseid)
-        return case 
+        return case
 
 class AdviseFilterBackend(DjangoFilterBackend):
     def get_filterset_kwargs(self, request, queryset, view):
@@ -373,10 +441,15 @@ class CaseAPIView(viewsets.ModelViewSet):
             raise PermissionDenied()
 
         data = request.data
+
         logger.debug(request.data)
         sc = self.get_serializer_class()
         serializer = sc(instance=instance, data=data, partial=True)
         if serializer.is_valid():
+            action = create_case_action("modified case details", request.user, instance, True)
+            for field, val in data.items():
+                if (val != getattr(instance, field, None)):
+                    create_case_change(action, field, getattr(instance, field), val);
             serializer.save()
             logger.debug(serializer.data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -541,8 +614,12 @@ class CaseThreadAPIView(viewsets.ModelViewSet):
             #if so, we want to archive vs delete
             thread.archived=True
             thread.save()
+            action = create_case_action(f"archived case thread with subject \"{thread.subject}\"",
+                                        request.user, thread.case)
         else:
             thread.delete()
+            action = create_case_action(f"deleted empty case thread with subject \"{thread.subject}\"",
+                                        request.user, thread.case)
 
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
@@ -570,14 +647,14 @@ class CaseThreadAPIView(viewsets.ModelViewSet):
 
             serializer = CaseThreadSerializer(ct)
 
+            action = create_case_action(f"created new case thread with subject \"{subject}\"",
+                                        request.user, case)
 
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug("NEEEEEED A SUBJECT")
             return Response({'error': 'subject is required'},
                             status=status.HTTP_400_BAD_REQUEST)
-
-
 
 
 
@@ -612,6 +689,12 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
         logger.debug(request.data)
         serializer = self.serializer_class(instance=instance, data=data, partial=True)
         if serializer.is_valid():
+            action = create_case_action(f"updated case participant {instance.name}", request.user, instance.case)
+            action.participant=instance
+            action.save()
+            for field, val in data.items():
+                if (val != getattr(instance, field, None)):
+                    create_case_change(action, field, getattr(instance, field), val);
             serializer.save()
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
@@ -634,13 +717,18 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
         for n in names:
             try:
                 cp = add_new_case_participant(thread, n, self.request.user, role)
+                if cp:
+                    added.append(cp.name)
             except InvalidRoleException as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        if added:
+            action = create_case_action(f"added participants to case: {(', ').join(added)}", request.user, case)
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
     def destroy(self, request, *args, **kwargs):
         participant = self.get_object()
-
+        self.check_object_permissions(request, participant.case)
+        action = create_case_action(f"removed participant {participant.name} from case", request.user, participant.case)
         # get all threads
         threads = CaseThreadParticipant.objects.filter(participant=participant)
         for t in threads:
@@ -652,7 +740,7 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
 
 class CaseParticipantSummaryAPIView(generics.GenericAPIView):
     permission_classes = (IsAuthenticated, PendingUserPermission, CaseObjectAccessPermission)
-    
+
     def get_view_name(self):
         return "Case Participant Summary View"
 
@@ -668,7 +756,7 @@ class CaseParticipantSummaryAPIView(generics.GenericAPIView):
     def get_queryset(self):
         c = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         return CaseParticipant.objects.filter(case=c)
-    
+
     def get(self, request, *args, **kwargs):
         logger.debug("IN CASE PARTICIPANT SUMMARY API");
         c = get_object_or_404(Case, case_id=self.kwargs['caseid'])
@@ -700,7 +788,7 @@ class CaseThreadParticipantAPIView(viewsets.ModelViewSet):
             #only case owners can add participants to a thread
             raise PermissionDenied
         names = self.request.POST.getlist('names[]', [])
-        
+
         role = self.request.POST.get('role', None)
         if (role):
             role = role.lower()
@@ -708,11 +796,16 @@ class CaseThreadParticipantAPIView(viewsets.ModelViewSet):
             if not(any(role in i for i in CaseParticipant.CASE_ROLES)):
                 return Response({'error': 'Invalid Role'},
                                 status=status.HTTP_400_BAD_REQUEST)
+        added = []
         for n in names:
             try:
                 cp = add_new_case_participant(thread, n, self.request.user, role)
+                if cp:
+                    added.append(cp.name)
             except InvalidRoleException as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        action = create_case_action(f"added participants to case thread \"{thread.subject}\": {(', ').join(added)}", request.user, thread.case)
 
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
@@ -723,8 +816,10 @@ class CaseThreadParticipantAPIView(viewsets.ModelViewSet):
 
         if participant.thread.official:
             #this is the official thread, so remove from Case too
+            action = create_case_action(f"removed participant {participant.participant.name} from case", request.user, participant.thread.case)
             participant.participant.delete()
         else:
+            action = create_case_action(f"removed participant {participant.participant.name} from case thread \"{thread.subject}\"", request.user, participant.thread.case)
             participant.delete()
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
@@ -855,8 +950,12 @@ class VulAPIView(viewsets.ModelViewSet):
         if (request.data.get('description')):
             vul = Vulnerability(case=case,
                                 cve=cve,
+                                user=self.request.user,
                                 description=request.data.get('description'))
             vul.save()
+            action = create_case_action("added new vulnerability", request.user, case, True)
+            action.vulnerability = vul
+            action.save()
             serializer = self.serializer_class(vul)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
@@ -875,6 +974,17 @@ class VulAPIView(viewsets.ModelViewSet):
         logger.debug(request.data)
         serializer = self.serializer_class(instance=instance, data=data, partial=True)
         if serializer.is_valid():
+            action = create_case_action("modified vulnerability details", request.user, instance.case, True)
+            action.vulnerability = instance
+            action.save()
+            for field, val in data.items():
+                try:
+                    oldval = getattr(instance, field)
+                except AttributeError:
+                    continue
+                if (val != oldval):
+                    create_case_change(action, field, getattr(instance, field), val);
+
             serializer.save()
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
@@ -885,6 +995,9 @@ class VulAPIView(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         vul = get_object_or_404(Vulnerability, id=self.kwargs['pk'])
         self.check_object_permissions(request, vul.case)
+        action = create_case_action(f"deleted vulnerability {vul.vul}", request.user, vul.case, True)
+        action.vulnerability = vul
+        action.save()
 
         if vul.case.status == Case.PENDING_STATUS:
             vul.delete()
@@ -920,12 +1033,19 @@ class CaseArtifactAPIView(viewsets.ModelViewSet):
         if not(request.user.is_coordinator):
             raise PermissionDenied()
 
+
         if ca.shared:
+            action = create_case_action(f"unshared artifact {ca.file.filename}", request.user, ca.case)
             ca.shared=False
             ca.save()
         else:
             ca.shared=True
+            action = create_case_action(f"shared artifact {ca.file.filename}", request.user, ca.case, True)
             ca.save()
+
+        action.artifact = ca
+        action.save()
+
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
     def get_object(self):
@@ -979,15 +1099,18 @@ class CaseArtifactAPIView(viewsets.ModelViewSet):
         #get artifact
         ca = get_object_or_404(CaseArtifact, file__uuid=self.kwargs['uuid'])
         if request.user.is_superuser or request.user.is_staff:
+            action = create_case_action(f"deleted artifact {ca.file.filename}", request.user, ca.case)
             ca.delete()
             return Response({}, status=status.HTTP_202_ACCEPTED)
         if (ca.action.user == request.user):
             ca.shared=False
+            action = create_case_action(f"unshared artifact {ca.file.filename}", request.user, ca.case)
             ca.save()
             #TODO - ADD AUDIT LOG
             return Response({}, status.HTTP_202_ACCEPTED)
         if (is_case_owner(self.request.user, ca.case.id)):
             ca.shared=False
+            action = create_case_action(f"unshared artifact {ca.file.filename}", request.user, ca.case)
             ca.save()
             return Response({}, status.HTTP_202_ACCEPTED)
         raise PermissionDenied()
@@ -1041,6 +1164,9 @@ class CVSSVulView(viewsets.ModelViewSet):
             vcvss = VulCVSS(vul=vul, scored_by=self.request.user, **serializer.validated_data)
             logger.debug(vcvss)
             vcvss.save()
+            action = create_case_action(f"scored vulnerability (CVSS) {vul.vul}", request.user, vul.case, True)
+            action.vulnerability=vul
+            action.save()
 
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         logger.debug(serializer.errors)
@@ -1053,6 +1179,9 @@ class CVSSVulView(viewsets.ModelViewSet):
             raise PermissionDenied()
         vcvss = VulCVSS.objects.filter(vul=vul).first()
         if vcvss:
+            action = create_case_action(f"removed CVSS Score for vulnerability {vul.vul}", request.user, vul.case)
+            action.vulnerability=vul
+            action.save()
             vcvss.delete()
             return Response({}, status=status.HTTP_202_ACCEPTED)
         return Response({}, status.HTTP_400_BAD_REQUEST)
@@ -1064,9 +1193,18 @@ class CVSSVulView(viewsets.ModelViewSet):
         logger.debug(request.data)
         serializer = self.serializer_class(instance=vul.vulcvss, data=request.data, partial=True)
         if serializer.is_valid():
+            action = create_case_action(f"modified CVSS score for vulnerability {vul.vul}", request.user, vul.case, True)
+            action.vulnerability=vul
+            action.save()
+            oldscore = vul.vulcvss.score
+            oldvector = vul.vulcvss.vector
             x = serializer.save()
             x.scored_by = self.request.user
             x.save()
+            if oldscore != x.score:
+                create_case_change(action, "score", oldscore, x.score)
+            if oldvector != x.vector:
+                create_case_change(action, "vector", oldvector, x.vector)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         logger.debug(serializer.errors)
         return Response(serializer.error_messages,
@@ -1101,6 +1239,9 @@ class SSVCVulView(viewsets.ModelViewSet):
             ssvc = VulSSVC(vul=vul, user=self.request.user, **serializer.validated_data)
             logger.debug(ssvc)
             ssvc.save()
+            action = create_case_action(f"scored vulnerability (SSVC) {vul.vul}", request.user, vul.case, True)
+            action.vulnerability=vul
+            action.save()
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         logger.debug(serializer.errors)
         return Response(serializer.error_messages,
@@ -1113,6 +1254,9 @@ class SSVCVulView(viewsets.ModelViewSet):
 
         vcvss = VulSSVC.objects.filter(vul=vul).first()
         if vcvss:
+            action = create_case_action(f"removed SSVC score for vulnerability {vul.vul}", request.user, vul.case)
+            action.vulnerability=vul
+            action.save()
             vcvss.delete()
             return Response({}, status=status.HTTP_202_ACCEPTED)
         return Response({}, status.HTTP_400_BAD_REQUEST)
@@ -1124,7 +1268,15 @@ class SSVCVulView(viewsets.ModelViewSet):
         logger.debug(request.data)
         serializer = self.serializer_class(instance=vul.vulssvc, data=request.data, partial=True)
         if serializer.is_valid():
+            olddecision=vul.vulssvc.final_decision
             x = serializer.save()
+
+            action = create_case_action(f"modified SSVC score for vulnerability {vul.vul}", request.user, vul.case, True)
+            action.vulnerability=vul
+            action.save()
+
+            if olddecision != x.final_decision:
+                create_case_change(action, "final_decision", olddecision, newdecision)
             x.user = self.request.user
             x.last_edit = timezone.now()
             x.save()
@@ -1137,24 +1289,92 @@ class NotifyVendorsView(LoginRequiredMixin, UserPassesTestMixin, generic.Templat
     login_url = "authapp:login"
     template_name = 'cvdp/notmpl.html'
     #http_method_names=['post']
-    
+
     def test_func(self):
         case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
         return is_case_owner(self.request.user, case.id)
 
-    
+
     def post(self, request, *args, **kwargs):
         logger.debug(f"{self.__class__.__name__} post: {self.request.POST}")
         case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
         participants = self.request.POST.getlist('participants[]', None)
+
         subject = self.request.POST.get('subject', None);
         content = self.request.POST.get('content', None);
         if not participants or not subject or not content:
             return JsonResponse({'message': 'participants, subject, and content required'}, status=400)
-        
+
+        part_list = []
         for p in participants:
             cp = get_object_or_404(CaseParticipant, id=p)
             notify_case_participant(cp, subject, content, self.request.user)
-        
+            part_list.append(cp.name)
+
+        action = create_case_action(f"notified participants: {', '.join(part_list)}", self.request.user, case)
+
         return JsonResponse({'message': 'success'}, status=200);
-        
+
+
+class CaseActivityAPIView(APIView):
+    serializer_class = CaseActionSerializer
+    permission_classes = (IsAuthenticated, PendingUserPermission, CaseObjectAccessPermission)
+
+    def get_view_name(self):
+        return f"Case Activity"
+
+    def get(self, request, *args, **kwargs):
+
+        # -----------------------------------------------------------
+        page_number = request.query_params.get('page_number ', 1)
+        page_size = request.query_params.get('page_size ', 10)
+        # -----------------------------------------------------------
+        cases = []
+        if self.kwargs.get('caseid'):
+            case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
+            self.check_object_permissions(self.request, case)
+            cases.append(case)
+        else:
+            # get all activity
+            cases = my_cases(self.request.user)
+
+        if self.request.user.is_coordinator:
+            actions = CaseAction.objects.filter(case__in=cases)
+            action_serializer = CaseActionSerializer(actions, many=True)
+            case_actions = action_serializer.data
+
+            posts = PostRevision.objects.filter(post__thread__case__in=cases)
+            post_serializer = PostActionSerializer(posts, many=True)
+            post_actions = post_serializer.data
+
+            advisory = AdvisoryRevision.objects.filter(advisory__case__in=cases)
+            advisory_serializer = AdvisoryActionSerializer(advisory, many=True)
+            advisory_actions = advisory_serializer.data
+
+
+        else:
+            actions = CaseAction.objects.filter(case__in=cases, action_type=2)
+            action_serializer = CaseActionSerializer(actions, many=True)
+            case_actions = action_serializer.data
+
+            #only get posts in threads this user has access to
+            my_threads = _my_threads(request.user)
+            posts = PostRevision.objects.filter(post__thread__in=my_threads)
+            post_serializer = PostActionSerializer(posts, many=True)
+            post_actions = post_serializer.data
+
+            #only get advisory if shared
+            advisory = AdvisoryRevision.objects.filter(advisory__case__in=cases).exclude(date_shared__isnull=True)
+            advisory_serializer = AdvisoryActionSerializer(advisory, many=True)
+            advisory_actions = advisory_serializer.data
+
+        results = case_actions + post_actions + advisory_actions
+        qs = sorted(results,
+                    key=lambda instance: instance['created'],
+                    reverse=True)
+
+
+        paginator = Paginator(qs, page_size)
+        data = paginator.page(page_number)
+
+        return Response({'results':data.object_list})

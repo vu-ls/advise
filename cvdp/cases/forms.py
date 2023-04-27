@@ -7,7 +7,7 @@ from crispy_forms.helper import FormHelper
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import get_user_model
-
+from cvdp.lib import create_case_change, create_case_action
 
 class CreateCaseForm(forms.ModelForm):
 
@@ -41,7 +41,19 @@ class EditCaseForm(forms.ModelForm):
             'summary' : forms.Textarea(attrs={'rows': 3})
         }
 
-    
+    def save(self, user=None):
+        instance = Case.objects.filter(case_id=self.cleaned_data['case_id']).first()
+
+        action = create_case_action("modified case details", user, instance, True)
+        
+        data = self.cleaned_data
+        for field, val in data.items():
+            if (val != getattr(instance, field, None)):
+                create_case_change(action, field, getattr(instance, field), val);
+
+        return super(EditCaseForm, self).save(commit=True)
+
+        
 
 class CaseFilterForm(forms.Form):
 

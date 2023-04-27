@@ -568,8 +568,14 @@ class CaseParticipant(models.Model):
             return f"{self.group.name} in {self.case.case_id}"
         else:
             return f"{self.contact.email} in {self.case.case_id}"
-        
 
+    def _get_name(self):
+        if self.group:
+            return self.group.name
+        else:
+            return self.contact.email
+        
+    name = property(_get_name)
 
 # Adapted from Pinax-messages Project
 class MessageThread(models.Model):
@@ -1172,6 +1178,7 @@ class CaseViewed(models.Model):
 	default=timezone.now)
 
 
+
 class EmailTemplate(models.Model):
 
     CASE_EMAIL = 0
@@ -1314,7 +1321,7 @@ class Vulnerability(models.Model):
         auto_now=True
     )
 
-    date_public = models.DateTimeField(
+    date_public = models.DateField(
         blank=True,
         null=True
     )
@@ -1794,3 +1801,77 @@ class CaseAdvisory(models.Model):
 
     def get_absolute_url(self):
         return reverse('cvdp:advisory', args=(self.case.case_id,))
+
+class CaseAction(Action):
+
+    ACTION_TYPE = (
+        (1, 'Share'),
+        (2, 'Coordinator Only'),
+    )
+    
+    case = models.ForeignKey(
+        Case,
+        help_text=_('Case'),
+        on_delete=models.CASCADE
+    )
+
+    action_type = models.IntegerField(
+        default = 2
+    )
+
+    artifact = models.ForeignKey(
+        CaseArtifact,
+        blank=True, null=True,
+        on_delete=models.SET_NULL)
+
+    participant = models.ForeignKey(
+        CaseParticipant,
+        blank=True, null=True,
+        on_delete = models.SET_NULL)
+
+    vulnerability = models.ForeignKey(
+        Vulnerability,
+        blank=True, null=True,
+        on_delete=models.SET_NULL)
+
+
+    def __str__(self):
+        return f"{self.user.screen_name} made change to {self.case.caseid}: {self.title}"
+
+class CaseChange(models.Model):
+
+    action = models.ForeignKey(
+        CaseAction,
+        on_delete = models.CASCADE
+    )
+
+    field = models.CharField(
+        _('Field'),
+        max_length=100,
+    )
+
+    old_value = models.TextField(
+        _('Old Value'),
+        blank=True,
+        null=True,
+    )
+
+    new_value = models.TextField(
+        _('New Value'),
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        out = '%s ' % self.field
+        if not self.new_value:
+            out += 'removed'
+        elif not self.old_value:
+            out += ('set to %s') % self.new_value
+        else:
+            out += ('changed from "%(old_value)s" to "%(new_value)s"') % {
+                'old_value': self.old_value,
+                'new_value': self.new_value
+            }
+        return out
+    

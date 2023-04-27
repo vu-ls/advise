@@ -11,6 +11,7 @@ import CaseDetailApp from './CaseDetailApp';
 import CaseStatusApp from './CaseStatusApp';
 import CaseArtifactApp from './CaseArtifactApp';
 import DeleteConfirmation from "./DeleteConfirmation";
+import CaseActivityApp from './CaseActivityApp';
 
 const threadapi = new CaseThreadAPI();
 
@@ -33,7 +34,8 @@ const CaseThreadApp = (caseid) => {
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [removeID, setRemoveID] = useState(null);
     const [showArchived, setShowArchived] = useState(false);
-
+    const [reloadActivity, setReloadActivity] = useState(0);
+    
     const searchThreads=(searchprop) => {
 	const {value, togglebutton} = searchprop;
 	console.log("in search threads");
@@ -138,8 +140,9 @@ const CaseThreadApp = (caseid) => {
     // Async Fetch
     const fetchInitialData = async () => {
 	setShowArchived(false);
+	console.log("FETCH INITIAL CASE DATA");
 	try {
-
+	    setReloadActivity(reloadActivity + 1);
 	    await threadapi.getCase(caseid).then((response) => {
                 console.log(response);
                 setCaseInfo(response);
@@ -194,16 +197,23 @@ const CaseThreadApp = (caseid) => {
 	}
     }, [activeTab]);
 
+    
+    const updateCaseActivity = () => {
+	console.log("RELOAD ACTIVITY");
+	setReloadActivity(reloadActivity + 1);
+    };
+    
 
     return (
 	<>
 	    {caseInfo ? (
 	     <Row>
-		 <Col lg={8} md={8}>
+		 <Col lg={8} md={8} className="h-100">
 		     <CaseDetailApp
 			 caseInfo = {caseInfo}
 			 updateStatus = {fetchInitialData}
 			 user = {reqUser}
+			 updateActivity={updateCaseActivity}
 		     />
 		     
 		     <Card>
@@ -287,6 +297,7 @@ const CaseThreadApp = (caseid) => {
 								  user = {reqUser}
 								  search = {searchStr}
 								  participants = {participants}
+								  update = {updateCaseActivity}
 							      />
 							  </Tab.Pane>
 						      )
@@ -311,12 +322,7 @@ const CaseThreadApp = (caseid) => {
 						  }
 
 					      </form>
-					      {/*
-					      <Editor
-					      />
-					      */}
-
-
+					      
 					  </Tab.Pane>
 				      </Tab.Content>
 				  </Tab.Container>
@@ -324,7 +330,7 @@ const CaseThreadApp = (caseid) => {
 			 </Card.Body>
 		     </Card>
 		 </Col>
-		 <Col lg={4} md={4}>
+		 <Col lg={4} md={4} className="h-100">
 		     <CaseStatusApp
 			 caseInfo = {caseInfo}
 			 updateStatus = {fetchInitialData}
@@ -345,36 +351,42 @@ const CaseThreadApp = (caseid) => {
 			      Create thread to add participants
 			  </Card.Body>
 		      </Card>
-		      :<>
-			   {participants.length > 0 && (
-			       <ParticipantList
-				   participants = {participants}
-				   activethread = {activeTab}
-				   reload = {getThreadParticipants}
+		      :
+		      <>
+			  {participants.length > 0 && (
+			      <ParticipantList
+				  participants = {participants}
+				  activethread = {activeTab}
+				  reload = {getThreadParticipants}
 				   removeThread = {closeTab}
-				   user = {reqUser}
-				   caseInfo = {caseInfo}
-			       />
-			   )
-			   }
-		       </>
+				  user = {reqUser}
+				  caseInfo = {caseInfo}
+			      />
+			  )
+			  }
+		      </>
 		     }
+		     <CaseActivityApp
+			 caseInfo = {caseInfo}
+			 user = {reqUser}
+			 reload = {reloadActivity}
+		     />
+		     <DeleteConfirmation
+			 showModal={displayConfirmationModal}
+			 confirmModal={submitRemoveThread}
+			 hideModal={hideConfirmationModal}
+			 id={removeID}
+			 message={deleteMessage} />
 		 </Col>
-					      <DeleteConfirmation
-						  showModal={displayConfirmationModal}
-						  confirmModal={submitRemoveThread}
-						  hideModal={hideConfirmationModal}
-						  id={removeID}
-                message={deleteMessage} />
-					      </Row>
-					      )
-					      :
-					      ""
-					      
-					      }
-					      </>
-					      )
-
+	     </Row>
+	    )
+	     :
+	     ""
+	     
+	    }
+	</>
+    )
+    
 };
 
 export default CaseThreadApp;

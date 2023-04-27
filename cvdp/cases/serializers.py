@@ -12,6 +12,7 @@ from django.db.models import Count, Q
 from cvdp.md_utils import markdown as md
 from authapp.models import User
 import difflib
+from datetime import datetime, timedelta
 
 class CWESerializer(serializers.ModelSerializer):
 
@@ -133,6 +134,7 @@ class CaseSerializer(serializers.ModelSerializer):
                 return "PENDING"
         else:
             return "NOT STARTED"
+
     
 class UserCaseState:
     def __init__(self, user, contact, last_viewed, role):
@@ -166,7 +168,29 @@ class UserCaseStateSerializer(serializers.Serializer):
     last_viewed = serializers.DateTimeField()
     delete_perm = serializers.BooleanField(default=False)
     role = serializers.CharField()    
-        
+
+
+class Notification:
+    def __init__(self, case, text):
+        self.case = case
+        self.text = text
+
+class NotificationSerializer(serializers.Serializer):
+    case = serializers.SerializerMethodField()
+    url = serializers.SerializerMethodField()
+    text = serializers.CharField()
+
+    def get_case(self, obj):
+        case = obj['case']
+        return "%s" % case.case_id
+        return ""
+
+    def get_url(self, obj):
+        case = obj['case']
+        return reverse("cvdp:case", args=[case.case_id])
+    
+    
+    
 class ContentSerializerField(serializers.Field):
 
     def to_representation(self, obj):
@@ -254,7 +278,6 @@ class CaseParticipantSerializer(serializers.ModelSerializer):
         """
         Check that this is a valid role for this participant
         """
-        print(self.instance)
         if self.instance:
             avail_roles = self.get_roles_available(self.instance)
             if value not in avail_roles:
@@ -789,5 +812,78 @@ class CSAFAdvisorySerializer(serializers.ModelSerializer):
         vuls = Vulnerability.objects.filter(case=obj, cve__isnull=False)
         data = CSAFVulnerabilitySerializer(vuls, many=True)
         return data.data
-        
+
+
+class CaseChangeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CaseChange
+        fields = ['field', 'old_value', 'new_value']
+
+    
                                              
+class CaseActionSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    url = serializers.SerializerMethodField()
+    change = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CaseAction
+        fields = ['user', 'title', 'created', 'url', 'change',]
+
+    def get_url(self, obj):
+        return reverse("cvdp:case", args=[obj.case.case_id])
+
+    def get_change(self, obj):
+        changes = obj.casechange_set.all()
+        data = CaseChangeSerializer(changes, many=True)
+        return data.data
+
+
+class PostActionSerializer(serializers.ModelSerializer):
+    user = UserSerializer(source='post.author.user')
+    url = serializers.SerializerMethodField()
+    change = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = PostRevision
+        fields = ['user', 'title', 'created', 'url', 'change',]
+
+    def get_url(self, obj):
+        return reverse("cvdp:case", args=[obj.post.thread.case.case_id])
+
+    def get_change(self, obj):
+        return []
+
+    def get_title(self, obj):
+        if (obj.revision_number > 0):
+            return "modified post"
+        elif PostReply.objects.filter(post=obj.post).exists():
+            return "replied to post"
+        else:
+            return "added post"
+        
+class AdvisoryActionSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    url = serializers.SerializerMethodField()
+    change = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PostRevision
+        fields = ['user', 'title', 'created', 'url', 'change',]
+
+    def get_url(self, obj):
+        return reverse("cvdp:case", args=[obj.advisory.case.case_id])
+
+    def get_change(self, obj):
+        return []
+
+    def get_title(self, obj):
+        if (obj.revision_number > 0):
+            return "modified case advisory"
+        else:
+            return "created case advisory"
+
+    

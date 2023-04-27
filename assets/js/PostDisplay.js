@@ -112,6 +112,7 @@ export default function PostDisplay(props) {
 		     <Editor
 			 post = {post}
 			 dataUpdated = {doneEditPost}
+			 participants = {props.participants}
 		     />
 		     :
 		     <div dangerouslySetInnerHTML={{__html: post.content}} />
@@ -172,9 +173,9 @@ export default function PostDisplay(props) {
 	
 	const user = props.user;
 	const post = props.post;
-
+	
 	const icon = (<i className="bx bx-dots-vertical-rounded"></i>);
-	const showedits = (user.contact == post.author);
+	const showedits = (user.contact == post.author.contact);
 	const showdelete = (showedits || user.delete_perm);
 	const showpin = (user.delete_perm && !post.pinned);
 	const showunpin = (user.delete_perm && post.pinned);
@@ -229,6 +230,7 @@ export default function PostDisplay(props) {
 				     date={date}
 				     timeago={timeago}
 				     parent={true}
+				     participants={props.participants}
 				 />
 			     </div>
 			     <div className="p-2 replygap h-100"></div>
@@ -246,6 +248,7 @@ export default function PostDisplay(props) {
 					     timeago={tgo}
 					     reply={true}
 					     lastreply={true}
+					     participants={props.participants}
 					 />
 				     )
 				 })}
@@ -259,6 +262,7 @@ export default function PostDisplay(props) {
                                  post={post}
                                  date={date}
                                  timeago={timeago}
+				 participants={props.participants}
                              /> 
 			    }
 			</div>

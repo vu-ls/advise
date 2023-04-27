@@ -15,7 +15,7 @@ const CaseDetailApp = (props) => {
     const [caseInfo, setCaseInfo] = useState(null);
     const [caseTitle, setCaseTitle] = useState("");
     const [invalidTitle, setInvalidTitle] = useState(false);
-    const [caseSummary, setCaseSummary] = useState("");
+    const [caseSummary, setCaseSummary] = useState(" ");
     const [feedback, setFeedback] = useState(null);
     const [activeTab, setActiveTab] = useState("report");
     const [vuls, setVuls] = useState([]);
@@ -46,7 +46,7 @@ const CaseDetailApp = (props) => {
 	    setCaseTitle(props.caseInfo.title);
 	    setCaseSummary(props.caseInfo.summary);
 	}
-    }, [props]);
+    }, [props.caseInfo, props.user]);
 
     useEffect(() => {
 	if (addReport) {
@@ -65,7 +65,6 @@ const CaseDetailApp = (props) => {
 	    setReportLoading(false);
 	}
     }, [report]);
-
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -103,7 +102,6 @@ const CaseDetailApp = (props) => {
     }
 
     useEffect(() => {
-
 	if (caseInfo) {
 	    console.log('fetching vuls');
 	    fetchInitialData();
@@ -118,6 +116,7 @@ const CaseDetailApp = (props) => {
 	if (vuls) {
 	    setStatus(vuls.some(item => item.affected_products.length > 0));
 	    console.log("vuls are updated");
+	    props.updateActivity();
 	}
     }, [vuls]);
 
@@ -125,15 +124,15 @@ const CaseDetailApp = (props) => {
 	event.preventDefault();
 	const formData = new FormData(event.target),
               formDataObj = Object.fromEntries(formData.entries());
-	try {
-	    threadapi.updateCase(props.caseInfo, formDataObj).then((response) => {
-		let f = <Alert variant="success">Got it! Thanks for adding more information!</Alert>;
-		setFeedback(f);
-	    });
-	} catch (err) {
-	    let f= <Alert variant="error">An error occurred: {err}</Alert>
+	threadapi.updateCase(props.caseInfo, formDataObj).then((response) => {
+	    let f = <Alert variant="success">Got it! Thanks for adding more information!</Alert>;
 	    setFeedback(f);
-	}
+	    props.updateActivity();
+	}).catch(err => {
+	    console.log(err);
+	    let f= <Alert variant="danger">An error occurred: {err.response.data.detail}. Make sure you are assigned to the case before editing.</Alert>
+	    setFeedback(f);
+	})
     };
 
     const setActiveTabNow = (props) => {

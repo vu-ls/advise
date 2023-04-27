@@ -3,7 +3,10 @@ import ReactQuill, { Quill,editor } from 'react-quill';
 import RichText from './RichText.js';
 import {Alert} from "react-bootstrap";
 import axios from 'axios'
+import CaseThreadAPI from './ThreadAPI';
 const API_URL = process.env.API_URL || 'http://localhost:8000/advise';
+
+const threadapi = new CaseThreadAPI();
 
 export default function Editor(props) {
     let initialText = props.post ? props.post.content: "";
@@ -72,7 +75,7 @@ export default function Editor(props) {
 		console.log("NOW UPDATE THIS");
 		props.dataUpdated();
 	    }).catch(err => {
-		setError(`Error posting messing: ${err.message}`);
+		setError(`Error posting message: ${err.message}`);
 	    })
 	}
     }

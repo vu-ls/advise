@@ -8,6 +8,9 @@ import {Modal, Card, Alert, Button} from 'react-bootstrap';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import ParticipantModal from './ParticipantModal.js';
 import DeleteConfirmation from "./DeleteConfirmation";
+import PerfectScrollbar from 'react-perfect-scrollbar';
+import 'react-perfect-scrollbar/dist/css/styles.css'
+
 const threadapi = new CaseThreadAPI();
 
 export default function ParticipantList(props) {
@@ -98,7 +101,7 @@ export default function ParticipantList(props) {
 
 
     return (
-	<Card className="mt-4">
+	<Card className="mt-3 mb-3">
 	    <Card.Header className="d-flex align-items-center justify-content-between">
 		<Card.Title className="m-0">
 		    { cardTitle }
@@ -132,6 +135,9 @@ export default function ParticipantList(props) {
 		     <>{error}</>
 		    }
 		</>
+		<div className="participant-list">
+		    <PerfectScrollbar>
+
 		{isLoading ?
 		 <p>Loading...</p>
 		 :
@@ -161,7 +167,8 @@ export default function ParticipantList(props) {
 		     })
 		 )
 		}
-		
+		    </PerfectScrollbar>
+		</div>
 	    </Card.Body>
 	    <ParticipantModal
 		showModal = {displayParticipantModal}

@@ -21,6 +21,7 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from cvdp.permissions import *
 from cvdp.components.serializers import *
 from cvdp.components.forms import *
+from cvdp.lib import create_case_action
 from django.db.models import Count, F
 
 logger = logging.getLogger(__name__)
@@ -364,7 +365,13 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         #TODO - fix permissions
         component = self.get_object()
+        if component.component.get_vendor():
+            action = create_case_action(f"Removed status for {component.component.get_vendor()}'s component {component.component.name} {component.component.version} for vulnerability {component.vul.vul}", request.user, component.vul.case)
+        else:
+            action = create_case_action(f"Removed status for {component.component.name} {component.component.version} for vulnerability {component.vul.vul}", request.user, component.vul.case)
+        
         component.delete()
+        
         return Response({}, status=status.HTTP_202_ACCEPTED)
         
     def update(self, request, **kwargs):

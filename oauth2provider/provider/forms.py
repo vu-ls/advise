@@ -92,7 +92,7 @@ class SignUpForm(UserCreationForm):
             logger.debug(f"Successful recaptcha, score: {resp['score']}")
             if resp['score'] > settings.RECAPTCHA_SUCCESS_SCORE:
                 return self.cleaned_data
-        raise ValidationError(_('Invalid ReCAPTCHA. Please try again.'))
+        raise forms.ValidationError(_('Invalid ReCAPTCHA. Please try again.'))
 
         
     def save(self, commit=True):

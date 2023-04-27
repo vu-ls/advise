@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, Badge, FloatingLabel, Button, InputGroup, Form, Row, Col } from "react-bootstrap";
 import {Typeahead} from 'react-bootstrap-typeahead';
 import { useState, useEffect } from 'react';
+import { format, parse, addHours } from 'date-fns';
 import ThreadAPI from './ThreadAPI';
 import 'react-bootstrap-typeahead/css/Typeahead.bs5.css';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
@@ -23,8 +24,8 @@ const EditVulModal = (props) => {
     const [cweSelected, setCWESelected] = useState([]);
     const [references, setReferences] = useState([]);
     const [tags, setTags] = useState([]);
+    const [datePublic, setDatePublic] = useState(null);
 
-    
     useEffect(() => {
 	if (props.vul) {
 	    if (props.vul.cve) {
@@ -39,6 +40,7 @@ const EditVulModal = (props) => {
 		setReferences(props.vul.references);
 	    }
 	    setTags(props.vul.tags);
+	    setDatePublic(props.vul.date_public);
 	    
 	}
     }, [props]);
@@ -51,11 +53,18 @@ const EditVulModal = (props) => {
 	/* load cwe */
     }, []);
 
+    const changeDate = (value) => {
+	/* this is to avoid weird timezone issues */
+	setDatePublic(value);
+    };
+
+    
     const submitVul = (event) => {
         event.preventDefault();
         const error = false;
         const formData = new FormData(event.target),
               formDataObj = Object.fromEntries(formData.entries());
+		
 	formDataObj['problem_types'] = cweSelected.map((item)=> item.cwe);
 	formDataObj['references'] = references.map((item) => {
 	    if (item.label) {
@@ -64,6 +73,7 @@ const EditVulModal = (props) => {
 		return item;
 	    }
 	});
+	formDataObj['date_public'] = datePublic;
 	formDataObj['tags'] = tags.map((item) => {
 	    if (item.label) {
 		return item.label;
@@ -141,7 +151,7 @@ const EditVulModal = (props) => {
                             </Form.Group>
 			    <Form.Group className="mb-3" controlId="_type">
                                 <Form.Label>Date Public</Form.Label>
-                                <Form.Control type="date" name="date_public" defaultValue={props.date_public}/>
+                                <Form.Control type="date" name="date_public" value={datePublic} onChange={(e)=>changeDate(e.target.value)}/>
                             </Form.Group>
 			</Col>
 			<Col lg={6}>

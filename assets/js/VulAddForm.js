@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import CaseThreadAPI from './ThreadAPI';
 import PickCVEModalAccount from "./PickCVEModalAccount";
 import DeleteConfirmation from "./DeleteConfirmation";
-import {Card, DropdownButton, Dropdown, Alert, Accordion, Row, Col, Button, Form} from 'react-bootstrap';
+import {Card, Badge, DropdownButton, Dropdown, Alert, Accordion, Row, Col, Button, Form} from 'react-bootstrap';
 import EditVulModal from "./EditVulModal";
+import { format, formatDistance } from 'date-fns';
 import AdminAPI from './AdminAPI'
 import CVEAPI from './CVEAPI';
 import ScoreModal from './ScoreModal';
@@ -283,7 +284,21 @@ const VulAddForm = (props) => {
 				    {vul.cve &&
 				     <p><b>CVE:</b> {vul.vul} </p>
 				    }
-				    {vul.problem_types &&
+				    {vul.tags && vul.tags.length > 0 &&
+				     <div className="mb-2">
+					 <b>Tags:</b>{" "}
+					 {vul.tags.map((t, index) => {
+					 return (
+					     <Badge key={`tag-${index}`} variant="info">{t}</Badge>
+					 )
+				     })}
+				     </div>
+				    }
+				    {vul.date_public &&
+				     <p><b>Date Public:</b> {vul.date_public} </p>
+                                    }
+				    
+				    {vul.problem_types && vul.problem_types.length > 0 &&
 				     <div>
 				     <b>Problem Types:</b><br/>
 				     <ul className="list-unstyled">

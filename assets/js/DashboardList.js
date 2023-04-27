@@ -1,19 +1,26 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {Row, Card, Col} from 'react-bootstrap';
+import {Row, ListGroup, Card, Col} from 'react-bootstrap';
 import CaseThreadAPI from './ThreadAPI';
 import CaseList from './CaseList.js';
 import Searchbar from './Searchbar.js';
+import ActivityApp from './ActivityApp.js';
+import PerfectScrollbar from 'react-perfect-scrollbar';
+import 'react-perfect-scrollbar/dist/css/styles.css'
+import '../css/casethread.css';
 
 const caseapi = new CaseThreadAPI();
 
 
 const DashboardList = () => {
     const [isLoading, setIsLoading] = useState(true);
+    const [activityLoading, setActivityLoading] = useState(true);
     const [cases, setCases] = useState([]);
     const [filteredCases, setFilteredCases] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsCount, setItemsCount] = useState(0);
-    
+    const [error, setError] = useState(null);
+    const [activity, setActivity] = useState([]);
+
     // Searchbar functionality
     const onSearchbarChange = e => {
         const value = e.target.value
@@ -25,8 +32,8 @@ const DashboardList = () => {
 	console.log("currentPage in use", currentPage);
 	paginationHandler(currentPage);
     }, [currentPage])
-	
-    
+
+
     const paginationHandler = (page) => {
         caseapi.getMyCasesByPage(page).then((response) => {
 	    setCases(response.results);
@@ -34,7 +41,7 @@ const DashboardList = () => {
         })
     }
 
-    
+
     const filterData = (value) => {
         if (value === "") {
             setFilteredCases(cases)
@@ -49,7 +56,7 @@ const DashboardList = () => {
 			    item.report.report.toString()
 			    .toLowerCase().
 			    indexOf(value.toLowerCase()) > -1
-			
+
                     );
 		} else {
 		    return (
@@ -58,12 +65,12 @@ const DashboardList = () => {
                             .indexOf(value.toLowerCase()) > -1
 		    );
 		}
-		    
+
             });
             setFilteredCases(result)
         }
     }
-    
+
     // Async Fetch
     const fetchInitialData = async () => {
         console.log("fetching data");
@@ -77,32 +84,49 @@ const DashboardList = () => {
         } catch (err) {
             console.log('Error:', err)
         }
+
+	await caseapi.getMyActivity().then((response) => {
+	    setActivity(response.results);
+	}).catch(err => {
+	    setError(err.response.data.message);
+	});
     }
 
+    useEffect(() => {
+	setActivityLoading(false);
+    }, [activity]);
+    
     useEffect(() => {
         fetchInitialData();
     }, []);
 
+    const goToCase = (url) => {
+	window.location.href=url;
+    };
+    
 
     useEffect(() => {
 	setIsLoading(false);
 	console.log(filteredCases);
     }, [filteredCases]);
-    
+
     useEffect(() => {
 	setFilteredCases(cases);
     }, [cases]);
 
     return (
-        <Row>                                                                                     
-            <Col lg={8}>                                                                          
-                <Card>                                                                            
-                    <Card.Header>                                                                 
-                        <div className="d-flex align-items-start justify-content-between mt-2 gap-5">                                                                                              
-                            <Searchbar onChange={onSearchbarChange} />                            
-                        </div>                                                                    
-                    </Card.Header>                                                                
-                    <Card.Body>                                                                   
+	<>
+	    {error &&
+	     <Alert variant="danger">{error}</Alert>
+	    }
+            <div className="card-wrapper d-flex gap-4">
+                <Card className="dashboard-card-1">
+                    <Card.Header>
+                        <div className="d-flex align-items-start justify-content-between mt-2 gap-5">
+                            <Searchbar onChange={onSearchbarChange} />
+                        </div>
+                    </Card.Header>
+                    <Card.Body>
 			{ isLoading ?
 			  <div className="text-center">Loading...</div>
 			  :
@@ -114,10 +138,36 @@ const DashboardList = () => {
 			      emptymessage="You have no active cases"
 			  />
 			}
-		    </Card.Body>                                                                  
-                </Card>                                                                           
-            </Col>                                                                                
-        </Row>
+		    </Card.Body>
+                </Card>
+		<Card className="dashboard-card-2">
+		    <Card.Header>
+			<Card.Title>Recent Activity</Card.Title>
+		    </Card.Header>
+		    <Card.Body className="p-0">
+			<PerfectScrollbar className="dashboard-activity-scroll">
+			    <ListGroup variant="flush">
+                                {activityLoading ?
+                                 <p>Loading activity...</p>
+                                 :
+                                 (activity.map((a, index) => {
+                                 return (
+                                     <ListGroup.Item action onClick={(e)=>goToCase(a.url)} className="p-2 border-bottom" key={`activity-${index}`}>
+                                         <ActivityApp
+					     activity = {a}
+                                         />
+                                     </ListGroup.Item>
+                                 )
+                                 }))
+                                }
+                            </ListGroup>
+                        </PerfectScrollbar>
+
+		    </Card.Body>
+
+		</Card>
+            </div>
+	</>
     )
 }
 

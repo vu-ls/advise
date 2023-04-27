@@ -414,7 +414,7 @@ const CaseStatusApp = (props) => {
                         </Col>
                         <Col sm={8}>
 			    {dateDue ?
-			     <>{format(dateDue, 'yyyy-MM-dd')}<OverlayTrigger overlay={<Tooltip>Download Calendar reminder</Tooltip>}><a href="#" onClick={(e)=>downloadCalendar()}><i class="mx-2 fas fa-calendar-plus"></i></a></OverlayTrigger></>
+			     <>{format(dateDue, 'yyyy-MM-dd')}<OverlayTrigger overlay={<Tooltip>Download Calendar reminder</Tooltip>}><a href="#" onClick={(e)=>downloadCalendar()}><i className="mx-2 fas fa-calendar-plus"></i></a></OverlayTrigger></>
 			     :
 			     <b>TBD</b>
 			    }

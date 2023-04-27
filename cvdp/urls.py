@@ -80,7 +80,7 @@ urlpatterns = [
     re_path('^api/groups/contacts/(?P<pk>[0-9]+)/$', groupviews.ContactAssociationAPIView.as_view({'patch': 'partial_update', 'delete':'destroy'}), name='assoc_api_detail'),
     re_path('^api/contact/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/$', groupviews.GetContactAPIView.as_view(), name='get_contact_api'),
 
-    
+    path('api/case/notifications/', caseviews.CaseNotificationAPI.as_view(), name='notifications'), 
     re_path('^case_search/$', caseviews.CaseFilter.as_view(), name='casesearch'),
     path('case/new/', caseviews.CreateNewCaseView.as_view(), name='newcase'),
     re_path('^case/(?P<caseid>[0-9]+)/$', caseviews.CaseView.as_view(), name='case'),
@@ -104,6 +104,8 @@ urlpatterns = [
     re_path('^api/case/thread/(?P<pk>[0-9]+)/participants/$', caseviews.CaseThreadParticipantAPIView.as_view({'get': 'list', 'post':'create'}), name='thread_participant_api'),
     re_path('^api/case/thread/participant/(?P<pk>[0-9]+)/$', caseviews.CaseThreadParticipantAPIView.as_view({'delete':'destroy'}), name='thread_participant_api'),
     re_path('^api/case/(?P<caseid>\d+)/user/$', caseviews.UserCaseStateAPIView.as_view(), name='usercaseapi'),
+    re_path('^api/case/(?P<caseid>\d+)/activity/$', caseviews.CaseActivityAPIView.as_view(), name='activityapi'),
+    re_path('^api/case/activity/$', caseviews.CaseActivityAPIView.as_view(), name='allactivityapi'),
     re_path('^api/case/(?P<caseid>\d+)/participants/$', caseviews.CaseParticipantAPIView.as_view({'get':'list', 'post':'create'}), name='case_participant_api_list'),
     re_path('^api/case/participant/(?P<pk>[0-9]+)/$', caseviews.CaseParticipantAPIView.as_view({'patch': 'partial_update', 'delete': 'destroy'}), name='case_participant_api'),
     re_path('^api/case/(?P<caseid>\d+)/participants/summary/$', caseviews.CaseParticipantSummaryAPIView.as_view(), name='case_participant_summary_api'),

@@ -131,6 +131,8 @@ class Component(AbstractComponent):
             return self.product_info.supplier.name
         except ObjectDoesNotExist:
             return self.supplier
+        except AttributeError:
+            return self.supplier
         
 
 class Product(models.Model):

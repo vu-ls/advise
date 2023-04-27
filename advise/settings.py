@@ -538,3 +538,13 @@ RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_SITE_KEY')
 RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_SECRET_KEY')
 RECAPTCHA_SUCCESS_SCORE = os.environ.get('RECAPTCHA_SUCCESS_SCORE', 0.5)
 
+# staging swagger settings to specify endpoints needing auth [JDW]
+#SWAGGER_SETTINGS = {
+#    'SECURITY_DEFINITIONS': {
+#        'Token': {
+#            'type': 'apiKey',
+#            'name': 'Authorization',
+#            'in': 'header'
+#        }
+#    }
+#}

@@ -1,3 +1,22 @@
+.card-wrapper {
+    display: flex;
+    justify-content: space-between;
+    height: 1000px;
+}
+
+.dashboard-activity-scroll {
+    max-height: 900px;
+}
+
+.dashboard-card-1 {
+    width: 70%;
+    padding: 15px;
+}
+
+.dashboard-card-2 {
+    width: 30%;
+    padding: 15px;
+}
 
 .rbt-token .btn-close {
     background-color: transparent !important;
@@ -187,4 +206,12 @@ pre.cvejson {
 .accordion-item.active h2 > button{
     background-color: #8592a3;
     color: #fff;
+}
+
+.participant-list {
+    max-height: 400px;
+}
+
+.participant-content {
+    height: 500px;
 }
