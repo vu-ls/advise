@@ -38,6 +38,7 @@ from cvdp.cases.forms import *
 from django.core.paginator import Paginator
 from random import randint
 from cvdp.models import *
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -500,7 +501,6 @@ class PostAPIView(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Post.objects.none()
-        logger.debug(self.request.build_absolute_uri())
         case = get_object_or_404(CaseThread, id=self.kwargs['pk'])
         self.check_object_permissions(self.request, case)
         if self.request.GET.get('pinned'):

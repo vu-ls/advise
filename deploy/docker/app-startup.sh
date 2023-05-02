@@ -51,5 +51,5 @@ if [ "X${RUN_TESTS_ONLY}" = "X${WSGI_APP}" ]; then
     python manage.py test
 else
     # start the app!
-    gunicorn ${WSGI_APP}:application --bind 0.0.0.0:8000 --workers=4
+    gunicorn ${WSGI_APP}:application --bind 0.0.0.0:8000 --workers=4 --forwarded-allow-ips "*"
 fi
