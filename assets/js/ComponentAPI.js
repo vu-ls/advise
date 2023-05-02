@@ -15,13 +15,24 @@ export default class ComponentAPI {
     }
     
     getComponents(query) {
-        const url = `${API_URL}/api/components/?${query}`;
+	let url = `${API_URL}/api/components/`;
+	if (query) {
+            url = `${API_URL}/api/components/?${query}`;
+	}
         return axios.get(url).then(response => response.data);
     }
 
+    getNextComponents(url) {
+	return axios.get(url).then(response=>response.data);
+    }
+    
     getGroupComponents(c) {
 	const url = `${API_URL}/api/group/${c}/components/`;
         return axios.get(url).then(response => response.data);
+    }
+
+    getNextGroupComponents(url) {
+	return axios.get(url).then(response=>response.data);
     }
     
     getComponentForm() {

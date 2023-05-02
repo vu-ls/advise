@@ -32,6 +32,9 @@ const Searchbar = ({ onChange, value }) => {
 const ComponentTable = (props) => {
 
     const [data, setData] = useState([]);
+    const [count, setCount] = useState(0);
+    const [response, setResponse] = useState(null);
+    const [nextUrl, setNextUrl] = useState(null);
     const [filteredData, setFilteredData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedRows, setSelectedRows] = useState([]);
@@ -201,16 +204,29 @@ const ComponentTable = (props) => {
 
     const filterData = (value) => {
         if (value === "") {
-            setFilteredData(data)
+	    setFilteredData([]);
+	    setNextUrl(response.next);
         } else {
+	    setNextUrl(null);
+	    let query = `search=${value}`;
+	    componentapi.getComponents(query).then((response) => {
+		console.log(response);
+		setFilteredData(response.results);
+	    });
+	    /*
             const result = data.filter((item) => {
                 return (
                     item.name.toString()
                         .toLowerCase()
                         .indexOf(value.toLowerCase()) > -1
+			||
+			(item.owner && item.owner.name.toString()
+			.toLowerCase()
+			 .indexOf(value.toLowerCase()) > -1)
                 );
             });
-            setFilteredData(result)
+	    console.log("FILTERING....", result)
+            setFilteredData(result)*/
         }
     }
 
@@ -267,20 +283,47 @@ const ComponentTable = (props) => {
 	    if ('group' in props) {
 		await componentapi.getGroupComponents(props.group).then((response) => {
 		    console.log(response);
+		    setResponse(response);
                     setData(response);
                     setIsLoading(false);
 		})
 	    } else {
 		await componentapi.getComponents().then((response) => {
 		    console.log(response);
-                    setData(response);
-                setIsLoading(false);
+		    setResponse(response);
+                    setData(response.results);
+		    setCount(response.count);
+		    setNextUrl(response.next);
+                    setIsLoading(false);
 		})
 	    }
         } catch (err) {
             console.log('Error:', err)
         }
     }
+
+    const fetchNextData = async () => {
+	try {
+            if ('group' in props) {
+	        await componentapi.getNextGroupComponents(nextUrl).then((response) => {
+                    console.log(response);
+                    setData(response);
+                    setIsLoading(false);
+                })
+            } else {
+                await componentapi.getNextComponents(nextUrl).then((response) => {
+		    console.log(response);
+                    setData(data.concat(response.results));
+                    setCount(response.count);
+                    setNextUrl(response.next);
+	            setIsLoading(false);
+                })
+            }
+        } catch (err) {
+	    console.log('Error:', err)
+        }
+    }
+
 
     useEffect(() => {
 	if ('group' in props) {
@@ -291,8 +334,12 @@ const ComponentTable = (props) => {
     }, []);
 
     const fetchMoreData = () => {
+	console.log("loading more...");
+	if (nextUrl) {
+	    fetchNextData();
+	}
 	setTimeout(() => {
-	    setData();
+	    
 	}, 1500);
     };
 
@@ -434,6 +481,7 @@ const ComponentTable = (props) => {
 				    setSelectedRows = {handleSelectedRows}
 				    update={fetchMoreData}
 				    showRowExpansion={showDeps}
+				    hasMore={nextUrl ? true : false}
 		      />
 
 		  </div>

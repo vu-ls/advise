@@ -15,6 +15,7 @@ from authapp.models import User
 from django.utils.safestring import mark_safe
 import traceback
 from cvdp.manage.forms import *
+from rest_framework.pagination import PageNumberPagination
 from rest_framework import exceptions, generics, status, authentication, viewsets, mixins, filters
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
@@ -45,16 +46,22 @@ def _is_my_component(user, component):
     return Product.objects.filter(component=component, supplier__in=my_groups).exists()
 
 
+class StandardResultsPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size= 100
+
 #TODO Add PAGINATION
 class ComponentAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission)
     serializer_class = ComponentSerializer
-    search_fields = ['name']
+    search_fields = ['name', 'supplier', 'comment']
+    pagination_class = StandardResultsPagination
+    
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Component.objects.none()
-        
         if self.request.user.is_coordinator:
             return Component.objects.all()
         else:
@@ -66,7 +73,6 @@ class ComponentAPIView(viewsets.ModelViewSet):
             return obj
         else:
             raise PermissionDenied()
-        
     
     def get_view_name(self):
         return f"Components"

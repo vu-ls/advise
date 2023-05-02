@@ -117,6 +117,7 @@ class Component(AbstractComponent):
     objects = ComponentManager()
     
     class Meta:
+        ordering = ('name',)
         indexes = [ GinIndex(
             fields = ['search_vector'],
             name = 'component_gin',

@@ -3,7 +3,7 @@ import BTable from "react-bootstrap/Table";
 import { useTable, useExpanded, useSortBy, useRowSelect } from 'react-table';
 import InfiniteScroll from "react-infinite-scroll-component";
 
-const GenericTable = ({columns, data, setSelectedRows, update, showRowExpansion}) => {
+const GenericTable = ({columns, data, setSelectedRows, update, showRowExpansion, hasMore}) => {
 
 
     const {
@@ -40,8 +40,8 @@ const GenericTable = ({columns, data, setSelectedRows, update, showRowExpansion}
 	<InfiniteScroll
 	    dataLength={rows.length}
 	    next={update}
-	    hasMore={false}
-	    loader={<h4>Loading more...</h4>}
+	    hasMore={hasMore}
+	    loader={<h5 className="mt-3">Loading more...</h5>}
 	>
             <BTable className="table" hover {...getTableProps()}>
             <thead>
