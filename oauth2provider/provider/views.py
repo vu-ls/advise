@@ -17,7 +17,7 @@ from django_otp.forms import OTPTokenForm
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django.contrib import messages
 from django_otp import user_has_device, devices_for_user
-
+from django.utils.http import url_has_allowed_host_and_scheme
 from base64 import b32encode
 from io import BytesIO
 from urllib.parse import quote, parse_qs, urlparse
@@ -193,15 +193,24 @@ class MFASetupView(AccessMixin, generic.FormView):
         del(self.request.session['mfa_user_id'])
         del(self.request.session['MFAREQUIRED'])
         auth_login(self.request, form.user)
+        
         if self.request.session.get('redirect_uri'):
             next_url = self.request.session['redirect_uri']
+            logger.debug(f"next_url is {next_url}")
             if next_url and next_url != "None":
                 del(self.request.session['redirect_uri'])
-                o = urlparse(next_url)
-                if o.query:
-                    return redirect(next_url+"&registration=success")
-                else:
-                    return redirect(next_url+"?registration=success")
+                try:
+                    if url_has_allowed_host_and_scheme(next_url, set(settings.ALLOWED_HOSTS), True):
+                        logger.debug("url is safe")
+                        o = urlparse(next_url)
+                        if o.query:
+                            return redirect(next_url+"&registration=success")
+                        else:
+                            return redirect(next_url+"?registration=success")
+                    logger.debug(f'unsafe url {settings.ALLOWED_HOSTS}')
+                except:
+                    logger.debug("exception occurred when testing safety")
+                    pass
         
         return super().form_valid(form)
 
@@ -230,6 +239,8 @@ class RegistrationView(generic.FormView):
     def form_valid(self, form):
         user = form.save(commit = False)
         next_url = self.request.POST.get('next')
+        if next_url == "None":
+            next_url = None
         #does this user exist?
 
         dup = User.objects.filter(email__iexact = form.cleaned_data['email'])
@@ -266,11 +277,16 @@ class RegistrationView(generic.FormView):
             return redirect("provider:setup_mfa")
 
         if next_url:
-            o = urlparse(next_url)
-            if o.query:
-                return redirect(next_url+"&registration=success")
-            else:
-                return redirect(next_url+"?registration=success")
+            logger.debug(f"next_url is {next_url}")
+            try:
+                if url_has_allowed_host_and_scheme(next_url, set(settings.ALLOWED_HOSTS), True):
+                    o = urlparse(next_url)
+                    if o.query:
+                        return redirect(next_url+"&registration=success")
+                    else:
+                        return redirect(next_url+"?registration=success")
+            except:
+                pass
         
         return super(RegistrationView, self).form_valid(form)
 
@@ -321,10 +337,12 @@ class MFARequiredView(AccessMixin, generic.FormView):
         auth_login(self.request, form.user)
         del(self.request.session['mfa_user_id'])
         del(self.request.session['MFAREQUIRED'])
+        logger.debug(f"next_url is {next_url}")
         if next_url:
-            logger.debug(next_url)
-            return redirect(next_url)
-        logger.debug("redirecting...")
+            if url_has_allowed_host_and_scheme(next_url, set(settings.ALLOWED_HOSTS), True):
+                logger.debug(f"redirecting...{next_url}")
+                return redirect(next_url)
+        logger.debug("redirecting to success url")
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

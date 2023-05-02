@@ -65,7 +65,6 @@ $(function () {
     });
 
     caseapi.getCaseNotifications().then(response => {
-	console.log(response);
 	if (response.length) {
 	    $("#notify_count").html(`<span class=\"badge rounded-pill bg-danger\">${response.length}</span>`);
 	    var notifications = "";
@@ -76,7 +75,6 @@ $(function () {
 		    notifications + '<li><div class="dropdown-divider"></div></li>';
 		}
 	    });
-	    console.log(notifications);
 	    $("#notify_list").html(notifications);
 	}
     });

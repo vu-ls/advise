@@ -721,7 +721,7 @@ class GroupAPITests(TestCase):
         comps= Component.objects.filter(id__in=products)
         serializer = ComponentSerializer(comps, many=True)
         #use results due to pagination                                                                         
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_api_post_component(self):

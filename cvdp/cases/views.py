@@ -501,6 +501,13 @@ class PostAPIView(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Post.objects.none()
+        logger.debug(self.request.build_absolute_uri())
+        logger.debug(f"host: {self.request.get_host()}")
+        logger.debug(f"USE_X_FORWARDED_HOST: {settings.USE_X_FORWARDED_HOST}")
+        if "HTTP_X_FORWARDED_HOST" in self.request.META:
+            logger.debug(f"HTTP_X_FORWARDED_HOST: {self.request.META['HTTP_X_FORWARDED_HOST']}")
+        if "HTTP_X_FORWARDED_PROTO" in self.request.META:
+            logger.debug(f"HTTP_X_FORWARDED_PROTO: {self.request.META['HTTP_X_FORWARDED_PROTO']}")
         case = get_object_or_404(CaseThread, id=self.kwargs['pk'])
         self.check_object_permissions(self.request, case)
         if self.request.GET.get('pinned'):

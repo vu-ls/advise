@@ -251,7 +251,7 @@ class StatusRevision(BaseRevisionMixin, models.Model):
 
     class Meta:
         get_latest_by = 'revision_number'
-        ordering = ('created',)
+        ordering = ('created', 'component_status__component__name')
         unique_together = ('component_status', 'revision_number')
 
         

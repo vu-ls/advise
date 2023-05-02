@@ -693,7 +693,7 @@ class ComponentAPITest(TestCase):
         serializer = ComponentSerializer(comps, many=True)
         logger.debug(serializer.data)
         #use results due to pagination
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_coordinator_products_get_all(self):
@@ -722,7 +722,7 @@ class ComponentAPITest(TestCase):
         comps= Component.objects.filter(id__in=products)
         serializer = ComponentSerializer(comps, many=True)
         #use results due to pagination
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_unauth_component_get(self):
@@ -738,7 +738,7 @@ class ComponentAPITest(TestCase):
         client.force_authenticate(user=user)
         response = client.get(reverse('cvdp:componentapi'))
         # get data from db
-        self.assertEqual(response.data, [])
+        self.assertEqual(response.data['results'], [])
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_post_component(self):

@@ -47,6 +47,10 @@ class GenReportingForm(forms.Form):
                              })
         resp = req_object.json()
         if resp['success']:
-            if resp['score'] > settings.RECAPTCHA_SUCCESS_SCORE:
+            if resp.get('score'):
+                #v3 recaptcha
+                if resp['score'] > settings.RECAPTCHA_SUCCESS_SCORE:
+                    return self.cleaned_data
+            else:
                 return self.cleaned_data
         raise forms.ValidationError(_('Invalid ReCAPTCHA. Please try again.'))

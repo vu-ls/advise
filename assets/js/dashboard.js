@@ -8,10 +8,8 @@ const container = document.getElementById("app");
 const root = createRoot(container);
 
 root.render(
-    <React.StrictMode>
-	<DashboardList
-	/>
-    </React.StrictMode>
+    <DashboardList
+    />
 
 );
 

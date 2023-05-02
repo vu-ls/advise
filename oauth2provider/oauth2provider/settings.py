@@ -79,8 +79,8 @@ CSRF_COOKIE_HTTPONLY = False
 # Application definition
 
 #set to True to enable email verification.  This is done in AdVISE so we don't
-# to do it twice.
-ACCOUNT_EMAIL_VERIFICATION = os.environ.get("ACCOUNT_EMAIL_VERIFICATION", False)
+# need to do it twice.
+ACCOUNT_EMAIL_VERIFICATION = False
 LOGIN_REDIRECT_URL = 'provider:welcome'
 
 DASHBOARD_LINK = os.environ.get('DASHBOARD_LINK', 'http://localhost:8000/advise/dashboard/')

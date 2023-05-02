@@ -84,20 +84,26 @@ const DashboardList = () => {
         } catch (err) {
             console.log('Error:', err)
         }
-	
+
 	try {
 	    let results = await caseapi.getMyActivity();
 	    let data = await results.data;
+	    console.log(data);
 	    setActivity(data.results);
+	    setActivityLoading(false);
 	} catch(err) {
 	    setError(err.response.data.message);
 	}
     }
 
     useEffect(() => {
-	//console.log("activity done");
-	setActivityLoading(false);
+	console.log("activity done");
+	
     }, [activity]);
+
+    useEffect(()=> {
+	console.log("activity loading changing");
+    }, [activityLoading]);
     
     useEffect(() => {
         fetchInitialData();
@@ -106,7 +112,7 @@ const DashboardList = () => {
     const goToCase = (url) => {
 	window.location.href=url;
     };
-    
+
 
     useEffect(() => {
 	setIsLoading(false);
@@ -131,7 +137,9 @@ const DashboardList = () => {
                     </Card.Header>
                     <Card.Body>
 			{ isLoading ?
-			  <div className="text-center">Loading...</div>
+                         <div className="text-center">
+                             <div className="lds-spinner"><div></div><div></div><div></div></div>
+                         </div>
 			  :
 			  <CaseList
 			      cases={filteredCases}

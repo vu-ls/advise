@@ -287,7 +287,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
         if not(is_my_case(self.request.user, case.id)):
             raise PermissionDenied()
         #which components should we return here? if coordinator, return all
-        components = ComponentStatus.objects.filter(vul__case=case).distinct('component').order_by('component')
+        components = ComponentStatus.objects.filter(vul__case=case).distinct('component__name').order_by('component__name')
         if self.request.user.is_coordinator:
             return components
         else:

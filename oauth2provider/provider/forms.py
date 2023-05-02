@@ -74,8 +74,9 @@ class SignUpForm(UserCreationForm):
 
 
     def clean(self):
-        #check captcha                                                                                             
-        logger.debug(self.data)
+        #check captcha
+        logger.debug(self.data.get('email'))
+
         recaptcha_response = self.data.get('g-recaptcha-response')
         data = {
             "secret": settings.RECAPTCHA_PRIVATE_KEY,
@@ -89,9 +90,13 @@ class SignUpForm(UserCreationForm):
                              })
         resp = req_object.json()
         if resp['success']:
-            logger.debug(f"Successful recaptcha, score: {resp['score']}")
-            if resp['score'] > settings.RECAPTCHA_SUCCESS_SCORE:
-                return self.cleaned_data
+            if resp.get('score'):
+                #v3 recaptcha
+                logger.debug(f"Successful recaptcha, score: {resp['score']}")
+                if resp['score'] > settings.RECAPTCHA_SUCCESS_SCORE:
+                    return self.cleaned_data
+            else:
+                return self.cleaned_data    
         raise forms.ValidationError(_('Invalid ReCAPTCHA. Please try again.'))
 
         
