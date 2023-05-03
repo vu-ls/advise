@@ -49,7 +49,7 @@ class ReportSerializer(serializers.ModelSerializer):
         cr = Case.objects.filter(report=obj).first()
         user = self.context.get('user')
         
-        if user and cr and  cr.status == Case.ACTIVE_STATUS and is_my_case(user, cr):
+        if user and cr and  cr.status == Case.ACTIVE_STATUS and is_my_case(user, cr.id):
             return reverse("cvdp:case", args=[cr.case_id])
         else:
             return ""
@@ -115,14 +115,19 @@ class CaseSerializer(serializers.ModelSerializer):
     report = ReportSerializer()
     status = ChoiceField(Case.STATUS_CHOICES)
     advisory_status = serializers.SerializerMethodField()
-
+    created_by = serializers.SerializerMethodField()
+    
     class Meta:
         model = Case
-        fields = ('case_id', 'case_identifier', 'created', 'modified', 'status', 'title', 'summary', 'report', 'public_date', 'due_date', 'advisory_status', )
+        fields = ('case_id', 'case_identifier', 'created', 'created_by', 'modified', 'status', 'title', 'summary', 'report', 'public_date', 'due_date', 'advisory_status', )
         lookup_field = "case_id"
-        read_only_fields =("case_id", "case_identifier", "created", "modified", "report",)
+        read_only_fields =("case_id", "case_identifier", "created", "modified", "report", "created_by", )
 
 
+    def get_created_by(self, obj):
+        if obj.created_by:
+            return obj.created_by.screen_name
+        
     def get_advisory_status(self, obj):
         advisory = CaseAdvisory.objects.filter(case=obj).first()
         if advisory:
@@ -316,10 +321,11 @@ class PostReplySerializer(serializers.ModelSerializer):
     revisions = serializers.SerializerMethodField()
     revision_id = serializers.CharField(source='post.current_revision.id')
     created = serializers.DateTimeField(source='post.created')
+    id = serializers.IntegerField(source='post.id')
     
     class Meta:
         model = PostReply
-        fields = ('content', 'author_role', 'group', 'author', 'revisions', 'revision_id', 'created',)
+        fields = ('id', 'content', 'author_role', 'group', 'author', 'revisions', 'revision_id', 'created',)
     
     def get_revisions(self, obj):
         return obj.post.postrevision_set.count() - 1

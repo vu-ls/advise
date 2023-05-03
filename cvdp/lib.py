@@ -9,12 +9,37 @@ from datetime import datetime, timedelta
 from django.utils.encoding import smart_str
 from django.utils.timezone import make_aware
 from cvdp.appcomms.appcommunicator import cvdp_send_email
+import requests
 import mimetypes
 import os
 import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+def validate_recaptcha(token):
+    data = {
+        "secret": settings.RECAPTCHA_PRIVATE_KEY,
+        "response": token,
+    }
+    req_object = requests.post(url = "https://www.google.com/recaptcha/api/siteverify",
+                               data=data,
+                               headers={
+                                   "Content-type": "application/x-www-form-urlencoded",
+                                   "User-agent": "reCAPTCHA Django",
+                               })
+    resp = req_object.json()
+    logger.debug(resp)
+    if resp['success']:
+        if resp.get('score'):
+            #v3 recaptcha                                                                                 
+            if resp['score'] > settings.RECAPTCHA_SUCCESS_SCORE:
+                return True
+            else:
+                return False
+        return True
+    return False
 
 
 def send_template_email(template, emails, context):

@@ -45,7 +45,7 @@ export default function PostList(props) {
 
     const setReplyToPost = (post) => {
 	console.log("REPLY POST");
-	console.log(name);
+	console.log(post);
 	setReplyPost(post);
     };
 

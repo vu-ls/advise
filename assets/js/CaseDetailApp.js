@@ -143,6 +143,11 @@ const CaseDetailApp = (props) => {
     return (
 	caseInfo && owner ?
 	    <div className="nav-align-top mb-4">
+		{caseInfo.owners.length ?
+		 ""
+		 :
+		 <Alert variant="warning">This case is currently unassigned. Assign the case to yourself before editing case details.</Alert>
+		}
 		<Tab.Container
                     defaultActiveKey={activeTab}
 		    activeKey={activeTab}
@@ -316,9 +321,9 @@ const CaseDetailApp = (props) => {
 	 />
 
 	 :
-	 <Card className="p-4 mb-3">
-	     <Alert variant="warning">This case is currently pending. We are working on adding details. In the meantime, you can start the discussion below or add related artifacts.</Alert>
-	 </Card>
+	 <div className="text-center">                                                              
+             <div className="lds-spinner"><div></div><div></div><div></div></div>                   
+         </div>    
 	}
 	</>
     )

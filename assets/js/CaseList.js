@@ -26,9 +26,18 @@ export default function CaseList(props) {
 			     status= {c.status}
 			 />
 			 <h6 className="mt-2 text-light fw-semibold">
-			     Submitted by: {c.report ?
-					    c.report.submitter
-					    : c.created_by} on {format(date, 'yyyy-MM-dd')}. Last modified {format(last_modified, 'yyyy-MM-dd')}  ({timeago})
+			     {c.report ?
+			      <>
+				  Submitted
+				  {c.report.submitter ?
+				   <> by {c.report.submitter} </>
+				   :
+				   " anonymously "
+				  }
+			      </>
+			      :
+			      <>Created by {c.created_by} </>
+			     } on {format(date, 'yyyy-MM-dd')}. Last modified {format(last_modified, 'yyyy-MM-dd')}  ({timeago})
 			 </h6>
 		     </div>
 		 )

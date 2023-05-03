@@ -412,6 +412,10 @@ logging_dict = {
             'level': LOGLEVEL,
             'handlers': [LOGGER_HANDLER],
         },
+        'django': {
+            'level': LOGLEVEL,
+            'handlers': [LOGGER_HANDLER],
+        },
         'authapp': {
             'level': LOGLEVEL,
             'handlers': [LOGGER_HANDLER],

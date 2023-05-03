@@ -5,8 +5,13 @@
 }
 
 .dashboard-activity-scroll {
-    max-height: 900px;
+    /*max-height: 900px;*/
 }
+
+#scrollableDiv {
+    overflow-y: scroll;
+    max-height: 900px;
+}    
 
 .dashboard-card-1 {
     width: 70%;

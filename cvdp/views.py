@@ -39,8 +39,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 @login_required(login_url="authapp:login")
-@user_passes_test(is_staff_member, login_url='authapp:login')
 def assignable_users_api(request):
+    if not request.user.is_coordinator:
+        raise PermissionDenied
     ret_value = {}
     assignable_users = User.objects.filter(is_active=True, is_coordinator=True).order_by('screen_name').exclude(screen_name__isnull=True).distinct()
     users = UserSerializer(assignable_users, many=True)

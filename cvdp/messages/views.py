@@ -21,6 +21,7 @@ from cvdp.permissions import *
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import traceback
 from cvdp.forms import *
+from cvdp.lib import validate_recaptcha
 from cvdp.models import *
 from django.core.paginator import Paginator
 from rest_framework.views import APIView
@@ -111,6 +112,11 @@ class ThreadAPIView(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         logger.debug(f"ThreadAPI Create: {request.data}")
 
+        token = request.data.get('token', None)
+        if token:
+            if not validate_recaptcha(token):
+                return Response({'message': 'Invalid ReCAPTCHA. Please try again'}, status=status.HTTP_400_BAD_REQUEST)
+        
         content = request.data.get('content', None)
         if not content:
             return Response({'message': 'No message content present'},
@@ -184,6 +190,11 @@ class MessageAPIView(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         thread = get_object_or_404(MessageThread, id=self.kwargs.get('pk'))
+        logger.debug(request.data)
+        token = request.data.get('token', None)
+        if token:
+            if not validate_recaptcha(token):
+                return Response({'message': 'Invalid ReCAPTCHA. Please try again'}, status=status.HTTP_400_BAD_REQUEST)
         
         msg = Message.new_reply(thread, self.request.user, request.data['content'])
 

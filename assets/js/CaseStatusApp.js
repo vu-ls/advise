@@ -14,6 +14,7 @@ const threadapi = new CaseThreadAPI();
 
 const CaseStatusApp = (props) => {
 
+    const [apiError, setApiError] = useState(null);
     const [caseInfo, setCaseInfo] = useState(null);
     const [date, setDate] = useState("")
     const [datePublic, setDatePublic] = useState("");
@@ -316,10 +317,18 @@ const CaseStatusApp = (props) => {
     }, [props.caseInfo]);
 
     useEffect(() => {
-	threadapi.getUserAssignments().then((response) => {
-	    setUsers(response['users']);
-	    setRoles(response['roles']);
-	});
+	if (props.user.role === "owner") {
+	    try {
+		threadapi.getUserAssignments().then((response) => {
+		    setUsers(response['users']);
+		    setRoles(response['roles']);
+		})
+	    } catch (err) {
+		console.log(err);
+		setApiError("API Error");
+	    }
+	} 
+	    
     }, []);
 
 
@@ -328,6 +337,10 @@ const CaseStatusApp = (props) => {
 	    <Card className="mb-3">
 		<Card.Header className="d-flex align-items-center justify-content-between pb-2">
 		    <Card.Title>Case Details</Card.Title>
+		    {apiError &&
+		     <Alert variant="danger">{apiError}</Alert>
+		    }
+		    
 		    {props.user.role === "owner" &&
 		    <DropdownButton variant="btn p-0"
                                     title={<i className="bx bx-dots-vertical-rounded"></i>}

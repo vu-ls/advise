@@ -367,7 +367,7 @@ const VulAddForm = (props) => {
 			      )}
 		 </Accordion>
 		     {vuls.length == 0 &&
-		      <p>Vulnerabilities should be added soon...</p>
+		      <p>Vulnerabilities coming soon...</p>
 		     }
 
 		<div id="testref" ref={formRef}>&nbsp; </div>

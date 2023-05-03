@@ -68,7 +68,7 @@ const LoadInboxApp = (props) => {
 		      {groupThreads.map((gt, index) => {
 			  let unread = unreadCounts[gt.uuid];
 			  return (
-			      <Tab eventKey={gt.id} title={unread ? <>{gt.name} <Badge pill bg="success">{unread}</Badge></> : `${gt.name}`}>
+			      <Tab eventKey={gt.id} key={`${gt.name}-${index}`} title={unread ? <>{gt.name} <Badge pill bg="success">{unread}</Badge></> : gt.name}>
 				  <InboxApp
 				      coord={props.coord}
 				      contactmsg={props.contactmsg}

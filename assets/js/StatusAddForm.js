@@ -36,9 +36,10 @@ const STATUS_CHOICES = [
 
 
 function makeAndHandleRequest(query, page = 1) {
-    return componentapi.getComponents(query).then((response) => {
-        let items = response;
-        let total_count = items.length;
+    let q = `search=${query}`;
+    return componentapi.getComponents(q).then((response) => {
+        let items = response.results;
+        let total_count = response.count;
         const options = items.map((i) => ({
             name: i.name,
             id: i.id,

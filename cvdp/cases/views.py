@@ -48,7 +48,7 @@ def get_staff():
     return User.objects.filter(is_staff=True)
 
 def get_coordinators():
-    return User.objects.filter(is_coordinator=True)
+    return User.objects.filter(is_coordinator=True).exclude(screen_name__isnull=True)
 
 def _my_groups(user):
     groups = user.groups.all()
@@ -122,7 +122,6 @@ def assign_case(request, caseid):
         title = f"auto assigned case to {user.screen_name}"
     else:
         return Http404
-    title = title + f" to {user.screen_name}"
     contact = Contact.objects.filter(user=user).first()
     if contact == None:
         return Http404
@@ -221,8 +220,10 @@ class CreateNewCaseView(LoginRequiredMixin, UserPassesTestMixin, FormView):
 
     def form_valid(self, form):
         logger.debug("VALID FORM")
-        group = form.save()
-        return redirect("cvdp:case", group.case_id)
+        case = form.save()
+        case.created_by = self.request.user
+        case.save()
+        return redirect("cvdp:case", case.case_id)
 
 
 class CaseView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
@@ -247,7 +248,7 @@ class EditCaseView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
 
     def test_func(self):
         case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
-        return is_case_owner(self.request.user, case.id)
+        return is_case_owner_or_staff(self.request.user, case.id)
 
     def get_object(self, queryset=None):
         return Case.objects.get(case_id=self.kwargs.get('caseid'))
@@ -261,8 +262,7 @@ class EditAdvisoryView(LoginRequiredMixin, UserPassesTestMixin, generic.Template
     template_name = 'cvdp/advisory.html'
 
     def test_func(self):
-        case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
-        return is_case_owner(self.request.user, case.id)
+        return self.request.user.is_coordinator
 
     def get_context_data(self, **kwargs):
         context = super(EditAdvisoryView, self).get_context_data(**kwargs)
@@ -298,7 +298,7 @@ class AdvisoryAPIView(viewsets.ModelViewSet):
     def update(self, request, **kwargs):
         #only case owners can share advisory
         ca = get_object_or_404(CaseAdvisory, case__case_id=self.kwargs['caseid'])
-        if not is_case_owner(self.request.user, ca.case.id):
+        if not is_case_owner_or_staff(self.request.user, ca.case.id):
             raise PermissionDenied()
 
         revision = ca.current_revision
@@ -438,7 +438,7 @@ class CaseAPIView(viewsets.ModelViewSet):
     def update(self, request, **kwargs):
         instance = self.get_object()
         #only case owners can update a case
-        if not is_case_owner(self.request.user, instance.id):
+        if not is_case_owner_or_staff(self.request.user, instance.id):
             raise PermissionDenied()
 
         data = request.data
@@ -553,8 +553,14 @@ class PostAPIView(viewsets.ModelViewSet):
         if request.data.get('reply'):
             #this is a reply to another post
             parent = Post.objects.filter(id=request.data['reply']).first()
-            #create the thread
-            pt, created = PostThread.objects.update_or_create(parent=parent)
+            #is this post a reply itself?
+            old_pr = PostReply.objects.filter(post=parent).first()
+            if old_pr:
+                pt = old_pr.reply
+            else:
+                #create the thread
+                pt, created = PostThread.objects.update_or_create(parent=parent)
+
             #create the reply
             pr = PostReply(reply=pt,
                            post=post)
@@ -613,7 +619,7 @@ class CaseThreadAPIView(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         thread = get_object_or_404(CaseThread, id=self.kwargs['pk'])
-        if not(is_case_owner(self.request.user, thread.case.id)):
+        if not(is_case_owner_or_staff(self.request.user, thread.case.id)):
                raise PermissionDenied()
 
         #check to see if this thread has posts?
@@ -791,7 +797,7 @@ class CaseThreadParticipantAPIView(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         logger.debug(self.request.POST)
         thread = get_object_or_404(CaseThread, id=self.kwargs['pk'])
-        if not(is_case_owner(request.user, thread.case.id)):
+        if not(is_case_owner_or_staff(request.user, thread.case.id)):
             #only case owners can add participants to a thread
             raise PermissionDenied
         names = self.request.POST.getlist('names[]', [])
@@ -818,7 +824,7 @@ class CaseThreadParticipantAPIView(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         participant = get_object_or_404(CaseThreadParticipant, id=self.kwargs['pk'])
-        if not(is_case_owner(request.user, participant.thread.case.id)):
+        if not(is_case_owner_or_staff(request.user, participant.thread.case.id)):
             raise PermissionDenied()
 
         if participant.thread.official:
@@ -1115,7 +1121,7 @@ class CaseArtifactAPIView(viewsets.ModelViewSet):
             ca.save()
             #TODO - ADD AUDIT LOG
             return Response({}, status.HTTP_202_ACCEPTED)
-        if (is_case_owner(self.request.user, ca.case.id)):
+        if (is_case_owner_or_staff(self.request.user, ca.case.id)):
             ca.shared=False
             action = create_case_action(f"unshared artifact {ca.file.filename}", request.user, ca.case)
             ca.save()
@@ -1182,7 +1188,7 @@ class CVSSVulView(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         vul = get_object_or_404(Vulnerability, id=self.kwargs.get('pk'))
-        if not(is_case_owner(request.user, vul.case.id)):
+        if not(is_case_owner_or_staff(request.user, vul.case.id)):
             raise PermissionDenied()
         vcvss = VulCVSS.objects.filter(vul=vul).first()
         if vcvss:
@@ -1195,7 +1201,7 @@ class CVSSVulView(viewsets.ModelViewSet):
 
     def update(self, request, **kwargs):
         vul = get_object_or_404(Vulnerability, id=self.kwargs.get('pk'))
-        if not(is_case_owner(request.user, vul.case.id)):
+        if not(is_case_owner_or_staff(request.user, vul.case.id)):
             raise PermissionDenied()
         logger.debug(request.data)
         serializer = self.serializer_class(instance=vul.vulcvss, data=request.data, partial=True)
@@ -1237,7 +1243,7 @@ class SSVCVulView(viewsets.ModelViewSet):
         logger.debug(request.data)
 
         vul = get_object_or_404(Vulnerability, id=self.kwargs.get('pk'))
-        if not (is_case_owner(request.user, vul.case.id)):
+        if not (is_case_owner_or_staff(request.user, vul.case.id)):
             raise PermissionDenied()
 
         logger.debug(request.data)
@@ -1256,7 +1262,7 @@ class SSVCVulView(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         vul = get_object_or_404(Vulnerability, id=self.kwargs.get('pk'))
-        if not(is_case_owner(request.user, vul.case.id)):
+        if not(is_case_owner_or_staff(request.user, vul.case.id)):
             raise PermissionDenied()
 
         vcvss = VulSSVC.objects.filter(vul=vul).first()
@@ -1270,7 +1276,7 @@ class SSVCVulView(viewsets.ModelViewSet):
 
     def update(self, request, **kwargs):
         vul = get_object_or_404(Vulnerability, id=self.kwargs.get('pk'))
-        if not(is_case_owner(request.user, vul.case.id)):
+        if not(is_case_owner_or_staff(request.user, vul.case.id)):
             raise PermissionDenied()
         logger.debug(request.data)
         serializer = self.serializer_class(instance=vul.vulssvc, data=request.data, partial=True)
@@ -1299,7 +1305,7 @@ class NotifyVendorsView(LoginRequiredMixin, UserPassesTestMixin, generic.Templat
 
     def test_func(self):
         case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
-        return is_case_owner(self.request.user, case.id)
+        return is_case_owner_or_staff(self.request.user, case.id)
 
 
     def post(self, request, *args, **kwargs):
@@ -1333,9 +1339,11 @@ class CaseActivityAPIView(APIView):
     def get(self, request, *args, **kwargs):
 
         # -----------------------------------------------------------
-        page_number = request.query_params.get('page_number ', 1)
-        page_size = request.query_params.get('page_size ', 10)
+        page_number = request.query_params.get('page', 1)
+        page_size = request.query_params.get('page_size', 10)
         # -----------------------------------------------------------
+        logger.debug(f"page_number is {page_number}")
+        logger.debug(request.query_params)
         cases = []
         if self.kwargs.get('caseid'):
             case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
@@ -1383,5 +1391,9 @@ class CaseActivityAPIView(APIView):
 
         paginator = Paginator(qs, page_size)
         data = paginator.page(page_number)
-
-        return Response({'results':data.object_list})
+        if data.has_next():
+            next_page = data.next_page_number()
+        else:
+            next_page = None
+        
+        return Response({'results':data.object_list, 'next_page': next_page})

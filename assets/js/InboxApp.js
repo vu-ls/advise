@@ -12,19 +12,24 @@ import ReactQuill, { Quill,editor } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import StandardPagination from './StandardPagination';
 
+import ReCAPTCHA from "react-google-recaptcha";
+
+const recaptchaRef = React.createRef();
+const RECAPTCHA_SITE_KEY = process.env.RECAPTCHA_SITE_KEY || null;
+
 const messageapi = new MessageAPI();
 
 const InboxApp = (props) => {
 
     const isInitialMount = useRef(true);
-    
+
     const [threads, setThreads] = useState([]);
     const [messages, setMessages] = useState([]);
     const [curThread, setCurThread] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [search, setSearch] = useState(null);
     const [itemsCount, setItemsCount] = useState(0);
-    const [apiError, setApiError] = useState(null);
+    const [error, setError] = useState(null);
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [newMessage, setNewMessage] = useState(false);
     const [expandUsers, setExpandUsers] = useState(false);
@@ -34,7 +39,7 @@ const InboxApp = (props) => {
     const [sendMsgContact, setSendMsgContact] = useState(null);
     const [feedback, setFeedback] = useState(null);
     const [sentMessage, setSentMessage] = useState(false);
-    
+
     const fetchInitialData = async (msg) => {
 	if (msg) {
 	    setFeedback(msg);
@@ -136,7 +141,7 @@ const InboxApp = (props) => {
 		setCurThread(threads[0])
 		setLoadingMessages(true);
 		setNewMessage(false);
-	    } 
+	    }
 	} else {
 	    setCurThread(null)
 	    setLoadingMessages(false);
@@ -188,16 +193,30 @@ const InboxApp = (props) => {
 	}
     }, [curThread]);
 
-    const submitMessage = async () => {
+    const submitMessage = async (e) => {
+	e.preventDefault();
+
+
 	setDisableButton(true);
 	let formField = new FormData();
+	if (RECAPTCHA_SITE_KEY) {
+	    const token = await recaptchaRef.current.executeAsync();
+	    formField.append('token', token);
+	}
+
         formField.append('content', message);
 	await messageapi.createMessage(curThread, formField).then((response) => {
 	    console.log("NEW RESPONSE", response);
 	    setMessages(messages => [...messages, response])
 	    setDisableButton(false);
+	    recaptchaRef.current.reset();
 	    setMessage("");
-        });
+        }).catch(err => {
+	    console.log(err);
+            setError(`Error sending message: ${err.response.data.message}`);
+	});
+
+
     };
 
     const toggleExpandUsers = () => {
@@ -348,7 +367,7 @@ const InboxApp = (props) => {
 			       <div className="d-flex justify-content-center mb-3">
 
 				   {curThread.users.length + curThread.groups.length > 1?
-				    <a href="#" onClick={(e)=>toggleExpandUsers()}>{curThread.users.length+curThread.groups.length} people > </a>
+				    <a href="#" onClick={(e)=>toggleExpandUsers()}>{curThread.users.length+curThread.groups.length} people <i className="fas fa-greater-than"></i> </a>
 				    :
 				    <>1 person</>
 				   }
@@ -380,7 +399,7 @@ const InboxApp = (props) => {
 							<p className="pt-1">{group.name}</p>
                                                     </div>
 						)
-                                            })}                                                                                                                      </>         
+                                            })}                                                                                                                      </>
 				    </div>
 				</div>
 			       }
@@ -416,7 +435,13 @@ const InboxApp = (props) => {
 				   }
 
 				   <li className="bg-white">
+				       <form>
+
 				       <Card className="w-100">
+					   {error &&
+					     <Alert variant="danger"> {error}</Alert>
+					    }
+
 					   <Card.Body>
 					       <ReactQuill
 						   style={{
@@ -430,17 +455,26 @@ const InboxApp = (props) => {
 						   placeholder="Write a new message to continue the thread"
 						   onChange={setMessage}
 					       />
+					       {RECAPTCHA_SITE_KEY &&
+						<ReCAPTCHA
+						    ref={recaptchaRef}
+						    size="invisible"
+						    sitekey={RECAPTCHA_SITE_KEY}
+						/>
+					       }
+
 					   </Card.Body>
 					   <Card.Footer>
 					       <Button
 						   variant="outline-primary"
 						   className="float-end"
 						   disabled={disableButton ? true : false}
-						   onClick={(e)=>submitMessage()}>
+						   onClick={(e)=>submitMessage(e)}>
 						   {disableButton ? <>Sending...</>:<>Send</>}
 					       </Button>
 					   </Card.Footer>
 				       </Card>
+				       </form>
 
 				   </li>
 

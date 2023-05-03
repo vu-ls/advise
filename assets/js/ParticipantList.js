@@ -170,24 +170,27 @@ export default function ParticipantList(props) {
 		    </PerfectScrollbar>
 		</div>
 	    </Card.Body>
-	    <ParticipantModal
-		showModal = {displayParticipantModal}
-		hideModal = {hideParticipantModal}
-		thread={thread}
-		caseid={caseid}
-		allowSelectRole={allowSelectRole}
-		confirmInvite = {reloadParticipants}
-		title={participantModalTitle}
-		currentParticipants = {participants}
-		caseInfo = {caseInfo}
-	    />
-	    <DeleteConfirmation
-                showModal={displayConfirmationModal}
-                confirmModal={submitRemoveParticipant}
-                hideModal={hideConfirmationModal}
-                id={removeID}
-                message={deleteMessage} />
-
+	    {props.user.role === "owner" &&
+	     <>
+		 <ParticipantModal
+		     showModal = {displayParticipantModal}
+		     hideModal = {hideParticipantModal}
+		     thread={thread}
+		     caseid={caseid}
+		     allowSelectRole={allowSelectRole}
+		     confirmInvite = {reloadParticipants}
+		     title={participantModalTitle}
+		     currentParticipants = {participants}
+		     caseInfo = {caseInfo}
+		 />
+		 <DeleteConfirmation
+                     showModal={displayConfirmationModal}
+                     confirmModal={submitRemoveParticipant}
+                     hideModal={hideConfirmationModal}
+                     id={removeID}
+                     message={deleteMessage} />
+	     </>
+	    }
 	</Card>
     )
 }

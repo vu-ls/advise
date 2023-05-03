@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {Row, ListGroup, Card, Col} from 'react-bootstrap';
+import {Row, Alert, ListGroup, Card, Col} from 'react-bootstrap';
 import CaseThreadAPI from './ThreadAPI';
 import CaseList from './CaseList.js';
 import Searchbar from './Searchbar.js';
 import ActivityApp from './ActivityApp.js';
 import PerfectScrollbar from 'react-perfect-scrollbar';
+import InfiniteScroll from 'react-infinite-scroll-component'
 import 'react-perfect-scrollbar/dist/css/styles.css'
 import '../css/casethread.css';
 
@@ -20,7 +21,9 @@ const DashboardList = () => {
     const [itemsCount, setItemsCount] = useState(0);
     const [error, setError] = useState(null);
     const [activity, setActivity] = useState([]);
-
+    const [activityHasMore, setActivityHasMore] = useState(false);
+    const [activityNext, setActivityNext] = useState(null);
+    
     // Searchbar functionality
     const onSearchbarChange = e => {
         const value = e.target.value
@@ -90,12 +93,35 @@ const DashboardList = () => {
 	    let data = await results.data;
 	    console.log(data);
 	    setActivity(data.results);
+	    setActivityNext(data.next_page);
+	    if (data.next_page) {
+		setActivityHasMore(true);
+	    }
 	    setActivityLoading(false);
 	} catch(err) {
 	    setError(err.response.data.message);
 	}
     }
 
+    const fetchMoreActivity = async (page) => {
+	try {
+	    let results = await caseapi.getMyActivity(activityNext);
+	    let data = await results.data;
+	    console.log(data);
+	    setActivity(activity.concat(data.results));
+	    setActivityNext(data.next_page);
+	    if (data.next_page) {
+		setActivityHasMore(true);
+	    } else {
+		setActivityHasMore(false);
+	    }
+	} catch(err) {
+	    console.log(err);
+	    setError("Error fetching more activity");
+	}
+    }
+    
+    
     useEffect(() => {
 	console.log("activity done");
 	
@@ -161,19 +187,29 @@ const DashboardList = () => {
 			     <div className="lds-spinner"><div></div><div></div><div></div></div>
 			 </div>
                          :
-			 <PerfectScrollbar className="dashboard-activity-scroll">
-			     <ListGroup variant="flush">
-                                 {activity.map((a, index) => {
-                                     return (
-					 <ListGroup.Item action onClick={(e)=>goToCase(a.url)} className="p-2 border-bottom" key={`activity-${index}`}>
-                                             <ActivityApp
-						 activity = {a}
-                                             />
-					 </ListGroup.Item>
-                                     )
-                                 })}
-                            </ListGroup>
-                         </PerfectScrollbar>
+			 <div id="scrollableDiv">
+			     <InfiniteScroll
+				 dataLength={activity.length}
+				 next={fetchMoreActivity}
+				 hasMore={activityHasMore}
+				 loader={<div className="text-center"><div className="lds-spinner"><div></div><div></div><div></div></div></div>}
+				 endMessage={<div className="text-center">No more activity updates</div>}
+				 scrollableTarget="scrollableDiv"
+				 >
+
+				 <ListGroup variant="flush">
+                                     {activity.map((a, index) => {
+					 return (
+					     <ListGroup.Item action onClick={(e)=>goToCase(a.url)} className="p-2 border-bottom" key={`activity-${index}`}>
+						 <ActivityApp
+						     activity = {a}
+						 />
+					     </ListGroup.Item>
+					 )
+                                     })}
+				 </ListGroup>
+				 </InfiniteScroll>
+				 </div>
 			}
 		    </Card.Body>
 

@@ -11,6 +11,11 @@ import ReactQuill, { Quill,editor } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import ContactAPI from './ContactAPI';
 import DeleteConfirmation from './DeleteConfirmation';
+import ReCAPTCHA from "react-google-recaptcha";
+
+const recaptchaRef = React.createRef();
+const RECAPTCHA_SITE_KEY = process.env.RECAPTCHA_SITE_KEY || null;
+
 const contactapi = new ContactAPI();
 
 const messageapi = new MessageAPI();
@@ -29,7 +34,6 @@ function makeAndHandleRequest(query, page = 1) {
 	    color: i.logocolor,
 	    logo: i.photo
 	}));
-	console.log(options);
 	return {options, total_count};
     });
 }
@@ -114,7 +118,6 @@ const NewMessage = (props) => {
 	    setOptions(CACHE[q].options);
 	    return;
 	}
-
 	setIsLoading(true);
 	makeAndHandleRequest(q).then((resp) => {
 	    CACHE[q] = { ...resp, page: 1 };
@@ -153,7 +156,13 @@ const NewMessage = (props) => {
 
     const submitPost = async (e) => {
 	e.preventDefault();
+
         let formField = new FormData();
+	if (RECAPTCHA_SITE_KEY) {
+	    const token = await recaptchaRef.current.executeAsync();
+	    formField.append('token', token);
+	}
+
 	if (message == "") {
 	    setInvalidMessage(true);
 	    return;
@@ -176,7 +185,6 @@ const NewMessage = (props) => {
 	if (props.group) {
 	    formField.append('from', props.group);
 	}
-
 	await messageapi.createThread(formField).then((response) => {
 	    if (props.sendContact) {
 		window.location.href="/advise/inbox";
@@ -272,10 +280,18 @@ const NewMessage = (props) => {
                          This field is required.
                      </Form.Text>
                     }
+		    {RECAPTCHA_SITE_KEY &&
+                     <ReCAPTCHA
+                         ref={recaptchaRef}
+                         size="invisible"
+                         sitekey={RECAPTCHA_SITE_KEY}
+                     />
+                    }   
 		    <div className="text-end pt-3">
 			<button onClick={clearText} className="mx-1 btn btn-outline-secondary">Cancel</button>
 			<button onClick={(e) => submitPost(e)} className="btn btn-primary">Submit</button>
 		    </div>
+		    
 		</Form>
 		<DeleteConfirmation
                     showModal={displayConfirmationModal}

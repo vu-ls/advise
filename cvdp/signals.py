@@ -54,7 +54,7 @@ def send_message_notification(sender, message, thread, reply, from_group, **kwar
         groups = thread.groupthread_set.all()
             
     for g in groups:
-        users = User.objects.filter(groups=g.group).exclude(id=message.sender.id)
+        users = User.objects.filter(groups=g.group).exclude(id=message.sender.id).exclude(api_account=True).exclude(pending=True)
         for u in users:
             if u.email not in recipients:
                 recipients.append(u.email)

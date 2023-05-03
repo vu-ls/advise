@@ -47,10 +47,9 @@ export default function PostDisplay(props) {
 	    user,
 	    post,
 	}
-
 	let cols = props.reply ? 11 : 12;
-	let cardclass = props.parent ? "has_replies" : "";
-	cardclass = props.lastreply ? "" : `mb-4 ${cardclass}`;
+	let cardclass = props.parent ? "has_replies" : "mt-2";
+	cardclass = props.lastreply ? `${cardclass}` : `mb-2 ${cardclass}`;
 	//cardclass = props.reply ? "replypost" : cardclass;
 	//{user.user.photo ? <Image src={user.user.photo} rounded /> : (displayLogo(dprops)) }
 
@@ -65,9 +64,9 @@ export default function PostDisplay(props) {
 		
 		<Col lg={cols}>
 		    <Card key={`card_${post.id}`} className={`${cardclass} ${post.pinned ? "pinned" :""}`}>
-	    <Card.Header>
-		<div className="d-flex align-items-start justify-content-between mt-2">
-		    <div className="author d-flex align-items-start justify-content-between">
+			<Card.Header>
+			    <div className="d-flex align-items-start justify-content-between mt-2">
+				<div className="author d-flex align-items-start justify-content-between">
 			{post.group ?
                          <DisplayLogo
                              name={post.group.name}
@@ -247,7 +246,8 @@ export default function PostDisplay(props) {
 					     date={d}
 					     timeago={tgo}
 					     reply={true}
-					     lastreply={true}
+					     parent={false}
+					     lastreply={lastreply}
 					     participants={props.participants}
 					 />
 				     )

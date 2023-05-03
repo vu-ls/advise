@@ -394,11 +394,16 @@ const ParticipantTable = (caseid) => {
     }, []);
 
     return (
+	caseInfo ?
 	<Card>
 	    <Card.Header>
                 {caseInfo && caseInfo.status === "Active" && summary && summary.notified < summary.count &&
 		 <Alert variant="warning">This case has {summary.count-summary.notified} vendors that have not been notified.</Alert>
-		}   
+		}
+		{caseInfo && caseInfo.status === "Pending" &&
+		 <Alert variant="warning">This case is currently in <b>Pending</b> state. Users can not be notified until case state has been changed to <b>Active</b>.</Alert>
+		 
+		}
 		<>
 		    {error &&
 		     <Alert variant="danger">{error}</Alert>
@@ -416,7 +421,9 @@ const ParticipantTable = (caseid) => {
 		    >
 			<Dropdown.Item eventKey="add">Add Participant</Dropdown.Item>
 			<Dropdown.Item eventKey="remove">Remove Participant</Dropdown.Item>
+			{caseInfo.status === "Active" &&
 			<Dropdown.Item eventKey="email">Notify Selected Participants</Dropdown.Item>
+			}
 		    </DropdownButton>
 
 		</div>
@@ -430,7 +437,7 @@ const ParticipantTable = (caseid) => {
 			 data= {filteredData.length > 0 ? filteredData : data}
 			 setSelectedRows = {setSelectedRows}
 		  />
-		   <p>Selected Rows: {selectedRows.length}</p>
+		   <p className="mt-4">Selected Rows: {selectedRows.length}</p>
 	      </div>
 	    }
 	    </Card.Body>
@@ -456,7 +463,11 @@ const ParticipantTable = (caseid) => {
 		count={selectedRows.length}
 	    />
 	</Card>
-	
+	:
+	<div className="text-center">                                                                    
+            <div className="lds-spinner"><div></div><div></div><div></div></div>                         
+        </div> 
+
     )
 }
 
@@ -464,28 +475,3 @@ const ParticipantTable = (caseid) => {
 export default ParticipantTable;
 
 
-/*
-  			 rowProps={row => ({
-			     onClick: e => {
-				 console.log("inside");
-				 console.log(row);
-				 if (selectAll) {
-				     setRowSelect(rowSelect=> [...rowSelect, row.original.id])
-				 } 
-				 else if (rowSelect.includes(row.original.id)) {
-				     let selects = rowSelect.filter(item => item != row.original.id);
-				     setRowSelect(selects);
-				 } else {
-				     setRowSelect(rowSelect=> [...rowSelect, row.original.id])
-				     
-				 }
-			     },
-			     style: {
-				 background:
-				 rowSelect.includes(row.original.id) ? "#00afec" : "white",
-				 color:
-				 rowSelect.includes(row.original.id) ? "white" : "black"
-			     }
-			 })
-				  }
-*/

@@ -30,8 +30,11 @@ export default class CaseThreadAPI{
 	return axios.get(url).then(response => response.data);
     }
 
-    getMyActivity() {
-	const url = `${API_URL}/api/case/activity/`;
+    getMyActivity(c) {
+	let url = `${API_URL}/api/case/activity/`;
+	if (c) {
+	    url = `${API_URL}/api/case/activity/?page=${c}`;
+	}
         return axios.get(url);
     }
     

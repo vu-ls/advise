@@ -123,6 +123,13 @@ confirm your email address.
   new user entry for the OAuth autheticated user. Enable "Staff" and "Superuser" 
   checkboxes if appropriate.
 
+  * Navigate to the "Groups" view of AdVISE and click on the vertical 3 dots to
+  add a new Group for the coordination team. Then, with the superuser account,
+  go to the Admin section and select "Global Settings" under CVDP. Click the button
+  to "Add Global Settings."  Select the group that you just created and click Save.
+  This will be the main coordination group for this AdVISE instance. Non-coordinator
+  users will be able to send messages to this group.
+
 ## Next Steps
 At this point, the AdVISE environment is ready for site configuration. Refer
 to the main documentation directory for further information. 

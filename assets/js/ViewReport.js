@@ -13,7 +13,13 @@ const ViewReport = (report) => {
     return (
         <div>                                                                                           
             <Alert variant="secondary">
-                This report was submitted by <b>{orig_report.submitter}</b> on {format(date, 'yyyy-MM-dd')}
+                This report was submitted
+		{orig_report.submitter ?
+		 <> by <b>{orig_report.submitter}</b> </>
+		 :
+		 <> anonymously </>
+		}
+		on {format(date, 'yyyy-MM-dd')}
             </Alert>                                                                                    
             <Row>                                                                                       
             {orig_report.report.map((r, index) => {

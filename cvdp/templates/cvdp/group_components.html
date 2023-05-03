@@ -7,14 +7,19 @@
 
 
 <div class="container-xxl flex-grow-1 container-p-y">
+  {% if componentspage %}
+  {% include 'cvdp/include/top_panel.html' with title="Component List" breadcrumbs="Components" %}
+  {% else %}
   {% url 'cvdp:editcontact' contact.id as button_url %}
   {% include 'cvdp/include/top_panel.html' with button_url=button_url button_text="Edit Group" title=group.name breadcrumbs="Groups" %}
+  {% endif %}
 
   <div class="row">
     <div class="col-lg-12">
-      
+      {% if componentspage %}
+      {% else %}
       {% include 'cvdp/include/group_nav.html' with components=1%}
-
+      {% endif %}
       <div id="app" group="{{group.id}}"> </div>
       
     </div>
