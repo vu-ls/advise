@@ -42,6 +42,11 @@ const CaseSummaryApp = (props) => {
     }, [vuls]);
 
 
+    const setActiveTabNow = (props) => {
+        setFeedback(null);
+        setActiveTab(props);
+    }
+    
     return (
 	caseInfo ?
 	    <div className="nav-align-top mb-4">
@@ -50,7 +55,7 @@ const CaseSummaryApp = (props) => {
 		    activeKey={activeTab}
                     id="report"
                     className="mb-3"
-		    onSelect={(e)=>(setFeedback(null),setActiveTab(e.eventKey))}
+		    onSelect={setActiveTabNow}
                 >
                     <Nav variant="pills" className="mb-3" fill justify>
 			<Nav.Item>

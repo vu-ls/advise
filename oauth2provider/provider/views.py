@@ -195,7 +195,7 @@ class MFASetupView(AccessMixin, generic.FormView):
         auth_login(self.request, form.user)
         if self.request.session.get('redirect_uri'):
             next_url = self.request.session['redirect_uri']
-            if next_url:
+            if next_url and next_url != "None":
                 del(self.request.session['redirect_uri'])
                 o = urlparse(next_url)
                 if o.query:

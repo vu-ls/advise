@@ -32,7 +32,7 @@ export default class CaseThreadAPI{
 
     getMyActivity() {
 	const url = `${API_URL}/api/case/activity/`;
-        return axios.get(url).then(response => response.data);
+        return axios.get(url);
     }
     
     assignCase(c, name) {

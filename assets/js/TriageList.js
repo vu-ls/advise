@@ -140,7 +140,9 @@ const TriageList = () => {
                     </Card.Header>
                     <Card.Body>
 			{ isLoading ?
-			  <div className="text-center">Loading...</div>
+                          <div className="text-center">
+                              <div className="lds-spinner"><div></div><div></div><div></div></div>
+                          </div>
 			  :
 			  <CaseList
 			      cases={filteredCases}
@@ -197,7 +199,7 @@ const TriageList = () => {
                          <>
                              {newUsers.map((user) => {
                                  return (
-				     <a href={`/advise/contact/${user.contact}/`}>   
+				     <a href={`/advise/contact/${user.contact}/`}>
 					 <div className="d-flex align-items-center gap-2 mb-3">
                                              <DisplayLogo
 						 name={user.name}

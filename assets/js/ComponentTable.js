@@ -30,7 +30,7 @@ const Searchbar = ({ onChange, value }) => {
 
 
 const ComponentTable = (props) => {
-    
+
     const [data, setData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +47,7 @@ const ComponentTable = (props) => {
     const [componentDetail, setComponentDetail] = useState(null);
     const [group, setGroup] = useState(null);
     const [showGroupModal, setShowGroupModal] = useState(false);
-    
+
     const columns = useMemo(
         () => [
             {
@@ -81,7 +81,7 @@ const ComponentTable = (props) => {
 		Cell: props => (
 		    <a href={`${props.row.original.owner.url}`}>{props.row.original.owner.name}</a>
 		)
-		    
+
 	    },
 	    {
 		Header: 'type',
@@ -181,7 +181,7 @@ const ComponentTable = (props) => {
 	setShowDetailModal(true);
 	console.log("view details of component");
     };
-    
+
     useEffect(() => {
 	if (editComponent) {
 	    setAddComponentModal(true);
@@ -262,7 +262,7 @@ const ComponentTable = (props) => {
     // Async Fetch
     const fetchInitialData = async () => {
         console.log("fetching components");
-	
+
         try {
 	    if ('group' in props) {
 		await componentapi.getGroupComponents(props.group).then((response) => {
@@ -286,7 +286,7 @@ const ComponentTable = (props) => {
 	if ('group' in props) {
 	    setGroup(props.group);
 	}
-	
+
 	fetchInitialData();
     }, []);
 
@@ -320,12 +320,12 @@ const ComponentTable = (props) => {
 			<b>Loading...</b>
 		    </td>
 		</tr>
-		
+
 	    );
 	}
-	
+
 	// error handling here :)
-	//			
+	//
 	return (
 	    <>
 		{data.map((x, i) => {
@@ -337,8 +337,8 @@ const ComponentTable = (props) => {
 			</tr>
 		    );
 
-				 
-		    
+
+
 		})}
 	    </>
 	);
@@ -424,7 +424,9 @@ const ComponentTable = (props) => {
             </Card.Header>
             <Card.Body>
 		{ isLoading ?
-		  <div className='text-center'>Loading...</div>
+		  <div className="text-center">
+                      <div className="lds-spinner"><div></div><div></div><div></div></div>
+                  </div>
 		  :
 		  <div className="flex justify-center mt-8">
 		      <GenericTable columns={columns}
@@ -433,7 +435,7 @@ const ComponentTable = (props) => {
 				    update={fetchMoreData}
 				    showRowExpansion={showDeps}
 		      />
-		      
+
 		  </div>
 		}
 	    </Card.Body>
@@ -470,4 +472,3 @@ const ComponentTable = (props) => {
 };
 
 export default ComponentTable;
-

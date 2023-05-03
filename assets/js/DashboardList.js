@@ -84,15 +84,18 @@ const DashboardList = () => {
         } catch (err) {
             console.log('Error:', err)
         }
-
-	await caseapi.getMyActivity().then((response) => {
-	    setActivity(response.results);
-	}).catch(err => {
+	
+	try {
+	    let results = await caseapi.getMyActivity();
+	    let data = await results.data;
+	    setActivity(data.results);
+	} catch(err) {
 	    setError(err.response.data.message);
-	});
+	}
     }
 
     useEffect(() => {
+	//console.log("activity done");
 	setActivityLoading(false);
     }, [activity]);
     
@@ -145,24 +148,25 @@ const DashboardList = () => {
 			<Card.Title>Recent Activity</Card.Title>
 		    </Card.Header>
 		    <Card.Body className="p-0">
-			<PerfectScrollbar className="dashboard-activity-scroll">
-			    <ListGroup variant="flush">
-                                {activityLoading ?
-                                 <p>Loading activity...</p>
-                                 :
-                                 (activity.map((a, index) => {
-                                 return (
-                                     <ListGroup.Item action onClick={(e)=>goToCase(a.url)} className="p-2 border-bottom" key={`activity-${index}`}>
-                                         <ActivityApp
-					     activity = {a}
-                                         />
-                                     </ListGroup.Item>
-                                 )
-                                 }))
-                                }
+                        {activityLoading ?
+			 <div className="text-center">
+			     <div className="lds-spinner"><div></div><div></div><div></div></div>
+			 </div>
+                         :
+			 <PerfectScrollbar className="dashboard-activity-scroll">
+			     <ListGroup variant="flush">
+                                 {activity.map((a, index) => {
+                                     return (
+					 <ListGroup.Item action onClick={(e)=>goToCase(a.url)} className="p-2 border-bottom" key={`activity-${index}`}>
+                                             <ActivityApp
+						 activity = {a}
+                                             />
+					 </ListGroup.Item>
+                                     )
+                                 })}
                             </ListGroup>
-                        </PerfectScrollbar>
-
+                         </PerfectScrollbar>
+			}
 		    </Card.Body>
 
 		</Card>

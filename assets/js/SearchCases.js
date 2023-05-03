@@ -17,7 +17,7 @@ const SearchCases = () => {
     const [searchStatus, setSearchStatus] = useState([]);
     const OWNER_CHOICES = JSON.parse(document.getElementById('owner_option').textContent);
     const STATUS_CHOICES = JSON.parse(document.getElementById('case_status_options').textContent);
-    
+
     // Searchbar functionality
     const onSearchbarChange = (e, field) => {
         const value = e.target.value
@@ -53,9 +53,9 @@ const SearchCases = () => {
 	    setItemsCount(response.count);
 	    setIsLoading(false);
 	});
-	
+
     }, [searchVal, searchOwners, searchStatus])
-    
+
     useEffect(()=> {
 	console.log("currentPage in use", currentPage);
 	paginationHandler(currentPage);
@@ -108,7 +108,9 @@ const SearchCases = () => {
                     </Card.Header>
                     <Card.Body>
 			{ isLoading ?
-			  <div className="text-center">Loading...</div>
+			  <div className="text-center">
+                              <div className="lds-spinner"><div></div><div></div><div></div></div>
+                          </div>
 			  :
 			  <CaseList
 			      cases={cases}

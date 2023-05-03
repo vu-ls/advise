@@ -24,9 +24,6 @@ class GenReportingForm(forms.Form):
 
         for i, values in enumerate(extra):
             label, klass, widget, field_args = values
-            logger.debug(label)
-            logger.debug(klass)
-            logger.debug(widget)
             if widget:
                 field_args["widget"] = widget
                          
