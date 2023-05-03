@@ -3,7 +3,7 @@ certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==2.1.1
 crispy-bootstrap5==0.7
-cryptography==38.0.4
+cryptography==39.0.1
 defusedxml==0.7.1
 Deprecated==1.2.13
 Django==4.1.7
