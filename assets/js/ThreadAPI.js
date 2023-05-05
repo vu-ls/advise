@@ -71,16 +71,16 @@ export default class CaseThreadAPI{
         return axios.delete(url);
     }
     getPosts(c) {
-        const url = `${API_URL}/api/case/${c.id}/posts/`;
+        const url = `${API_URL}/api/case/thread/${c.id}/posts/`;
 	return axios.get(url).then(response => response.data);
     }
     getPost(c) {
-	const url = `${API_URL}/api/case/post/${c.id}/`;
+	const url = `${API_URL}/api/case/thread/post/${c.id}/`;
         return axios.get(url).then(response => response.data);
     }
 
     getPostDiff(c) {
-	const url = `${API_URL}/case/post/diff/${c}/`;
+	const url = `${API_URL}/case/thread/post/diff/${c}/`;
 	return axios.get(url).then(response=>response.data);
     }
     getThreadParticipants(c) {
@@ -120,19 +120,19 @@ export default class CaseThreadAPI{
     }
 
     getPinnedPosts(c) {
-        const url = `${API_URL}/api/case/${c.id}/posts/?pinned=1`;
+        const url = `${API_URL}/api/case/thread/${c.id}/posts/?pinned=1`;
         return axios.get(url).then(response => response.data);
     }
 
     pinPost(c) {
 	const data = {'pinned': true};
-	const url = `${API_URL}/api/case/post/${c.id}/`;
+	const url = `${API_URL}/api/case/thread/post/${c.id}/`;
 	return axios.patch(url, data).then(response=>response.data);
     }	
 
     unpinPost(c) {
         const data = {'pinned': false};
-        const url = `${API_URL}/api/case/post/${c.id}/`;
+        const url = `${API_URL}/api/case/thread/post/${c.id}/`;
         return axios.patch(url, data).then(response=>response.data);
     }
 
@@ -141,18 +141,18 @@ export default class CaseThreadAPI{
     }
     deletePost(c) {
 	console.log("IN UPDATE POST");
-	const url = `${API_URL}/api/case/post/${c}/`;
+	const url = `${API_URL}/api/case/thread/post/${c}/`;
 	return axios.delete(url).then(response=>response.data);
     }
     editPost(content, post) {
 	console.log("IN EDIT POST");
         const data = {'content': content};
-        const url = `${API_URL}/api/case/post/${post.id}/`;
+        const url = `${API_URL}/api/case/thread/post/${post.id}/`;
         return axios.patch(url, data).then(response=>response.data);
     }
     getPostsHTML(c) {
 	console.log("IN GETPOSTSHTML");
-	const url = `${API_URL}/case/posts/${c.id}/`;
+	const url = `${API_URL}/case/thread/posts/${c.id}/`;
 	return axios.get(url).then(response => response.data);
     }
     getParticipants(c) {
@@ -213,7 +213,7 @@ export default class CaseThreadAPI{
     
     searchPosts(c, search) {
 	console.log(search);
-	const url = `${API_URL}/api/case/${c.id}/posts/?search=${search}`;
+	const url = `${API_URL}/api/case/thread/${c.id}/posts/?search=${search}`;
 	return axios.get(url).then(response=>response.data);
     }
 

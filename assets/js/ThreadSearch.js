@@ -1,9 +1,5 @@
 import React from 'react';
-import Col from 'react-bootstrap/Col';
-import Button from 'react-bootstrap/Button';
-import Row from 'react-bootstrap/Row';
-import Form from 'react-bootstrap/Form';
-import InputGroup from 'react-bootstrap/InputGroup';
+import {Col, Button, Row, Form, InputGroup, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import { useState, useEffect } from 'react';
 
 export function PostToggleButton(props) {
@@ -11,17 +7,19 @@ export function PostToggleButton(props) {
     const [toggleState, setToggleState] = useState(false);
     const [toggleClass, setToggleClass] = useState("bx bx-sort-up");
     const [isLoading, setIsLoading] = useState(true);
-
+    const [tooltipText, setTooltipText] = useState("Show newest posts at top");
     useEffect(() => {
 	if (isLoading) {
 	    setIsLoading(false);
 	} else {
 	    if (toggleState) {
 		setToggleClass("bx bx-sort-down");
+		setTooltipText("Show newest posts at the bottom");
 		props.onChange("fifo");
 
 	    } else{
 		setToggleClass("bx bx-sort-up");
+		setTooltipText("Show newest posts at the top");
 		props.onChange("lifo");
 	    }
 	}
@@ -29,11 +27,13 @@ export function PostToggleButton(props) {
     
     
     return (
-	<Button
-	    variant="btn btn-icon btn-outline-primary"
-	    onClick={()=>{setToggleState(!toggleState)}}> 
-            <i className={toggleClass}></i>             
-        </Button>                   	       
+	<OverlayTrigger overlay={<Tooltip>{tooltipText}</Tooltip>}>
+	    <Button
+		variant="btn btn-icon btn-outline-primary"
+		onClick={()=>{setToggleState(!toggleState)}}> 
+		<i className={toggleClass}></i>             
+            </Button>
+	</OverlayTrigger>
     
     )
 }

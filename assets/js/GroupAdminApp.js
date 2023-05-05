@@ -366,7 +366,7 @@ const GroupAdminApp = (props) => {
 			</Nav.Item>
 
                         <Nav.Item key="contactinfo">
-                            <Nav.Link eventKey="contactinfo">Contact Information {selectedGroup.support_email ? "" : <i class="fas fa-exclamation-triangle text-danger"></i> }</Nav.Link>
+                            <Nav.Link eventKey="contactinfo">Contact Information {selectedGroup.support_email ? "" : <i className="fas fa-exclamation-triangle text-danger"></i> }</Nav.Link>
                         </Nav.Item>
 
 			<Nav.Item key="permissions">

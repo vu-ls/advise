@@ -75,6 +75,7 @@ export default function PostList(props) {
     };
 
     const paginationHandler = (url) => {
+	setIsLoading(true);
 	threadapi.getPostsByURL(url).then((response) => {
             setNextUrl(response.next);
             setPreviousUrl(response.previous);
@@ -84,7 +85,7 @@ export default function PostList(props) {
 	    } else {
 		setPosts(posts => [...response.results, ...posts]);
 	    }
-
+	    setIsLoading(false);
 
         })
     }
@@ -165,7 +166,11 @@ export default function PostList(props) {
 	let total = pinnedPosts.length + posts.length;
 	setShowTotal(total);
 	let more = totalPosts - posts.length;
-	setShowMore(more);
+	if (more >= 0) {
+	    setShowMore(more);
+	} else {
+	    setShowMore(0);
+	}
     }, [posts, pinnedPosts]);
 
     useEffect(() => {
@@ -217,7 +222,9 @@ export default function PostList(props) {
 
 	    <div id="allposts">
 		{isLoading ? (
-		    ""
+		    <div className="text-center">                                                                            
+                        <div className="lds-spinner"><div></div><div></div><div></div></div>                                 
+                    </div>      
 		) : (
 		<PostDisplay
 		    posts = {posts}

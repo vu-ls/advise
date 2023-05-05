@@ -389,7 +389,7 @@ class CaseAPIFilter(django_filters.FilterSet):
 
     def filter_my_cases(self,queryset, name, value):
         #return cases owned  by me if staff, otherwise ignore
-        if self.request.user.is_staff and value:
+        if self.request.user.is_coordinator and value:
             cases = CaseParticipant.objects.filter(contact__user=self.request.user, role="owner").values_list('case')
             return queryset.filter(id__in=cases)
         else:

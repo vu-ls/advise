@@ -12,9 +12,9 @@ logger.setLevel(logging.DEBUG)
 def markdown(value):
     markdown_attrs['a'].extend(["class", "data-bs-toggle", "data-bs-html", "data-bs-original-title"])
     if markdown_attrs.get('span'):
-        markdown_attrs['span'].extend(['class', 'data-value'])
+        markdown_attrs['span'].extend(['class', 'data-value', 'data-denotation-char', 'data-id', 'data-link', 'data-index'])
     else:
-        markdown_attrs['span'] = ['class', 'data-value']
+        markdown_attrs['span'] = ['class', 'data-value', 'data-denotation-char', 'data-id', 'data-link', 'data-index']
     #markdown_attrs['a'].append("class")
     markdown_attrs['img'].append("width")
     markdown_attrs['img'].append("height")

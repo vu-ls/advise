@@ -31,6 +31,7 @@ export default function PostDisplay(props) {
 	
 	const editThisPost=()=> {
 	    console.log("in edit post");
+	    console.log(post);
 	    setEditPost(true);
 	}
 
@@ -38,7 +39,6 @@ export default function PostDisplay(props) {
 	    setEditPost(false);
 	    console.log(post);
 	    threadapi.getPost(post).then((response) => {
-
 		setPost(response);
 	    });
 	}
@@ -155,7 +155,6 @@ export default function PostDisplay(props) {
 		return;
 	    case 'edit':
 		props.editPost(props.post.id);
-		console.log("pin");
 		return;
 		
 	    case 'unpin':

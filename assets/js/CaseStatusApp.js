@@ -328,10 +328,8 @@ const CaseStatusApp = (props) => {
 		setApiError("API Error");
 	    }
 	} 
-	    
-    }, []);
-
-
+    }, [props.user])
+	
     return (
         caseInfo ?
 	    <Card className="mb-3">
