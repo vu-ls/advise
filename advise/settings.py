@@ -384,7 +384,7 @@ if DEPLOYMENT_TYPE == 'AWS':
         'file_overwrite': False,
         'default_acl': 'private',
         'region_name': AWS_REGION,
-        'custom_domain': False,
+        'custom_domain': AWS_S3_CUSTOM_DOMAIN,
     }
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_FILES_LOCATION}/'
     MEDIA_ROOT = None
