@@ -70,7 +70,7 @@ const GroupAdminTable = ({columns, data, setSelectedRows, fetchData, group, api,
 
 		{loading ? (
                     // Use our custom loading state to show a loading indicator
-                    <td colSpan="10000">Loading more rows...</td>
+                    <tr><td colSpan="1000">Loading more rows...</td></tr>
                 ) :
 		 (rows.length > 0 && rows.map((row, i) => {
                     prepareRow(row);
@@ -90,7 +90,10 @@ const GroupAdminTable = ({columns, data, setSelectedRows, fetchData, group, api,
 			) : null}
 			</React.Fragment>
 		    )
-                 })) || <tr><td colSpan={visibleColumns.length} className="text-center">No data ...</td></tr>}
+                 })) ||
+		 <tr><td colSpan={visibleColumns.length} className="text-center">No contacts found</td></tr>
+		}
+		 
             </tbody>
         </BTable>
     )

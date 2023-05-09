@@ -33,7 +33,7 @@ def validate_recaptcha(token):
     logger.debug(resp)
     if resp['success']:
         if resp.get('score'):
-            #v3 recaptcha                                                                                 
+            #v3 recaptcha
             if resp['score'] > settings.RECAPTCHA_SUCCESS_SCORE:
                 return True
             else:
@@ -184,11 +184,11 @@ def add_new_case_participant(thread, name, user, role):
                             raise InvalidRoleException("Participant can't be case owner")
                     else:
                         raise InvalidRoleException("Participant can't be case owner")
-                
+
                 cp.role = role
                 cp.save()
                 role_change=True
-                                
+
         else:
             cp = CaseParticipant(case=thread.case,
                                  contact = contact,
@@ -200,10 +200,10 @@ def add_new_case_participant(thread, name, user, role):
                             raise InvalidRoleException("Participant can't be case owner")
                         else:
                             cp.notified = timezone.now()
-                            
+
                     else:
                         raise InvalidRoleException("Participant can't be case owner")
-                    
+
                 cp.role = role
             cp.save()
             created = True
@@ -249,7 +249,7 @@ def add_new_case_participant(thread, name, user, role):
                     group_emails.append(x.email)
                 cvdp_send_email(None, None, group_emails, **email_context)
         """
-                
+
     if ((created or role_change) and role == "owner"):
         email_context = {'url': f'{settings.SERVER_NAME}{thread.case.get_absolute_url()}', 'case': thread.case.caseid, 'template': "case_assignment", 'assignee': user.screen_name, 'prepend': thread.case.caseid}
         #if this user assigned themselves, don't send an email
@@ -257,14 +257,14 @@ def add_new_case_participant(thread, name, user, role):
             #send email to newly assigned user
             cvdp_send_email(None, None, [contact.email], **email_context)
         #TODO: can a group be an owner?
-        
+
     if created:
         return cp
 
     return None
 
 def notify_case_participant(participant, subject, content, user):
-     #is this uuid a contact or group?   
+     #is this uuid a contact or group?
     participant.notified = timezone.now()
     participant.save()
     email_context={'url': f'{settings.SERVER_NAME}{participant.case.get_absolute_url()}', 'case': participant.case.caseid, 'prepend':participant.case.caseid}
@@ -277,7 +277,7 @@ def notify_case_participant(participant, subject, content, user):
         for x in group_users:
             group_emails.append(x.email)
         cvdp_send_email(subject, content, group_emails, **email_context)
-    
+
 
 def add_artifact(file):
 
@@ -314,10 +314,10 @@ def get_casethread_user_participants(thread):
     #combine lists and de-duplicate
     return list(set(users) | set(contacts))
 
-    
+
 def get_post_mentions(post):
     logger.debug(post.content)
-    
+
     mentions = []
     user_emails = []
     group_emails = []
@@ -365,10 +365,39 @@ def create_case_change(action, field, old_value, new_value):
     if (not old_value and not new_value):
         #ignore if change is going from null to [] or vice versa
         return
-    
+
     change = CaseChange(action=action,
                         field = field,
                         old_value=old_value,
                         new_value=new_value)
+    change.save()
+    return change
+
+def create_contact_action(title, user, contact):
+    action = ContactAction(contact=contact,
+                           user=user,
+                           title=title,
+                           created=timezone.now())
+    action.save()
+    return action
+
+def create_group_action(title, user, group):
+
+    action = ContactAction(group=group,
+                           user=user,
+                           title=title,
+                           created=timezone.now())
+    action.save()
+    return action
+
+def create_contact_change(action, field, old_value, new_value):
+    if (not old_value and not new_value):
+	#ignore if change is going from null to [] or vice versa
+        return
+
+    change = ContactChange(action=action,
+			   field = field,
+                           old_value=old_value,
+                           new_value=new_value)
     change.save()
     return change

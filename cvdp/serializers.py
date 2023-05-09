@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from authapp.models import User
+from django.core.exceptions import ObjectDoesNotExist
 
 class ChoiceField(serializers.ChoiceField):
 
@@ -18,6 +20,21 @@ class ChoiceField(serializers.ChoiceField):
         self.fail('invalid_choice', input=data)
 
 
+class UserSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='screen_name')
+    logocolor = serializers.CharField(source='userprofile.logocolor')
+    photo = serializers.ImageField(source='userprofile.photo')
+    contact = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ('id', 'name', 'org', 'photo', 'logocolor', 'title', 'contact')
+
+    def get_contact(self, obj):
+        try:
+            return obj.contact.id
+        except ObjectDoesNotExist:
+            return None
         
 class GenericSerializer(serializers.Serializer):
     type = serializers.SerializerMethodField()

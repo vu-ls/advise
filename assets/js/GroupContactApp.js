@@ -145,7 +145,7 @@ const GroupContactApp = (props) => {
 		 :
 		 <>
 		     <Col lg={6} className="mb-3">
-			 <Alert variant="danger">Please add a contact email address for your organization.</Alert>
+			 <Alert variant="danger">Please add a contact email address for this organization.</Alert>
 		     </Col>
 		     <Col lg={6}>
 		     </Col>

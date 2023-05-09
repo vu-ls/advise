@@ -16,7 +16,12 @@ export default class ContactAPI{
     }
 
     getGroupContacts(c) {
-	const url = `${API_URL}/api/groups/${c}/contacts/`;
+	const url = `${API_URL}/api/groups/${c}/contacts/?verified=True`;
+	return axios.get(url);
+    }
+
+    getUnverifiedContacts(c) {
+	const url = `${API_URL}/api/groups/${c}/contacts/?verified=False`;
 	return axios.get(url);
     }
 
@@ -28,6 +33,23 @@ export default class ContactAPI{
 	    }})
     }
 
+    removeGroup(group) {
+	const url = `${API_URL}/api/group/${group}/`;
+        return axios.delete(url).then(response => response.data);
+    }
+    
+    activateGroup(group) {
+	const data = {'active': true};
+	const url = `${API_URL}/api/group/${group}/`;
+	return axios.patch(url, data).then(response => response.data);
+    }
+
+    deactivateGroup(group) {
+        const data = {'active': false};
+        const url = `${API_URL}/api/group/${group}/`;
+	return axios.patch(url, data).then(response => response.data);
+    }
+    
     createAPIKey(group) {
 	const url = `${API_URL}/api/manage/group/${group}/api/`;
 	return axios.post(url, {});
@@ -47,6 +69,24 @@ export default class ContactAPI{
 	const url = `${API_URL}/api/manage/group/${group}/api/`;
         return axios.get(url);
     }
+    
+    getGroupActivity(g, c) {
+        let url = `${API_URL}/api/group/${g}/activity/`;
+        if (c) {
+            url = c;
+        }
+        return axios.get(url);
+    }
+    
+    
+    getActivity(c) {
+	let url = `${API_URL}/api/contact/activity/`;
+	if (c) {
+	    url = c;
+	}
+	return axios.get(url);
+    }
+	
 
     getContact(c) {
 	const url = `${API_URL}/api/contact/${c}/`;
@@ -74,6 +114,11 @@ export default class ContactAPI{
     updateGroupContact(c, data) {
 	const url = `${API_URL}/api/groups/contacts/${c}/`;
 	return axios.patch(url, data)
+    }
+
+    updateContact(c, data) {
+        const url = `${API_URL}/api/contacts/${c}/`;
+        return axios.patch(url, data)
     }
 
     getMyGroups() {

@@ -18,6 +18,7 @@ from cvdp.utils import process_query
 from rest_framework import exceptions, generics, status, authentication, viewsets, mixins, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from cvdp.permissions import *
 from cvdp.groups.serializers import *
@@ -27,13 +28,18 @@ from django.contrib.auth import get_user_model
 import traceback
 from cvdp.groups.forms import *
 from django.core.paginator import Paginator
-from cvdp.lib import send_template_email
+from cvdp.lib import send_template_email, create_contact_action, create_group_action, create_contact_change
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 User = get_user_model()
 
+
+class StandardResultsPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size= 100
 
 """
 Group Detail View - Django based
@@ -53,6 +59,35 @@ class GroupDetailView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailVie
         context['contactpage']=1
         return context
 
+
+"""
+Group/Contact Activity
+"""
+class ContactActivityAPIView(viewsets.ModelViewSet):
+    serializer_class = ContactActionSerializer
+    permission_classes = (IsAuthenticated, PendingUserPermission, GroupLevelPermission)
+    pagination_class=StandardResultsPagination
+    
+    def get_view_name(self):
+        return f"Contact Activity"
+    
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return ContactAction.objects.none()
+        actions = []
+        if self.kwargs.get('contact'):
+            logger.debug(self.kwargs.get('contact'))
+            contact = get_object_or_404(Contact, uuid=self.kwargs.get('contact'))
+            #TODO add CONTACT PERMISSIONS!
+            actions = ContactAction.objects.filter(contact=contact)
+        elif self.kwargs.get('group'):
+            group = get_object_or_404(Group, groupprofile__uuid=self.kwargs.get('group'))
+            self.check_object_permissions(self.request, group)
+            actions = ContactAction.objects.filter(group=group)
+        elif self.request.user.is_coordinator:
+            actions = ContactAction.objects.all()
+        return actions
+        
 
 """
 Group Admin View - React app "groupadmin"
@@ -75,7 +110,7 @@ class GroupAdminView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateVi
         context['groupadminpage'] = 1
         return context
 
- 
+
 """
 Group verifications - Django View
 """
@@ -149,7 +184,7 @@ class GroupSearchView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView)
             cc = CaseThreadParticipant.objects.filter(thread__id=thread).values_list('participant__contact__id', flat=True).exclude(participant__contact__isnull=True)
             groups = groups.exclude(id__in=cg)
             contacts = contacts.exclude(id__in=cc)
-        
+
 
         for g in groups[:10]:
             results.append({'name':g.name, 'photo':g.groupprofile.get_logo(), 'logocolor':g.groupprofile.icon_color, 'uuid':g.groupprofile.uuid})
@@ -167,7 +202,7 @@ class GroupAPIFilter(django_filters.FilterSet):
         choices=[('1', 'group'), ('2', 'contact'), ('3', 'user')],
         label='type')
 
-    
+
     def filter_type(self, queryset, name, value):
         logger.debug("IN FILTER TYPE")
         logger.debug(value)
@@ -186,7 +221,7 @@ class GroupAPIView(APIView):
 
     def get(self, request, format=None):
         logger.debug(request.query_params)
-        # kind of hacky but will work for now 
+        # kind of hacky but will work for now
         # -----------------------------------------------------------
         page_number = request.query_params.get('page_number ', 1)
         page_size = request.query_params.get('page_size ', 10)
@@ -216,7 +251,7 @@ class GroupAPIView(APIView):
         else:
             gp = Paginator(groups, page_size)
             cp = Paginator(contacts, page_size)
-            
+
             groups_serializer = GroupSerializer(gp.page(page_number), many=True)
             contacts_serializer = ContactSerializer(cp.page(page_number), many=True)
             data = groups_serializer.data + contacts_serializer.data
@@ -244,24 +279,34 @@ class GroupAdminAPIView(viewsets.ModelViewSet):
     def update(self, request, **kwargs):
         instance = self.get_object()
         #only group admins can change the details!
-        if not ContactAssociation.objects.filter(contact__user=self.request.user, group=instance, group_admin=True).exists():
-            raise PermissionDenied()
+        if not(self.request.user.is_coordinator):
+            if not ContactAssociation.objects.filter(contact__user=self.request.user, group=instance, group_admin=True).exists():
+                raise PermissionDenied()
         data = request.data
         logger.debug(request.FILES)
         logger.debug(data)
         if data.get('logocolor'):
+            action = create_group_action(f"generated new logo color for group {instance.name}", request.user, instance)
+            create_contact_change(action, "logo color", instance.groupprofile.icon_color, data['logocolor'])
             instance.groupprofile.icon_color = data['logocolor']
-
         elif data.get('logo'):
             if data['logo'] == "reset":
+                action = create_group_action(f"reset {instance.name}'s logo", request.user, instance)
+                create_contact_change(action, "logo", instance.groupprofile.logo, None)
                 instance.groupprofile.logo = None
             else:
+                action = create_group_action(f"added new logo to {instance.name}", request.user, instance)
+                create_contact_change(action, "logo", instance.groupprofile.logo, data['logo'])
                 instance.groupprofile.logo = data['logo']
         else:
             #likely updating contact info
             logger.debug("IN UPDATE CONTACT INFO!!!")
             serializer = self.serializer_class(instance=instance, data=request.data, partial=True)
             if serializer.is_valid():
+                action = create_group_action(f"modified {instance.name}'s contact information", request.user, instance)
+                for field, val in data.items():
+                    if (val != getattr(instance, field, None)):
+                        create_contact_change(action, field, getattr(instance, field, None), val);
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             else:
@@ -283,7 +328,7 @@ class GroupAPIAccountView(viewsets.ModelViewSet):
         self.check_object_permissions(self.request, g)
         logger.debug(f"GROUP IS {g.name}")
         accounts = g.user_set.filter(api_account=True)
-        
+
         api_keys = APIToken.objects.filter(user__in=accounts)
         return api_keys
 
@@ -310,6 +355,7 @@ class GroupAPIAccountView(viewsets.ModelViewSet):
         token = APIToken(user=api_account)
         key = token.generate_key()
         token.save(key)
+        action = create_group_action(f"generated new API key {token.last_four}", request.user, g)
         return Response({'key': key}, status=status.HTTP_201_CREATED)
 
     def update(self, request, **kwargs):
@@ -324,8 +370,9 @@ class GroupAPIAccountView(viewsets.ModelViewSet):
         token = APIToken(user=user)
         key = token.generate_key()
         token.save(key)
+        action = create_group_action(f"refreshed API key {self.kwargs['key']} to {token.last_four}", request.user, g)
         return Response({'key': key}, status=status.HTTP_202_ACCEPTED)
-    
+
     def destroy(self, request, *args, **kwargs):
         g = get_object_or_404(Group, id=self.kwargs['pk'])
         self.check_object_permissions(self.request, g)
@@ -340,10 +387,11 @@ class GroupAPIAccountView(viewsets.ModelViewSet):
             c.delete()
         #then delete user
         token.user.delete()
+        action = create_group_action(f"removed API key {self.kwargs['key']}", request.user, g)
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
-        
-    
+
+
 class GroupDetailAPIView(viewsets.ModelViewSet):
     queryset = GroupProfile.objects.all()
     serializer_class = GroupProfileSerializer
@@ -359,9 +407,10 @@ class GroupDetailAPIView(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         if self.request.user.is_superuser:
             g = self.get_object()
-            g.delete()
+            g.group.delete()
+            return Response({}, status=status.HTTP_202_ACCEPTED)
         raise PermissionDenied()
-    
+
     def update(self, request, **kwargs):
         print("IN UPDATE")
         print(request.data)
@@ -370,6 +419,10 @@ class GroupDetailAPIView(viewsets.ModelViewSet):
         data = request.data
         serializer = self.serializer_class(instance=instance, data=data, partial=True)
         if serializer.is_valid():
+            action = create_group_action(f"modified {group.name}'s contact information", request.user, group)
+            for field, val in data.items():
+                if (val != getattr(instance, field, None)):
+                    create_contact_change(action, field, getattr(instance, field), val);
             serializer.save()
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
@@ -391,22 +444,60 @@ class GroupDetailAPIView(viewsets.ModelViewSet):
             if old_group:
                 return Response({'message': 'Group with name already exists'},
                                 status=status.HTTP_400_BAD_REQUEST)
-            
-                                                               
-            serializer.create(validated_data=request.data)
+
+
+            group=serializer.create(validated_data=request.data)
+            action = create_group_action(f"added new group {group.group.name}", request.user, group.group)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         logger.debug(serializer.errors)
         return Response(serializer.error_messages,
                         status=status.HTTP_400_BAD_REQUEST)
 
 class ContactAPIView(viewsets.ModelViewSet):
-    queryset = Contact.objects.all()
-    permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
+    permission_classes = (IsAuthenticated, PendingUserPermission, ContactAPIPermission)
     serializer_class = ContactSerializer
+    lookup_field = 'uuid'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['email', 'phone', 'name']
     filterset_fields = ['email', 'phone', 'name']
 
+    
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Contact.objects.none()
+        if not self.request.user.is_coordinator:
+            raise PermissionDenied()
+        else:
+            return Contact.objects.all()
+
+    def get_object(self):
+        if not self.request.user.is_coordinator:
+            raise PermissionDenied()
+        return super().get_object()
+    
+    def update(self, request, **kwargs):
+        print("IN UPDATE")
+        print(request.data)
+        instance = Contact.objects.filter(uuid=self.kwargs['uuid']).first()
+        data = request.data
+        if not self.request.user.is_coordinator:
+            if data.get('group'):
+                group = get_object_or_404(Group, id=data['group'])
+                self.check_object_permissions(self.request, group)
+            else:
+                raise PermissionDenied()
+        serializer = self.serializer_class(instance=instance, data=data, partial=True)
+        if serializer.is_valid():
+            action = create_contact_action(f"modified details for contact {instance.email}", request.user, instance)
+            for field, val in data.items():
+                if (val != getattr(instance, field, None)):
+                    create_contact_change(action, field, getattr(instance, field, None), val);
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        else:
+            logger.debug(serializer.errors)
+            return Response(serializer.error_messages,
+                            status=status.HTTP_400_BAD_REQUEST)
 
 class GetContactAPIView(generics.RetrieveAPIView):
     permission_classes = (IsAuthenticated, CoordinatorPermission)
@@ -420,16 +511,16 @@ class GetContactAPIView(generics.RetrieveAPIView):
             return ContactSerializer
         else:
             return GroupSerializer
-    
+
     def get_object(self):
         contact = Contact.objects.filter(uuid=self.kwargs['contact']).first()
         if contact:
             return contact
         group = get_object_or_404(Group, groupprofile__uuid=self.kwargs['contact'])
         return group
-            
-    
-    
+
+
+
 class ContactAssociationAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, GroupAdminLevelPermission)
     serializer_class = ContactAssociationSerializer
@@ -450,16 +541,25 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
         self.check_object_permissions(request, ca.group)
         if ca.contact.user:
             logger.debug("DELETING JUST THE ASSOC")
+            action = create_contact_action(f"removed user {ca.contact.email} from group {ca.group.name}", request.user, ca.contact)
+            action.group=ca.group
+            action.save()
             # if there is a user associated with this contact, just remove the association
             ca.delete()
         else:
             #is this contact in any other groups
             other = ContactAssociation.objects.filter(contact=ca.contact).exclude(id=ca.id)
             if other:
+                action = create_contact_action(f"removed email {ca.contact.email} from group {ca.group.name}", request.user, ca.contact)
+                action.group=ca.group
+                action.save()
                 logger.debug("DELETING JUST THE ASSOC -other")
                 ca.delete()
             else:
                 #this should automatically remove ca
+                action = create_contact_action(f"removed email {ca.contact.email} from group {ca.group.name}", request.user, ca.contact)
+                action.group=ca.group
+                action.save()
                 ca.contact.delete()
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
@@ -467,7 +567,7 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
         logger.debug(request.data)
         group = get_object_or_404(Group, id=self.kwargs['pk'])
         self.check_object_permissions(self.request, group)
-        
+
         group_admin = ContactAssociation.objects.filter(group=group, contact__user=request.user, group_admin=True).exists()
 
         ctx = {'group': group.name, 'added_by': request.user.email, 'url': request.get_host()}
@@ -482,12 +582,18 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
                 #send email to user to let them know they have been added
                 ca.verified = True
                 ca.save()
-                
+
             if contact.user:
                 group.user_set.add(contact.user)
+                action = create_contact_action(f"added user {contact.email} to group {group.name}", request.user, contact)
+                action.group = group
+                action.save()
                 if group_admin and created:
                     send_template_email("group_admin_added", [contact.email], ctx)
             else:
+                action = create_contact_action(f"added email {contact.email} to group {group.name}", request.user, contact)
+                action.group = group
+                action.save()
                 if group_admin and created:
                     #send invitation
                     send_template_email("group_admin_invite", [contact.email], ctx)
@@ -504,11 +610,13 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
                 contact.user = user
                 contact.save()
                 group.user_set.add(user)
+                action = create_contact_action(f"added user {contact.email} to group {group.name}", self.request.user, contact)
                 if group_admin:
                     send_template_email("group_admin_added", [contact.email], ctx)
 
 
             else:
+                action = create_contact_action(f"added email {contact.email} to group {group.name}", self.request.user, contact)
                 if group_admin:
                     send_template_email("group_admin_invite", [contact.email], ctx)
             ca = ContactAssociation.objects.update_or_create(contact=contact, group=group)
@@ -517,9 +625,9 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
             logger.debug(seralizer.errors)
             return Response(serializer.error_messages,
                             status=status.HTTP_400_BAD_REQUEST)
-        
-        
-    
+
+
+
     def update(self, request, **kwargs):
         instance = get_object_or_404(ContactAssociation, id=self.kwargs['pk'])
         self.check_object_permissions(request, instance.group)
@@ -527,18 +635,24 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
         logger.debug(data)
         if data.get('group_admin') and not instance.contact.user:
             logger.debug("Can't make a non-user an admin")
-            return Response({'group_admin':'This contact is not associated with a user, and can not be promoted to group admin.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message':'This contact is not associated with a user, and can not be promoted to group admin.'}, status=status.HTTP_400_BAD_REQUEST)
         logger.debug("in update contact association")
         #ONCE VERIFIED, we should check if the user exists and add them to the group
         serializer = self.serializer_class(instance=instance, data=data, partial=True)
         if serializer.is_valid():
+            action = create_contact_action(f"modified contact association details for contact {instance.contact.email} in group {instance.group.name}", request.user, instance.contact)
+            action.group=instance.group
+            action.save()
+            for field, val in data.items():
+                if (val != getattr(instance, field, None)):
+                    create_contact_change(action, field, getattr(instance, field), val);
             serializer.save()
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
             return Response(serializer.error_messages,
                             status=status.HTTP_400_BAD_REQUEST)
-                                           
+
 
 class CreateGroupView(LoginRequiredMixin, UserPassesTestMixin, FormView, FormMixin):
     model = Group
@@ -572,6 +686,9 @@ class CreateGroupView(LoginRequiredMixin, UserPassesTestMixin, FormView, FormMix
         gp = GroupProfile(group = group,
                           vendor_type = form.cleaned_data['vendor_type'])
         gp.save()
+
+        create_group_action(f"created group {group.name}", self.request.user, group)
+
         return JsonResponse({'new':reverse("cvdp:group", args=[group.id])}, status=200)
 
 class CreateContactView(LoginRequiredMixin, UserPassesTestMixin, FormView, FormMixin):
@@ -623,9 +740,16 @@ class CreateContactView(LoginRequiredMixin, UserPassesTestMixin, FormView, FormM
         if pk:
             contact = get_object_or_404(Contact, email=request.POST['email'])
             group = get_object_or_404(Group, id=pk)
-            ca = ContactAssociation.objects.update_or_create(contact=contact, group=group,
+            ca, created = ContactAssociation.objects.update_or_create(contact=contact, group=group,
                                                              defaults={'added_by': request.user})
             logger.debug(ca)
+            if created:
+                if contact.user:
+                    action = create_contact_action(f"added user {contact.email} to group {group.name}", request.user, contact)
+                else:
+                    action = create_contact_action(f"added email {contact.email} to group {group.name}", request.user, contact)
+                action.group = group
+                action.save()
             return ca
 
     def form_valid(self, form):
@@ -636,6 +760,7 @@ class CreateContactView(LoginRequiredMixin, UserPassesTestMixin, FormView, FormM
         user = User.objects.filter(email=contact.email).first()
         if user:
             contact.user = user
+
         contact.added_by = self.request.user
         contact.save()
 
@@ -650,6 +775,7 @@ class ContactView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
     login_url = "authapp:login"
     template_name = "cvdp/contact.html"
     model = Contact
+    slug_field='uuid'
 
     def test_func(self):
         return self.request.user.is_coordinator

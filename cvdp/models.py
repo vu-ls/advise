@@ -1875,3 +1875,60 @@ class CaseChange(models.Model):
             }
         return out
     
+
+
+class ContactAction(Action):
+    
+    contact = models.ForeignKey(
+	Contact,
+        help_text=_('Contact'),
+	on_delete=models.CASCADE,
+        blank=True, null=True
+    )
+
+    group = models.ForeignKey(
+        Group,
+        help_text=_('Group'),
+        on_delete=models.CASCADE,
+        blank=True, null=True
+    )
+
+    class Meta:
+        ordering = ("-created",)
+    
+class ContactChange(models.Model):
+
+    action = models.ForeignKey(
+	ContactAction,
+	on_delete = models.CASCADE
+    )
+
+    field = models.CharField(
+	_('Field'),
+	max_length=100,
+    )
+
+    old_value = models.TextField(
+	_('Old Value'),
+	blank=True,
+	null=True,
+    )
+
+    new_value = models.TextField(
+	_('New Value'),
+	blank=True,
+	null=True,
+    )
+
+    def __str__(self):
+        out = '%s ' % self.field
+        if not self.new_value:
+            out += 'removed'
+        elif not self.old_value:
+            out += ('set to %s') % self.new_value
+        else:
+            out += ('changed from "%(old_value)s" to "%(new_value)s"') % {
+		'old_value': self.old_value,
+		'new_value': self.new_value
+            }
+        return out

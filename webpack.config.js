@@ -25,6 +25,7 @@ module.exports = {
 	inbox: './assets/js/inbox',
 	advisory: './assets/js/advisory',
 	groups: './assets/js/groups',
+	coordgroup: './assets/js/group',
 	group_components: './assets/js/groupcomponents',
 	groupadmin: './assets/js/groupadmin',
 	myreports: './assets/js/myreports',

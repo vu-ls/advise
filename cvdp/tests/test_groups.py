@@ -400,6 +400,14 @@ class GroupTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_reporter_get_contact(self):
+        self.api_client.force_authenticate(user=self.reporter_user)
+        contact = Contact.objects.filter(user=self.vendor_user).first()
+        response = self.api_client.get(
+            reverse('cvdp:contactapi-detail', args=[contact.uuid]))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
     def test_coord_create_contact(self):
         self.api_client.force_authenticate(user=self.coord_user)
         valid_payload = {
@@ -444,25 +452,61 @@ class GroupTests(TestCase):
             'email': 'repoter@dkso.com'
         }
         response = self.api_client.patch(
-            reverse('cvdp:contactapi-detail', args=[contact.id]),
+            reverse('cvdp:contactapi-detail', args=[contact.uuid]),
             data=json.dumps(valid_payload),
             content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
     def test_coord_delete_contact(self):
         self.api_client.force_authenticate(user=self.coord_user)
         contact = Contact.objects.get(user=self.reporter_user)
         response = self.api_client.delete(
-            reverse('cvdp:contactapi-detail', args=[contact.id]))
+            reverse('cvdp:contactapi-detail', args=[contact.uuid]))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_vendor_delete_contact(self):
         self.api_client.force_authenticate(user=self.vendor_user)
         contact = Contact.objects.get(user=self.reporter_user)
         response = self.api_client.delete(
-            reverse('cvdp:contactapi-detail', args=[contact.id]))
+            reverse('cvdp:contactapi-detail', args=[contact.uuid]))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_groupadmin_get_contact(self):
+        self.api_client.force_authenticate(user=self.vendor_user)
+        group = Group.objects.get(name='vendor')
+        ca = ContactAssociation.objects.filter(contact__user=self.vendor_user, group=group).first()
+        ca.group_admin = True
+        ca.save()
+
+        contact = Contact.objects.get(user=self.vendor_user)
+        response = self.api_client.get(
+            reverse('cvdp:contactapi-detail', args=[contact.uuid]))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        #but the groupadmin can patch if group is in payload!
+        valid_payload = {
+            'phone': '5555555555'
+        }
+        response = self.api_client.patch(
+            reverse('cvdp:contactapi-detail', args=[contact.uuid]),
+            data=json.dumps(valid_payload),
+            content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        valid_payload = {
+            'phone': '5555555555',
+            'group': group.id
+        }
+        response = self.api_client.patch(
+            reverse('cvdp:contactapi-detail', args=[contact.uuid]),
+            data=json.dumps(valid_payload),
+            content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        #make sure group admin can't just get any user
+        
     def test_groupadmin_api_generation(self):
         self.api_client.force_authenticate(user=self.vendor_user)
         group = Group.objects.get(name='vendor')

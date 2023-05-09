@@ -34,6 +34,7 @@ export default function PostList(props) {
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [replyPost, setReplyPost] = useState(null);
     const [isLoading, setIsLoading] = useState(true)
+    const [isPinnedLoading, setIsPinnedLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [toggle, setToggle] = useState("fifo");
 
@@ -49,7 +50,7 @@ export default function PostList(props) {
 	setReplyPost(post);
     };
 
-    
+
     const hideConfirmationModal = () => {
         setDisplayConfirmationModal(false);
     };
@@ -90,17 +91,12 @@ export default function PostList(props) {
         })
     }
 
-    const getPostsHTML=() => {
-        threadapi.getPostsHTML(thread).then((response) => {
-	    setPostsHTML(response);
-	})
-    }
-
     const getPinnedPosts=()=> {
 	threadapi.getPinnedPosts(thread).then((response) => {
 	    console.log(response.results);
 	    setPinnedPosts(response.results);
 	    console.log("in set pinned posts");
+	    setIsPinnedLoading(false);
 	})
     }
 
@@ -112,7 +108,7 @@ export default function PostList(props) {
     useEffect(() => {
 	updatePosts();
     }, [thread]);
-    
+
     useEffect(() => {
 	if (search) {
 	    console.log("IN SEARCH");
@@ -157,6 +153,8 @@ export default function PostList(props) {
     }
     const updatePosts=() => {
 	if (thread) {
+	    setIsLoading(true);
+	    setIsPinnedLoading(true);
 	    getPinnedPosts();
 	    getAllPosts();
 	}
@@ -196,17 +194,25 @@ export default function PostList(props) {
     return (
 	<div>
 	    <div id="pinnedposts">
-		{pinnedPosts.length > 0 && (
-		    <PostDisplay
-			posts = {pinnedPosts}
-			user = {requser}
-			dataUpdated = {updatePosts}
-			deletePost = {showDeleteModal}
-			replyToPost = {setReplyToPost}
-			viewPostDiff = {showDiffModal}
+		{isPinnedLoading ?
+		 <div className="text-center">
+                     <div className="lds-spinner"><div></div><div></div><div></div></div>
+                 </div>
+		 :
+		 <>
+		     {pinnedPosts.length > 0 && (
+			 <PostDisplay
+			     posts = {pinnedPosts}
+			     user = {requser}
+			     dataUpdated = {updatePosts}
+			     deletePost = {showDeleteModal}
+			     replyToPost = {setReplyToPost}
+			     viewPostDiff = {showDiffModal}
 			participants = {props.participants}
-		    />
-		)}
+			 />
+		     )}
+		 </>
+		}
 	    </div>
 	    {(nextUrl && (toggle == "fifo")) && (
 		<div className="d-grid gap-2 mb-2">
@@ -222,9 +228,9 @@ export default function PostList(props) {
 
 	    <div id="allposts">
 		{isLoading ? (
-		    <div className="text-center">                                                                            
-                        <div className="lds-spinner"><div></div><div></div><div></div></div>                                 
-                    </div>      
+		    <div className="text-center">
+                        <div className="lds-spinner"><div></div><div></div><div></div></div>
+                    </div>
 		) : (
 		<PostDisplay
 		    posts = {posts}
@@ -266,7 +272,7 @@ export default function PostList(props) {
 		showModal={displayDiffModal}
 		hideModal={hideDiffModal}
 		id={diffId}
-		
+
 	    />
 
 	</div>

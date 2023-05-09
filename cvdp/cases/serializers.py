@@ -2,7 +2,7 @@ from cvdp.models import *
 from cvdp.components.models import ComponentStatus, Product
 from django.core.exceptions import ObjectDoesNotExist
 from cvdp.permissions import my_case_role, is_my_case
-from cvdp.serializers import ChoiceField
+from cvdp.serializers import ChoiceField, UserSerializer
 from cvdp.groups.serializers import GroupSerializer
 from rest_framework import serializers
 from django.contrib.auth.models import Group
@@ -151,21 +151,6 @@ class UserCaseState:
             self.delete_perm = True
     
 
-class UserSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='screen_name')
-    logocolor = serializers.CharField(source='userprofile.logocolor')
-    photo = serializers.ImageField(source='userprofile.photo')
-    contact = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = User
-        fields = ('id', 'name', 'org', 'photo', 'logocolor', 'title', 'contact')
-
-    def get_contact(self, obj):
-        try:
-            return obj.contact.id
-        except ObjectDoesNotExist:
-            return None
 
 class UserCaseStateSerializer(serializers.Serializer):
     user = UserSerializer()

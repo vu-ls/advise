@@ -73,13 +73,17 @@ urlpatterns = [
     path('groups/new/', groupviews.CreateGroupView.as_view(), name='newgroup'),
     path('contact/new/', groupviews.CreateContactView.as_view(), name='newcontact'),
     re_path('^contact/new/(?P<pk>[0-9]+)/$', groupviews.CreateContactView.as_view(), name='newcontact'),
-    re_path('^contact/(?P<pk>[0-9]+)/$', groupviews.ContactView.as_view(), name='contact'),
+    re_path('^contact/(?P<slug>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/$', groupviews.ContactView.as_view(), name='contact'),
     #re_path('^group/api/(?P<pk>[0-9]+)/$', groupviews.GroupAPIView.as_view(), name='groupapi'),
     path('api/groups/', groupviews.GroupAPIView.as_view(), name='groupapi'),
     re_path('^api/groups/(?P<pk>[0-9]+)/contacts/$', groupviews.ContactAssociationAPIView.as_view({'get':'list', 'post':'create'}), name='assoc_api'),
     re_path('^api/groups/contacts/(?P<pk>[0-9]+)/$', groupviews.ContactAssociationAPIView.as_view({'patch': 'partial_update', 'delete':'destroy'}), name='assoc_api_detail'),
     re_path('^api/contact/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/$', groupviews.GetContactAPIView.as_view(), name='get_contact_api'),
+    re_path('^api/contact/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/activity/$', groupviews.ContactActivityAPIView.as_view({'get': 'list'}), name='contact_activityapi'),
+    re_path('^api/group/(?P<group>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/activity/$', groupviews.ContactActivityAPIView.as_view({'get': 'list'}), name='group_activityapi'),
+    re_path('^api/contact/activity/$', groupviews.ContactActivityAPIView.as_view({'get': 'list'}), name='contactactivityapi'),
 
+    
     path('api/case/notifications/', caseviews.CaseNotificationAPI.as_view(), name='notifications'), 
     re_path('^case_search/$', caseviews.CaseFilter.as_view(), name='casesearch'),
     path('case/new/', caseviews.CreateNewCaseView.as_view(), name='newcase'),
@@ -104,6 +108,7 @@ urlpatterns = [
     re_path('^api/case/thread/(?P<pk>[0-9]+)/participants/$', caseviews.CaseThreadParticipantAPIView.as_view({'get': 'list', 'post':'create'}), name='thread_participant_api'),
     re_path('^api/case/thread/participant/(?P<pk>[0-9]+)/$', caseviews.CaseThreadParticipantAPIView.as_view({'delete':'destroy'}), name='thread_participant_api'),
     re_path('^api/case/(?P<caseid>\d+)/user/$', caseviews.UserCaseStateAPIView.as_view(), name='usercaseapi'),
+ 
     re_path('^api/case/(?P<caseid>\d+)/activity/$', caseviews.CaseActivityAPIView.as_view(), name='activityapi'),
     re_path('^api/case/activity/$', caseviews.CaseActivityAPIView.as_view(), name='allactivityapi'),
     re_path('^api/case/(?P<caseid>\d+)/participants/$', caseviews.CaseParticipantAPIView.as_view({'get':'list', 'post':'create'}), name='case_participant_api_list'),

@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import {hydrateRoot} from 'react-dom/client';
+import { renderToString } from "react-dom/server";
 import { Dropdown } from 'react-bootstrap';
-import { PDFDownloadLink, usePDF, Document, Text, View, StyleSheet, Page } from '@react-pdf/renderer';
+import jsPDF from 'jspdf';
 import CaseThreadAPI from './ThreadAPI';
-import {AdvisoryPDF} from './AdvisoryPDF';
 
 const threadapi = new CaseThreadAPI();
 
 
 const PDFDownloader = (props) => {
-    const [instance, updateInstance] = useState(null);
     const [data, setData] = useState(null);
-    const [newInstance, updateNewInstance] = usePDF({'document': <myPDF/> });
     const [loading, setLoading] = useState(false);
     
     const fetchAdvisory = async() => {
@@ -26,29 +24,34 @@ const PDFDownloader = (props) => {
 	fetchAdvisory();
     }, []);
 
-    const HelloWorldPDF = (data) => (
-	<Document>
-	    <Page size="A4">
-		<View>
-		    <Text>{data.data.title}</Text>
-		</View>
-	    </Page>
-	</Document>
-    )
+
+    const downloadPDF = () => {
+	setLoading(true);
+	var doc = new jsPDF('p', 'pt', 'a4');
+	var pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+	var pageWidth = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
+	const string = renderToString(data.content);
+	let margins = [25, 20, 25, 20];
+        doc.setFont("Helvetica");
+	doc.setFontSize(24);
+	doc.text(data.title, pageWidth/2, 50, {align: 'center'});
+	let content = `<div class="advisorypdf" style="width:1350px">${data.content}</div>`;
+        doc.html(content, {
+	    callback: function(doc) {
+		doc.save(`CASE${props.case_id}-advisory_DRAFT.pdf`);
+	    },
+	    margin:margins,
+	    x: 40,
+	    y: 60
+	});
+	
+    }
     
     return (
 	<>
-	    {data ?
-	     <PDFDownloadLink document={<AdvisoryPDF data={data}/>} fileName="somename.pdf" className="dropdown-item">
-		 {
-		     ({loading}) => loading ? 'PDF' : 'PDF'
-		 }     
-	     </PDFDownloadLink>
-	     :
-	     <Dropdown.Item key="pdf">
-		 PDF
-	     </Dropdown.Item>
-	    }
+	    <Dropdown.Item key="pdf" onClick={(e)=>downloadPDF()}>
+		PDF
+	    </Dropdown.Item>
 	</>
     );
 

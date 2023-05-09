@@ -16,6 +16,8 @@
 .dashboard-card-1 {
     width: 70%;
     padding: 15px;
+    max-height: 1000px;
+    overflow-y: scroll;
 }
 
 .dashboard-card-2 {

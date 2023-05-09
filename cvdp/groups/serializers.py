@@ -1,8 +1,9 @@
-from cvdp.models import GroupProfile, ContactAssociation, Contact
+from cvdp.models import GroupProfile, ContactAssociation, Contact, ContactAction, ContactChange
 from rest_framework import serializers
 from django.contrib.auth.models import Group
 from authapp.models import APIToken
 from django.urls import reverse
+from cvdp.serializers import UserSerializer
 
 class GroupSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
@@ -99,7 +100,7 @@ class ContactSerializer(serializers.ModelSerializer):
             return ""
 
     def get_url(self, obj):
-        return reverse("cvdp:contact", args=[obj.id])
+        return reverse("cvdp:contact", args=[obj.uuid])
 
     def get_type(self, obj):
         if obj.user:
@@ -121,10 +122,36 @@ class ContactAssociationSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', )
         
     def get_url(self, obj):
-        return reverse("cvdp:contact", args=[obj.contact.id])
+        return reverse("cvdp:contact", args=[obj.contact.uuid])
 
 
     
+class ContactChangeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ContactChange
+        fields = ['field', 'old_value', 'new_value']
+
+
+
+class ContactActionSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    url = serializers.SerializerMethodField()
+    change = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ContactAction
+        fields = ['user', 'title', 'created', 'url', 'change',]
+
+    def get_url(self, obj):
+        if obj.group:
+            return reverse("cvdp:group", args=[obj.group.id])
+        return reverse("cvdp:contact", args=[obj.contact.uuid])
+    
+    def get_change(self, obj):
+        changes = obj.contactchange_set.all()
+        data = ContactChangeSerializer(changes, many=True)
+        return data.data
 
         
 

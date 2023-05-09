@@ -3,8 +3,9 @@ from rest_framework import serializers
 from django.contrib.auth.models import Group
 from django.urls import reverse
 from authapp.models import User
-from cvdp.serializers import ChoiceField
-from cvdp.cases.serializers import UserSerializer, ContentSerializerField
+from cvdp.serializers import ChoiceField, UserSerializer
+from cvdp.cases.serializers import ContentSerializerField
+
 from cvdp.groups.serializers import GroupSerializer
 
 

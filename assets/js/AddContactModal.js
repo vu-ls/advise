@@ -32,7 +32,6 @@ const AddContactModal = ({showModal, hideModal, title, edit, group}) => {
     
     const handleSubmit = async (event) => {
 
-	console.log("IN HANDLE SUBMIT!");
 	setDisableButton(true);
 	if (event) event.preventDefault();
 	    
@@ -43,11 +42,13 @@ const AddContactModal = ({showModal, hideModal, title, edit, group}) => {
 	    setDisableButton(false);
 	    return;
 	}
+	formDataObj['group'] = group.id;
 	
 	console.log(formDataObj);
 	if (edit) {
-	    await contactapi.updateGroupContact(edit, formDataObj).then(response=> {
+	    await contactapi.updateContact(edit.contact.uuid, formDataObj).then(response=> {
 		/* wait for response, then exit */
+		clear_data();
 		hideModal();
 	    })
 		.catch(err => {
@@ -56,6 +57,7 @@ const AddContactModal = ({showModal, hideModal, title, edit, group}) => {
 		});
 	} else {
 	    await contactapi.addGroupContact(group.id, formDataObj).then(response => {
+		clear_data();
 		hideModal();
 	    })
 		.catch(err => {
@@ -66,11 +68,17 @@ const AddContactModal = ({showModal, hideModal, title, edit, group}) => {
 	
     }
 
-    useEffect(() => {
-	console.log("HIDEMODAL");
-	clear_data();
-    }, [hideModal]);
+    useEffect(()=> {
+	if (edit) {
+	    console.log("IN EDIT CONTACT!!!");
+	    console.log(edit);
 
+	    setName(edit.contact.name);
+	    setEmail(edit.contact.email);
+	    setPhone(edit.contact.phone);
+	}
+    }, [edit]);
+    
     useEffect(() => {
 
 	if (email) {

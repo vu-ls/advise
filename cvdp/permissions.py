@@ -122,6 +122,29 @@ def my_case_vendors(user, case):
     return Group.objects.filter(id__in=cp)
     
 
+class ContactAPIPermission(BasePermission):
+    message = "Forbidden"
+
+    def has_permission(self, request, view):
+        if request.method in ['POST', 'DELETE']:
+            if request.user.is_coordinator or request.user.is_staff:
+                return True
+            return False
+        #otherwise - we're going to check has_object_permission
+        return True
+    
+    def has_object_permission(self, request, view, obj):
+
+        if request.user.is_coordinator or request.user.is_staff:
+            return True
+        logger.debug(request.method)
+        if request.method in ['PATCH']:
+            #obj is actually group
+            return ContactAssociation.objects.filter(group=obj, contact__user=request.user, group_admin=True).exists()
+        
+        return False
+
+    
 class GroupAdminLevelPermission(BasePermission):
     message = "Forbidden"
     
@@ -132,6 +155,7 @@ class GroupAdminLevelPermission(BasePermission):
             return request.user.groups.filter(id=obj.id).exists()
         else:
             #this user must be group admin
+
             return ContactAssociation.objects.filter(group=obj, contact__user=request.user, group_admin=True).exists()
 
 
