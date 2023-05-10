@@ -14,7 +14,7 @@
   <div class="alert alert-danger">AdVISE is improperly configured. Please select coordination team owner in admin settings.</div>
   {% endif %}
   
-  <div id="app" {% if user.is_coordinator %}val="coord"{% else %}val="user"{% endif %}groups="{{user.groups.all|length}}"></div>
+  <div id="mailapp" {% if user.is_coordinator %}val="coord"{% else %}val="user"{% endif %}groups="{{user.groups.all|length}}"></div>
   {% if contact and user.is_coordinator %}
   <div id="contact" val="{{ contact }}"></div>
   {% endif %}

@@ -9,10 +9,8 @@ const search = container.getAttribute("searchval");
 const root = createRoot(container);
 
 root.render(
-    <React.StrictMode>
-        <SearchAll
-	    search={search}
-        />
-    </React.StrictMode>
+    <SearchAll
+	search={search}
+    />
 
 );

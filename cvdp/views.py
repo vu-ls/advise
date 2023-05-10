@@ -28,7 +28,7 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from cvdp.permissions import *
 from cvdp.cases.serializers import *
 from cvdp.groups.serializers import ContactSerializer, GroupSerializer
-from cvdp.serializers import GenericSerializer
+from cvdp.serializers import GenericSerializer, UserSerializer
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import get_user_model
 import json
@@ -104,7 +104,7 @@ class GenerateNewRandomColor(LoginRequiredMixin, PendingTestMixin, generic.Templ
     login_url="authapp:login"
 
     def get(self, request, *args, **kwargs):
-        self.request.user.userprofile.logocolor = "#"+''.join([random.choice('0123456789AB\CDEF') for j in range(6)])
+        self.request.user.userprofile.logocolor = "#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
         self.request.user.userprofile.save()
         messages.success(
             self.request,
@@ -124,9 +124,9 @@ def quickSearch(request):
         return redirect("cvdp:search")
 
 def process_query(s, live=True):
-    query = re.sub(r'[!\'()|&<>]', ' ', s).strip()
+    query = re.sub(r"[!'()|&<>]", ' ', s).strip()
     # get rid of empty quotes
-    query = re.sub(r'""', '', s)
+    query = re.sub(r'""', '', query)
     if query == '"':
         return None
     if query.startswith(settings.CASE_IDENTIFIER):
@@ -166,6 +166,7 @@ class APISearchView(APIView):
         components = []
         cases = []
         vuls = []
+        artifacts = []
         advisory = []
         # kind of hacky but will work for now
         # -----------------------------------------------------------
@@ -173,21 +174,24 @@ class APISearchView(APIView):
         page_size = request.query_params.get('page_size ', 10)
 	# -----------------------------------------------------------
         search_term = self.request.GET.get('name', None)
+        logger.debug(f"SEARCH TERM IS {search_term}")
         search_query = None
         
         search_type = self.request.GET.get('type', "All").lower()
-
+        logger.debug(search_type)
         if search_term:
             search_query = process_query(search_term)
 
         if (search_type in ['all', 'cases']):
+            logger.debug("INS EARH TYPE")
             mycases = my_cases(self.request.user)
             cases = Case.objects.search_my_cases(mycases, search_query)
             vuls = Vulnerability.objects.search_my_cases(mycases, search_query)
             advisory = CaseAdvisory.objects.search_my_cases(mycases, search_query)
+            #artifacts isn't doing full text search so use search_term
+            artifacts = CaseArtifact.objects.search_my_cases(mycases, search_term)
         if (search_type in ['all', 'components']):
             components = Component.objects.search_my_components(my_components(self.request.user), search_query)
-
         if (search_type in ['all', 'contacts']):
             if self.request.user.is_coordinator:
                 if search_term:
@@ -198,12 +202,10 @@ class APISearchView(APIView):
                     groups = GroupProfile.objects.all().order_by('-modified')
                     contacts = Contact.objects.all().exclude(user__api_account=True).order_by('-modified')
 
-        results = chain(groups, contacts, cases, components, vuls, advisory)
-
+        results = chain(groups, contacts, cases, components, vuls, advisory, artifacts)
         qs = sorted(results,
                     key = lambda instance: instance.modified,
                     reverse = True)
-
         gp = Paginator(qs, page_size)
 
         serializer = GenericSerializer(gp.page(page_number), many=True)

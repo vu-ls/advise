@@ -82,8 +82,10 @@ class CaseCoordinatorSerializer(serializers.ModelSerializer):
             return "Anonymous"
 
     def get_owners(self, obj):
-        return list(CaseParticipant.objects.filter(case=obj, role="owner").values_list('contact__user__screen_name', flat=True))
-
+        owners = CaseParticipant.objects.filter(case=obj, role="owner").values_list('contact__user__id', flat=True)
+        users = User.objects.filter(id__in=owners)
+        serializer = UserSerializer(users, many=True)
+        return serializer.data
 
     def get_advisory_status(self, obj):
         advisory = CaseAdvisory.objects.filter(case=obj).first()
@@ -114,16 +116,23 @@ class CaseSerializer(serializers.ModelSerializer):
     case_identifier = serializers.CharField(source='get_caseid')
     report = ReportSerializer()
     status = ChoiceField(Case.STATUS_CHOICES)
+    owners = serializers.SerializerMethodField()
     advisory_status = serializers.SerializerMethodField()
     created_by = serializers.SerializerMethodField()
     
     class Meta:
         model = Case
-        fields = ('case_id', 'case_identifier', 'created', 'created_by', 'modified', 'status', 'title', 'summary', 'report', 'public_date', 'due_date', 'advisory_status', )
+        fields = ('case_id', 'case_identifier', 'owners', 'created', 'created_by', 'modified', 'status', 'title', 'summary', 'report', 'public_date', 'due_date', 'advisory_status', )
         lookup_field = "case_id"
-        read_only_fields =("case_id", "case_identifier", "created", "modified", "report", "created_by", )
+        read_only_fields =("case_id", "owners", "case_identifier", "created", "modified", "report", "created_by", )
 
 
+    def get_owners(self, obj):
+        owners = CaseParticipant.objects.filter(case=obj, role="owner").values_list('contact__user__id', flat=True)
+        users = User.objects.filter(id__in=owners)
+        serializer = UserSerializer(users, many=True)
+        return serializer.data
+        
     def get_created_by(self, obj):
         if obj.created_by:
             return obj.created_by.screen_name
@@ -190,6 +199,13 @@ class ContentSerializerField(serializers.Field):
         return data
 
 
+class CaseParticipantSummarySerializer(serializers.Serializer):
+    count = serializers.IntegerField()
+    notified = serializers.IntegerField()
+    vendors = serializers.IntegerField()
+
+    
+    
 class CaseParticipantSerializer(serializers.ModelSerializer):
 
     name = serializers.SerializerMethodField()

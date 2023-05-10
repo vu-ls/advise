@@ -30,7 +30,7 @@ RUN npm run build
 ##############################################################################
 ## django artifact build
 ##############################################################################
-FROM python:3.10-alpine as build-django
+FROM python:3.11-alpine as build-django
 
 RUN pip install --upgrade pip && \
     mkdir -p /home/advise/app && \
@@ -68,7 +68,7 @@ RUN apk del build-deps && \
 ##############################################################################
 ## django final image
 ##############################################################################
-FROM python:3.10-alpine
+FROM python:3.11-alpine
 
 RUN addgroup -S advise && \
     adduser -S advise -G advise && \
@@ -89,7 +89,7 @@ RUN apk update && \
     apk add --update openssl postgresql-client curl ${ADDITIONAL_APP_APK} && \
     rm -rf /var/cache/apk/*
 
-COPY --from=build-django /usr/local/lib/python3.10/site-packages/ /usr/local/lib/python3.10/site-packages/
+COPY --from=build-django /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
 COPY --from=build-django /usr/local/bin/ /usr/local/bin/
 COPY --from=build-node --chown=advise:advise ${APP_HOME}/webpack-stats.json ${APP_HOME}/
 COPY --from=build-node --chown=advise:advise ${APP_HOME}/node_modules/ ${APP_HOME}/node_modules/

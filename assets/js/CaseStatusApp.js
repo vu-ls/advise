@@ -24,7 +24,7 @@ const CaseStatusApp = (props) => {
     const [showAutoAssign, setShowAutoAssign] = useState(false);
     const [error, setError] = useState(null);
 
-    
+
     const hideAutoAssign = () => {
         setShowAutoAssign(false);
     };
@@ -73,26 +73,26 @@ const CaseStatusApp = (props) => {
 		if (error) {
 		    reject(error)
 	  }
-		
+
 		resolve(new File([value], filename, { type: 'plain/text' }))
 	    })
 	})
 	const url = URL.createObjectURL(file);
-	
+
 	// trying to assign the file URL to a window could cause cross-site
 	// issues so this is a workaround using HTML5
 	const anchor = document.createElement('a');
 	anchor.href = url;
 	anchor.download = filename;
-	
+
 	document.body.appendChild(anchor);
 	anchor.click();
 	document.body.removeChild(anchor);
-  
+
 	URL.revokeObjectURL(url);
     }
-    
-    
+
+
     const shareAdvisory = async() => {
 	threadapi.shareAdvisory(caseInfo.case_id).then(response => {
 	    props.updateStatus();
@@ -101,7 +101,7 @@ const CaseStatusApp = (props) => {
 	    setError(`Error sharing advisory: ${err.message}`);
 	});
     }
-    
+
     const StatusChanger = (props) => {
 	return (
 	    <Dropdown onSelect={changeStatus}>
@@ -141,7 +141,7 @@ const CaseStatusApp = (props) => {
 	    const a = document.createElement('a');
 	    a.setAttribute("href",     dataStr);
 	    a.setAttribute("download", `${caseInfo.case_identifier}` + ".json");
-	    document.body.appendChild(a); 
+	    document.body.appendChild(a);
 	    a.click();
 	    a.remove();
 	});
@@ -151,7 +151,7 @@ const CaseStatusApp = (props) => {
 	let badgetype = "info";
 
 	console.log(props.case_id);
-	
+
 	switch(props.advisory) {
 	case "NOT STARTED":
 	    badgetype="warning"
@@ -188,7 +188,7 @@ const CaseStatusApp = (props) => {
 		</DropdownButton>
 		}
 	    </div>
-		
+
 	)
     }
 
@@ -232,32 +232,30 @@ const CaseStatusApp = (props) => {
 		</span>
 	    </div>
 	);
-	if (props.owners.length > 0 && props.options.length > 0) {
-	    let owner = props.options.filter((item) => props.owners.includes(item.name));
-	    console.log("OWNER is", owner);
-	    if (owner) {
-		title = owner.map(item => {
-		    return (
-			<div className="d-flex align-items-center gap-2 mt-2 mb-2" key={`owner=${item.id}`}>
-			    <DisplayLogo
-				name={item.name}
-				color={item.logocolor}
-				photo={item.photo}
-			    />
-			    <span className="participant">
-				{item.name}
-			    </span>
-			</div>
-		    )
-		})
-	    }
+	if (props.owners.length > 0) {
+	    title = props.owners.map((item, index) => {
+		return (
+		    <div className="d-flex align-items-center gap-2 mt-2 mb-2" key={`owner=${item.id}`}>
+			<DisplayLogo
+			    name={item.name}
+			    color={item.logocolor}
+			    photo={item.photo}
+			/>
+			<span className="participant">
+			    {item.name}
+			</span>
+		    </div>
+		)
+	    })
 	}
 	return (
-	    <Dropdown onSelect={assignUser}>
-		<Dropdown.Toggle className="p-0" variant="light">
-		    {title}
-		</Dropdown.Toggle>
-		<Dropdown.Menu as={CustomMenu}>
+	    <>
+		{['coordinator', 'owner'].includes(props.role) ?
+		 <Dropdown onSelect={assignUser}>
+		     <Dropdown.Toggle className="p-0" variant="light">
+			 {title}
+		     </Dropdown.Toggle>
+		     <Dropdown.Menu as={CustomMenu}>
 
 		    {props.options ?
 		     props.options.map((u, index) => {
@@ -302,6 +300,10 @@ const CaseStatusApp = (props) => {
 		    }
 		</Dropdown.Menu>
 	    </Dropdown>
+	     :
+	     <>{title}</>
+		}
+	    </>
 	)
     }
 
@@ -317,7 +319,7 @@ const CaseStatusApp = (props) => {
     }, [props.caseInfo]);
 
     useEffect(() => {
-	if (props.user.role === "owner") {
+	if (['coordinator', 'owner'].includes(props.user.role)) {
 	    try {
 		threadapi.getUserAssignments().then((response) => {
 		    setUsers(response['users']);
@@ -327,9 +329,9 @@ const CaseStatusApp = (props) => {
 		console.log(err);
 		setApiError("API Error");
 	    }
-	} 
+	}
     }, [props.user])
-	
+
     return (
         caseInfo ?
 	    <Card className="mb-3">
@@ -338,7 +340,7 @@ const CaseStatusApp = (props) => {
 		    {apiError &&
 		     <Alert variant="danger">{apiError}</Alert>
 		    }
-		    
+
 		    {props.user.role === "owner" &&
 		    <DropdownButton variant="btn p-0"
                                     title={<i className="bx bx-dots-vertical-rounded"></i>}
@@ -371,7 +373,6 @@ const CaseStatusApp = (props) => {
 			    }
 			</Col>
 		    </Row>
-		    {['owner', 'coordinator'].includes(props.user.role) &&
                     <Row className="mb-2">
                         <Col sm={4}>
                             <Form.Label>Assigned To</Form.Label>
@@ -380,10 +381,10 @@ const CaseStatusApp = (props) => {
 			    <AssignmentDropdownButton
 				owners={caseInfo.owners}
 				options={users}
+				role={props.user.role}
 			    />
                         </Col>
                     </Row>
-		    }
                     <Row className="mb-2">
                         <Col sm={4}>
                             <Form.Label>Public</Form.Label>

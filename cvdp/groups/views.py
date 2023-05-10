@@ -106,27 +106,14 @@ class GroupAdminView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateVi
     def get_context_data(self, **kwargs):
         context = super(GroupAdminView, self).get_context_data(**kwargs)
         #TODO: this doesn't work for more than 1 group
-        context['my_group'] = self.request.user.groups.first().name
+        my_groups = self.request.user.groups.all()
+
+        #get all groups this user is the admin for
+        
+        context['admin_groups'] = list(ContactAssociation.objects.filter(group__in=my_groups, group_admin=True).values_list('group__groupprofile__uuid', flat=True))
         context['groupadminpage'] = 1
         return context
 
-
-"""
-Group verifications - Django View
-"""
-class GroupVerificationsView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
-    model = Group
-    login_url = "authapp:login"
-    template_name = "cvdp/verifications.html"
-
-    def test_func(self):
-        return self.request.user.is_coordinator
-
-    def get_context_data(self, **kwargs):
-        context = super(GroupVerificationsView, self).get_context_data(**kwargs)
-        context['object'] = self.object
-        context['verifications'] = ContactAssociation.objects.filter(group=self.object, verified=False)
-        return context
 
 """
 Group Components view - React app
@@ -324,6 +311,9 @@ class GroupAPIAccountView(viewsets.ModelViewSet):
         return "Group API Accounts"
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return APIToken.objects.none()
+
         g = get_object_or_404(Group, id=self.kwargs['pk'])
         self.check_object_permissions(self.request, g)
         logger.debug(f"GROUP IS {g.name}")
@@ -407,6 +397,7 @@ class GroupDetailAPIView(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         if self.request.user.is_superuser:
             g = self.get_object()
+            action = create_group_action(f"removed group: {g.name}", request.user, None)
             g.group.delete()
             return Response({}, status=status.HTTP_202_ACCEPTED)
         raise PermissionDenied()
@@ -506,6 +497,8 @@ class GetContactAPIView(generics.RetrieveAPIView):
         return "Retrieve Contact"
 
     def get_serializer_class(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return ContactSerializer
         contact = Contact.objects.filter(uuid=self.kwargs['contact']).first()
         if contact:
             return ContactSerializer
@@ -513,6 +506,8 @@ class GetContactAPIView(generics.RetrieveAPIView):
             return GroupSerializer
 
     def get_object(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Contact.objects.none()
         contact = Contact.objects.filter(uuid=self.kwargs['contact']).first()
         if contact:
             return contact
@@ -635,7 +630,7 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
         logger.debug(data)
         if data.get('group_admin') and not instance.contact.user:
             logger.debug("Can't make a non-user an admin")
-            return Response({'message':'This contact is not associated with a user, and can not be promoted to group admin.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail':'This contact is not associated with a user, and can not be promoted to group admin.'}, status=status.HTTP_400_BAD_REQUEST)
         logger.debug("in update contact association")
         #ONCE VERIFIED, we should check if the user exists and add them to the group
         serializer = self.serializer_class(instance=instance, data=data, partial=True)

@@ -261,7 +261,7 @@
                           </div>
                           <div class="flex-grow-1">
                             <span class="fw-semibold d-block">{{ user.screen_name }}</span>
-                            <small class="text-muted">{{ user.groups.all|join:", "}} {% if user.is_superuser %}<br/>Admin{% endif %}</small>
+                            <small class="text-muted">{{ user.groups.all|join:", "}} {% if user.is_superuser %}<br/>Admin{% elif user.is_staff %}Staff {% elif user.is_coordinator %}Coordinator{% endif %}</small>
                           </div>
                         </div>
                       </a>

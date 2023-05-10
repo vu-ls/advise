@@ -408,18 +408,37 @@ class CaseAPIFilter(django_filters.FilterSet):
         users = User.objects.filter(is_coordinator=True, is_active=True)
         self.filters["owner"].extra['choices'] = [(q.id, q.screen_name) for q in users]
 
+
+def _search_cases(mycases, searchterm):
+    search_query = None
+    
+    if searchterm:
+        search_query = process_query(searchterm)
+
+    cases = list(Case.objects.search_my_cases(mycases, search_query).values_list('id', flat=True))
+    vuls = list(Vulnerability.objects.search_my_cases(mycases, search_query).values_list('case__id', flat=True))
+    advisory = list(CaseAdvisory.objects.search_my_cases(mycases, search_query).values_list('case__id', flat=True))
+    artifacts = list(CaseArtifact.objects.search_my_cases(mycases, searchterm).values_list('case__id', flat=True))
+    case_list = cases + vuls + advisory + artifacts
+
+    dedup = list(dict.fromkeys(case_list))
+
+    return Case.objects.filter(id__in=dedup)
+        
 class CaseAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, CaseObjectAccessPermission)
     lookup_field = "case_id"
     filterset_class=CaseAPIFilter
-    search_fields = ['summary', 'title']
     pagination_class=StandardResultsPagination
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Case.objects.none()
         # get cases I have access to
-        return my_cases(self.request.user)   #.order_by('-modified')
+        myc = my_cases(self.request.user)
+        if self.request.GET.get('search'):
+            return _search_cases(myc, self.request.GET['search'])
+        return myc
 
     def get_serializer_class(self):
         if (self.kwargs.get('case_id')):
@@ -753,6 +772,7 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
 
 class CaseParticipantSummaryAPIView(generics.GenericAPIView):
     permission_classes = (IsAuthenticated, PendingUserPermission, CaseObjectAccessPermission)
+    serializer_class = CaseParticipantSummarySerializer
 
     def get_view_name(self):
         return "Case Participant Summary View"

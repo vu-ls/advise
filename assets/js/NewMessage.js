@@ -178,8 +178,9 @@ const NewMessage = (props) => {
 	formField.append('content', message);
 	console.log(messageTo);
 	if (allowSelectUser) {
-	    let users = messageTo.map((item) => item.uuid);
-	    formField.append('users', users);
+	    for (var i = 0; i < messageTo.length; i++) {
+		formField.append('users[]', messageTo[i].uuid);
+            }
 	}
 	console.log(formField);
 	if (props.group) {

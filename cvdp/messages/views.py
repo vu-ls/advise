@@ -131,7 +131,7 @@ class ThreadAPIView(viewsets.ModelViewSet):
             if from_group:
                 group_list.append(from_group)
         #get all users
-        for user in request.data.getlist('users'):
+        for user in request.data.getlist('users[]'):
             contact = Contact.objects.filter(uuid=user).first()
             if (contact):
                 user_list.append(contact.user)
@@ -143,7 +143,7 @@ class ThreadAPIView(viewsets.ModelViewSet):
                 else:
                     return Response({'message': 'invalid to: user/group does not exist'},
                                     status=status.HTTP_400_BAD_REQUEST)
-        if not request.data.getlist('users'):
+        if not request.data.getlist('users[]'):
             #get coordination team
             group = GlobalSettings.objects.all().first()
             if not group:

@@ -14,6 +14,7 @@ const SearchAll = (search) => {
     const [searchVal, setSearchVal] = useState("");
     const [searchType, setSearchType] = useState("All");
     const [results, setResults ] = useState([]);
+    const [start, setStart] = useState(false);
     let cancelToken;
 
     const doSearch = async (search) => {
@@ -26,8 +27,6 @@ const SearchAll = (search) => {
 	cancelToken = axios.CancelToken.source()
 	try {
 	    const response = await caseapi.searchAll(search, cancelToken);
-	    console.log(response.data.data);
-	    console.log("Results for " + search + ": " + response.data);
 	    setResults(response.data.data);
 	    setItemsCount(response.data.count);
 	    setIsLoading(false);
@@ -43,8 +42,12 @@ const SearchAll = (search) => {
         let urlstr = `type=${searchType}&page=${page}`;
         if (searchVal) {
             urlstr = `${urlstr}&name=${searchVal}`;
-        }
-	doSearch(urlstr);
+	    doSearch(urlstr);
+	    setStart(true);
+        } else if (start) {
+	    /* don't search on initial mount */
+	    doSearch(urlstr);
+	}
 
     }, [searchType, searchVal, page]);
 

@@ -32,7 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_contact(self, obj):
         try:
-            return obj.contact.id
+            return str(obj.contact.uuid)
         except ObjectDoesNotExist:
             return None
         
@@ -64,6 +64,12 @@ class GenericSerializer(serializers.Serializer):
         return obj.get_absolute_url()
 
     def get_title(self, obj):
+        try:
+            if obj.full_title:
+                return obj.full_title
+        except:
+            pass
+        
         try:
             if obj.title:
                 return obj.title

@@ -319,7 +319,7 @@ class Contact(models.Model):
             return None
 
     def get_absolute_url(self):
-        return reverse('cvdp:contact', args=(self.id,))
+        return reverse('cvdp:contact', args=(self.uuid,))
 
 class ContactAssociation(models.Model):
     contact = models.ForeignKey(
@@ -1475,6 +1475,18 @@ class UserAssignmentWeight(models.Model):
         unique_together = (('user', 'role'),)
 
 
+class CaseArtifactManager(models.Manager):
+    def search(self, query=None):
+        qs = self.get_queryset()
+        if query is not None:
+            qs = qs.filter(file__filename__icontains=query)
+        return qs
+
+    def search_my_cases(self, cases, query=None):
+        qs = CaseArtifact.objects.filter(case__in=cases)
+        if query is not None:
+            qs = qs.filter(file__filename__icontains=query)
+        return qs
 
 class CaseArtifact(models.Model):
 
@@ -1496,6 +1508,27 @@ class CaseArtifact(models.Model):
     shared = models.BooleanField(
         default=False)
 
+    def _get_modified(self):
+        # for sorting
+        if self.action:
+            return self.action.created
+        return timezone.now
+
+    modified = property(_get_modified)
+
+    def _get_title(self):
+        # also for searching
+        return f"{self.case.caseid} artifact: {self.file.filename}"
+
+    title = property(_get_title)
+
+    def get_absolute_url(self):
+        return reverse('cvdp:case', args=(self.case.case_id,))
+    
+    objects = CaseArtifactManager()
+
+    def __str__(self):
+        return f"{self.file.filename}"
 
 class CVEReservation(models.Model):
 
@@ -1882,14 +1915,14 @@ class ContactAction(Action):
     contact = models.ForeignKey(
 	Contact,
         help_text=_('Contact'),
-	on_delete=models.CASCADE,
+	on_delete=models.SET_NULL,
         blank=True, null=True
     )
 
     group = models.ForeignKey(
         Group,
         help_text=_('Group'),
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         blank=True, null=True
     )
 

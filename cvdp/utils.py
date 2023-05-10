@@ -20,9 +20,9 @@ def cached_attribute(func):
 
 
 def process_query(s, live=True):
-    query = re.sub(r'[!\'()|&<>]', ' ', s).strip()
+    query = re.sub(r"[!'()|&<>]", ' ', s).strip()
     # get rid of empty quotes                                                               
-    query = re.sub(r'""', '', s)
+    query = re.sub(r'""', '', query)
     if query == '"':
         return None
     if query.startswith(settings.CASE_IDENTIFIER):

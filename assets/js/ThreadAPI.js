@@ -241,7 +241,6 @@ export default class CaseThreadAPI{
 
 
     searchAll(search, cancel) {
-	console.log(search);
         const url = `${API_URL}/api/search/?${search}`;
         return axios.get(url, {cancelToken: cancel.token})
     }

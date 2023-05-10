@@ -20,11 +20,14 @@ logger.setLevel(logging.DEBUG)
 class ProviderAuthenticationForm(AuthenticationForm):
     
     def confirm_login_allowed(self, user):
-        if not user.email_confirmed:
-            raise forms.ValidationError(
-		_("The email associated with this account has not been confirmed. Please confirm the email before logging in."),
-                code='email_unconfirmed',
-            )
+        if user.is_superuser:
+            pass
+        elif settings.ACCOUNT_EMAIL_VERIFICATION:
+            if not user.email_confirmed:
+                raise forms.ValidationError(
+		    _("The email associated with this account has not been confirmed. Please confirm the email before logging in."),
+                    code='email_unconfirmed',
+                )
         
         
         

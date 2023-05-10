@@ -67,7 +67,6 @@ urlpatterns = [
     re_path('^api/manage/group/(?P<pk>[0-9]+)/admin/$', groupviews.GroupAdminAPIView.as_view({'patch': 'partial_update', 'get': 'retrieve'}), name='groupadminapi'),
     re_path('^api/manage/group/admin/(?P<pk>[0-9]+)/$', groupviews.GroupAdminAPIView.as_view({'get': 'retrieve'}), name='groupadminapi'),
     re_path('^groups/(?P<pk>[0-9]+)/$', groupviews.GroupDetailView.as_view(), name='group'),
-    re_path('^groups/(?P<pk>[0-9]+)/verifications/$', groupviews.GroupVerificationsView.as_view(), name='group_verifications'),
     re_path('^groups/(?P<pk>[0-9]+)/components/$', groupviews.GroupComponentsView.as_view(), name='group_components'),
     path('groups/search/', groupviews.GroupSearchView.as_view(), name='searchgroups'),
     path('groups/new/', groupviews.CreateGroupView.as_view(), name='newgroup'),

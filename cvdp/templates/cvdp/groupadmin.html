@@ -9,10 +9,11 @@
 
 <div class="container-xxl flex-grow-1 container-p-y">
   {% url 'cvdp:case' case.id as bread_url %}
-  {% include 'cvdp/include/top_panel.html' with title=my_group breadcrumbs="My Groups" %}
-  
-   <div id="app"></div>
+  {% include 'cvdp/include/top_panel.html' with title="My Groups" breadcrumbs="Groups" %}
 
+  {{ admin_groups|json_script:'admin' }}
+   <div id="app"></div>
+   
 
 </div>
 

@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client';
 import InboxApp from './InboxApp.js';
 import LoadInboxApp from './LoadInboxApp.js'
 import {Tab, Tabs} from 'react-bootstrap';
-const container = document.getElementById("app");
+const container = document.getElementById("mailapp");
 var contactmsg=null;
 if (document.getElementById('contact')) {
     contactmsg = document.getElementById('contact').getAttribute("val");

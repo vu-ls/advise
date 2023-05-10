@@ -45,7 +45,9 @@ const GroupAdminApp = (props) => {
     const [activityHasMore, setActivityHasMore] = useState(false);
     const [activityNext, setActivityNext] = useState(null);
     const [activityLoading, setActivityLoading] = useState(true);
-
+    const [admin, setAdmin] = useState([]);
+    const [groupAdmin, setGroupAdmin] = useState(false);
+    
     const columns = useMemo(
 	() => [
             {
@@ -86,7 +88,7 @@ const GroupAdminApp = (props) => {
 	    },
 	    {
 		Header: 'admin',
-		accessor: d => {return d.group_admin ? <i className="fas fa-crown"></i> : "" },
+		accessor: d => {return d.group_admin ? <OverlayTrigger overlay={<Tooltip>This user is a group admin</Tooltip>}><i className="fas fa-crown"></i></OverlayTrigger> : "" },
 	    },
 	    {
 		Header: 'perms',
@@ -94,13 +96,13 @@ const GroupAdminApp = (props) => {
 		Cell: props => (
 		    <div className="text-nowrap">
 			{props.row.original.group_admin ?
-			 <Button variant="btn-icon px-1" title="Remove admin permissions" onClick={() => changePerms(props, )}>
-			     <i className="fas fa-ban"></i>
-			 </Button>
+			 <OverlayTrigger overlay={<Tooltip>Remove Admin Permissions</Tooltip>}><Button variant="btn-icon px-1" title="Remove admin permissions" onClick={() => changePerms(props, )}>
+												   <i className="fas fa-ban"></i>
+											       </Button></OverlayTrigger>
 			 :
-			 <Button variant="btn-icon px-1" title="Make group admin" onClick={() => changePerms(props)}>
-                             <i className="fas fa-crown"></i>
-			 </Button>
+			 <OverlayTrigger overlay={<Tooltip>Make Group Admin</Tooltip>}><Button variant="btn-icon px-1" title="Make group admin" onClick={() => changePerms(props)}>
+											   <i className="fas fa-crown"></i>
+										       </Button></OverlayTrigger>
 			}
 		    </div>
 		)
@@ -195,7 +197,7 @@ const GroupAdminApp = (props) => {
 	await contactapi.updateGroupContact(contact.row.original.id, data).then(response=> {
 	    setUpdate(true);
 	}).catch(err => {
-	    setApiError(`Error changing user permissions: ${err.response.data.message}`);
+	    setApiError(`Error changing user permissions: ${err.response.data.detail}`);
 	});
     };
 
@@ -332,6 +334,12 @@ const GroupAdminApp = (props) => {
 	if (selectedGroup) {
 	    fetchAPIKeys();
 	    fetchActivity();
+	    if (props.group || admin.includes(selectedGroup.uuid)){
+		setGroupAdmin(true);
+	    } else {
+		setGroupAdmin(false);
+	    }
+	    
 	}
 
     }, [selectedGroup]);
@@ -492,10 +500,17 @@ const GroupAdminApp = (props) => {
 
     useEffect(() => {
 	if (props.group) {
+	    setGroupAdmin(true);
 	    fetchGroupData();
 	} else {
+	    const admin_groups = JSON.parse(document.getElementById('admin').textContent);
+	    console.log("ADMIN GROUPS are.... ", admin_groups);
+	    setAdmin(admin_groups);
             fetchInitialData();
 	}
+	
+	
+	
     }, []);
 
     function noSelect(rows) {
@@ -557,22 +572,25 @@ const GroupAdminApp = (props) => {
 			<Nav.Item key="group">
 			    <Nav.Link eventKey="group"><i className="bx bx-user me-1"></i>{" "}{props.group ? "Group Details" : "My Contacts"}</Nav.Link>
 			</Nav.Item>
+			{groupAdmin &&
+			 <>
+                             <Nav.Item key="contactinfo">
+				 <Nav.Link eventKey="contactinfo"><i className="fas fa-mobile-alt"></i>{" "} Contact Information {selectedGroup.support_email ? "" : <i className="fas fa-exclamation-triangle text-danger"></i> }</Nav.Link>
+                             </Nav.Item>
 
-                        <Nav.Item key="contactinfo">
-                            <Nav.Link eventKey="contactinfo"><i className="fas fa-mobile-alt"></i>{" "} Contact Information {selectedGroup.support_email ? "" : <i className="fas fa-exclamation-triangle text-danger"></i> }</Nav.Link>
-                        </Nav.Item>
-
-			<Nav.Item key="permissions">
-                            <Nav.Link eventKey="permissions"><i className="fas fa-user-lock"></i>{" "} Permissions</Nav.Link>
-                        </Nav.Item>
-
-			<Nav.Item key="verifications">
-                            <Nav.Link eventKey="verifications"><i className="bx bx-bell"></i>{" "}Unverified users {unverifiedContacts.length > 0 ? <i className="fas fa-exclamation-triangle text-danger"></i> : "" }</Nav.Link>
-                        </Nav.Item>
-
-			<Nav.Item key="api">
-                            <Nav.Link eventKey="api"><i className="fas fa-key"></i>{" "} API</Nav.Link>
-                        </Nav.Item>
+			     <Nav.Item key="permissions">
+				 <Nav.Link eventKey="permissions"><i className="fas fa-user-lock"></i>{" "} Permissions</Nav.Link>
+                             </Nav.Item>
+			     
+			     <Nav.Item key="verifications">
+				 <Nav.Link eventKey="verifications"><i className="bx bx-bell"></i>{" "}Unverified users {unverifiedContacts.length > 0 ? <i className="fas fa-exclamation-triangle text-danger"></i> : "" }</Nav.Link>
+                             </Nav.Item>
+			     
+			     <Nav.Item key="api">
+				 <Nav.Link eventKey="api"><i className="fas fa-key"></i>{" "} API</Nav.Link>
+                             </Nav.Item>
+			 </>
+			}
 			{props.group &&
 			 <Nav.Item key="components">
 			     <Nav.Link eventKey="components"><i className="fas fa-microchip"></i>{" "}Components</Nav.Link>
@@ -600,13 +618,17 @@ const GroupAdminApp = (props) => {
 
 					    <h3 className="px-3">
 						{selectedGroup.name}
-						{props.group && groups[0].active ?
-						 " (Active)"
-						 :
-						 " (Inactive)"
+						{props.group &&
+						 <>
+						     {groups[0].active ?
+						      " (Active)"
+						      :
+						      " (Inactive)"
+						     }
+						 </>
 						}
 					    </h3>
-
+					    {groupAdmin &&
 					    <div className="button-wrapper">
 						<div className="mb-2 d-flex align-items-center  gap-2">
 						    <Button
@@ -631,31 +653,33 @@ const GroupAdminApp = (props) => {
 						</div>
 						<p className="text-muted mb-0">Allowed JPG, GIF or PNG. Max size of 800K</p>
 					    </div>
-
+					    }
 					</div>
-					<DropdownButton
-					    variant="primary"
-					    title={
-						<span>Manage <i className="fas fa-chevron-down"></i></span>
-					    }
-					    onSelect={handleManage}
-					>
-					    <Dropdown.Item eventKey="add">Add Contact</Dropdown.Item>
-					    <Dropdown.Item eventKey="edit">Edit Contact</Dropdown.Item>
-					    <Dropdown.Item eventKey="remove">Remove Contact</Dropdown.Item>
-					    {props.group &&
-					     <>
-						 {groups[0].active ?
-						  <Dropdown.Item eventKey="deactivate">Deativate Group</Dropdown.Item>
-						  :
-						  <Dropdown.Item eventKey="activate">Activate Group</Dropdown.Item>
-						 }
-						 <Dropdown.Item eventKey="message">Message Group</Dropdown.Item>
-						 <Dropdown.Item eventKey="delete">Remove Group</Dropdown.Item>
-					     </>
-					    }
-
-					</DropdownButton>
+					{groupAdmin &&
+					 <DropdownButton
+					     variant="primary"
+					     title={
+						 <span>Manage <i className="fas fa-chevron-down"></i></span>
+					     }
+					     onSelect={handleManage}
+					 >
+					     <Dropdown.Item eventKey="add">Add Contact</Dropdown.Item>
+					     <Dropdown.Item eventKey="edit">Edit Contact</Dropdown.Item>
+					     <Dropdown.Item eventKey="remove">Remove Contact</Dropdown.Item>
+					     {props.group &&
+					      <>
+						  {groups[0].active ?
+						   <Dropdown.Item eventKey="deactivate">Deativate Group</Dropdown.Item>
+						   :
+						   <Dropdown.Item eventKey="activate">Activate Group</Dropdown.Item>
+						  }
+						  <Dropdown.Item eventKey="message">Message Group</Dropdown.Item>
+						  <Dropdown.Item eventKey="delete">Remove Group</Dropdown.Item>
+					      </>
+					     }
+					     
+					 </DropdownButton>
+					}
 				    </div>
 				</Card.Header>
 				<Card.Body>
@@ -693,134 +717,139 @@ const GroupAdminApp = (props) => {
 
 			    }
 			</Tab.Pane>
-			<Tab.Pane eventKey="contactinfo" key="contactinfo">
-			    <Card>
-				<Card.Header>
-				    <Card.Title>Organization Contact Information
-				    </Card.Title>
-				</Card.Header>
-				<Card.Body>
-				    <GroupContactApp
-					group={selectedGroup}
-					update = {fetchInitialData}
-				    />
-				</Card.Body>
-			    </Card>
-			</Tab.Pane>
+			{groupAdmin &&
+			 <>
 
-                        <Tab.Pane eventKey="permissions" key="permissions">
-                            <Card>
-                                <Card.Header>
-				    Group Case Permissions
-                                </Card.Header>
-                            </Card>
-
-                        </Tab.Pane>
-
-			<Tab.Pane eventKey="verifications" key="verifications">
-                            <Card>
-                                <Card.Header>
-				    <Card.Title>Unverified Users</Card.Title>
-                                </Card.Header>
-				<Card.Body>
-                                    <div className="flex justify-center mt-8">
-                                        <GroupAdminTable
-                                            columns={unverified_columns}
-                                            data = {unverifiedContacts}
-                                            setSelectedRows = {noSelect}
-                                            fetchData = {fetchUnverifiedContacts}
-                                            group = {selectedGroup}
-                                            api = {contactapi}
-                                            loading= {unverifiedTableLoading}
-                                            update={unverifiedUpdate}
-                                        />
-                                    </div>
-                                </Card.Body>
-                            </Card>
-
-                        </Tab.Pane>
-
-			<Tab.Pane eventKey="api" key="api">
-                            <Card>
-                                <Card.Header>
-				    <div className="d-flex justify-content-between align-items-start">
-					<Card.Title>Group API Keys</Card.Title>
-					<Button
-					    variant="primary"
-					    disabled={selectedGroup.support_email ? false : true}
-					    onClick={()=>createAPIKey()}
-					>Add API Key</Button>
-				    </div>
-                                </Card.Header>
-				<Card.Body>
-				    <>
-					{apiKey &&
-					 <Alert variant="success">Your API Key is: <b><OverlayTrigger
-											  placement="right"
-											  delay={{ show: 250, hide: 400 }}
-											  overlay={renderCopyTooltip}
-										      >
-											  <span className="api_token" onClick={() => navigator.clipboard.writeText(apiKey)}>
-											  {apiKey}</span>
-										      </OverlayTrigger>
-										   </b>
-					     <br/>
-					     Copy this key to safe place. Should you lose access to this key, you will have to generate a new one.
-					 </Alert>
-					}
-				    </>
-
-				    {selectedGroup.support_email ?
-
-				     <>
-					 {keys.length > 0 ?
-					  <Table striped bordered hover>
-					      <thead>
-						  <tr>
-						      <th>Key</th>
-						      <th>Created</th>
-						      <th>Last Used</th>
-						      <th>Action</th>
-						  </tr>
-					      </thead>
-					      <tbody>
-					      {keys.map((k, index) => {
-
-						  let created = new Date(k.created);
-						  let last_used = k.last_used ? formatDistance(new Date(k.last_used), new Date(), {addSuffix: true}) : "Not used";
-
-						  return (
-						      <tr key={k.last_four}>
-							  <td>
-							      ******{k.last_four}
-							  </td>
-							  <td>
-							      {format(created, 'yyyy-MM-dd H:mm:ss')}
-							  </td>
-							  <td>
-							      {last_used}
-							  </td>
-							  <td>
-							      <Button variant="btn-icon p-1" onClick={()=>confirmRemoveAPI(k)}><i className="fas fa-trash"></i></Button>
-							      <Button variant="btn-icon p-1" onClick={()=>confirmRefresh(k)}><i className="fas fa-sync-alt"></i></Button>
-							  </td>
-						      </tr>
-						  )
-					      })}
-					      </tbody>
-					  </Table>
+			     <Tab.Pane eventKey="contactinfo" key="contactinfo">
+				 <Card>
+				     <Card.Header>
+					 <Card.Title>Organization Contact Information
+					 </Card.Title>
+				     </Card.Header>
+				     <Card.Body>
+					 <GroupContactApp
+					     group={selectedGroup}
+					     update = {fetchInitialData}
+					 />
+				     </Card.Body>
+				 </Card>
+			     </Tab.Pane>
+                             <Tab.Pane eventKey="permissions" key="permissions">
+				 <Card>
+                                     <Card.Header>
+					 Group Case Permissions
+                                     </Card.Header>
+				 </Card>
+				 
+                             </Tab.Pane>
+			     
+			     <Tab.Pane eventKey="verifications" key="verifications">
+				 <Card>
+                                     <Card.Header>
+					 <Card.Title>Unverified Users</Card.Title>
+                                     </Card.Header>
+				     <Card.Body>
+					 <div className="flex justify-center mt-8">
+                                             <GroupAdminTable
+						 columns={unverified_columns}
+						 data = {unverifiedContacts}
+						 setSelectedRows = {noSelect}
+						 fetchData = {fetchUnverifiedContacts}
+						 group = {selectedGroup}
+						 api = {contactapi}
+						 loading= {unverifiedTableLoading}
+						 update={unverifiedUpdate}
+                                             />
+					 </div>
+                                     </Card.Body>
+				 </Card>
+				 
+                             </Tab.Pane>
+			     
+			     <Tab.Pane eventKey="api" key="api">
+				 <Card>
+                                     <Card.Header>
+					 <div className="d-flex justify-content-between align-items-start">
+					     <Card.Title>Group API Keys</Card.Title>
+					     <Button
+						 variant="primary"
+						 disabled={selectedGroup.support_email ? false : true}
+						 onClick={()=>createAPIKey()}
+					     >Add API Key</Button>
+					 </div>
+                                     </Card.Header>
+				     <Card.Body>
+					 <>
+					     {apiKey &&
+					      <Alert variant="success">Your API Key is: <b><OverlayTrigger
+											       placement="right"
+											       delay={{ show: 250, hide: 400 }}
+											       overlay={renderCopyTooltip}
+											   >
+											       <span className="api_token" onClick={() => navigator.clipboard.writeText(apiKey)}>
+											       {apiKey}</span>
+											   </OverlayTrigger>
+											</b>
+						  <br/>
+						  Copy this key to safe place. Should you lose access to this key, you will have to generate a new one.
+					      </Alert>
+					     }
+					 </>
+					 
+					 {selectedGroup.support_email ?
+					  
+					  <>
+					      {keys.length > 0 ?
+					       <Table striped bordered hover>
+						   <thead>
+						       <tr>
+							   <th>Key</th>
+							   <th>Created</th>
+							   <th>Last Used</th>
+							   <th>Action</th>
+						       </tr>
+						   </thead>
+						   <tbody>
+						       {keys.map((k, index) => {
+							   
+							   let created = new Date(k.created);
+							   let last_used = k.last_used ? formatDistance(new Date(k.last_used), new Date(), {addSuffix: true}) : "Not used";
+							   
+							   return (
+							       <tr key={k.last_four}>
+								   <td>
+								       ******{k.last_four}
+								   </td>
+								   <td>
+								       {format(created, 'yyyy-MM-dd H:mm:ss')}
+								   </td>
+								   <td>
+								       {last_used}
+								   </td>
+								   <td>
+								       <Button variant="btn-icon p-1" onClick={()=>confirmRemoveAPI(k)}><i className="fas fa-trash"></i></Button>
+								       <Button variant="btn-icon p-1" onClick={()=>confirmRefresh(k)}><i className="fas fa-sync-alt"></i></Button>
+								   </td>
+							       </tr>
+							   )
+						       })}
+						   </tbody>
+					       </Table>
+					       :
+					       <p>No API accounts have been created.</p>
+					       
+					      }
+					  </>
 					  :
-					  <p>No API accounts have been created.</p>
-
+					  <Alert variant="danger">Please add an email address for your organization before adding an API key.</Alert>
 					 }
-				     </>
-				     :
-				     <Alert variant="danger">Please add an email address for your organization before adding an API key.</Alert>
-				    }
-				</Card.Body>
-                            </Card>
-
-                        </Tab.Pane>
+				     </Card.Body>
+				 </Card>
+				 
+                             </Tab.Pane>
+			 </>
+			}
+			
 			{props.group &&
 			 <Tab.Pane eventKey="components" key="components">
 			     <ComponentTable
@@ -831,7 +860,7 @@ const GroupAdminApp = (props) => {
 
 		    </Tab.Content>
 		</Tab.Container>
-	    <Card>
+	    <Card className="mt-4">
 		<Card.Header>
 		    <Card.Title>Recent Activity</Card.Title>
 		</Card.Header>

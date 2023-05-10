@@ -146,7 +146,10 @@ class ContactActionSerializer(serializers.ModelSerializer):
     def get_url(self, obj):
         if obj.group:
             return reverse("cvdp:group", args=[obj.group.id])
-        return reverse("cvdp:contact", args=[obj.contact.uuid])
+        elif obj.contact:
+            return reverse("cvdp:contact", args=[obj.contact.uuid])
+        else:
+            return ""
     
     def get_change(self, obj):
         changes = obj.contactchange_set.all()
