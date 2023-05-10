@@ -1,4 +1,4 @@
-asgiref==3.5.2
+asgiref==3.6.0
 certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==2.1.1
@@ -6,7 +6,7 @@ crispy-bootstrap5==0.7
 cryptography==39.0.1
 defusedxml==0.7.1
 Deprecated==1.2.13
-Django==4.1.7
+Django==4.2.1
 django-crispy-forms==1.14.0
 django-environ==0.9.0
 django-oauth-toolkit==2.2.0

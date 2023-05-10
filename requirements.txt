@@ -1,4 +1,4 @@
-asgiref==3.5.2
+asgiref==3.6.0
 attrs==22.2.0
 beautifulsoup4==4.12.0
 bleach==5.0.1
@@ -14,7 +14,7 @@ cryptography==39.0.1
 cvelib==1.2.0
 defusedxml==0.7.1
 Deprecated==1.2.13
-Django==4.1.7
+Django==4.2.1
 django-allauth==0.51.0
 django-allauth-2fa @ git+https://github.com/esarneso/django-allauth-2fa.git@6bd3101916f2fca6f2ff414b3b1181bbd44d1b99
 django-cors-headers==3.13.0
