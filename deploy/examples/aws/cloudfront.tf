@@ -26,6 +26,27 @@ resource "aws_cloudfront_distribution" "advise_app" {
     origin_id = "advise_static"
   }
 
+  # attachment files origin
+  # Note: Attachments are served through the app to enforce permissions. The app
+  #       accesses them through the bucket directly, and has AWS permissions to
+  #       do so. They shouldn't normally be available through cloudfront.
+  #origin {
+  #  domain_name = module.app_attachments_bucket.url
+  #  s3_origin_config {
+  #    origin_access_identity = aws_cloudfront_origin_access_identity.app_attachments_bucket.cloudfront_access_identity_path
+  #  }
+  #  origin_id = "advise_attachments"
+  #}
+
+  # media files origin
+  origin {
+    domain_name = module.app_media_bucket.url
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.app_media_bucket.cloudfront_access_identity_path
+    }
+    origin_id = "advise_media"
+  }
+
   enabled         = true
   is_ipv6_enabled = true
   comment         = "AdVISE"
@@ -48,6 +69,29 @@ resource "aws_cloudfront_distribution" "advise_app" {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD", "OPTIONS"]
     target_origin_id       = "advise_static"
+    cache_policy_id        = aws_cloudfront_cache_policy.advise_s3_endpoints.id
+    viewer_protocol_policy = "redirect-to-https"
+  }
+
+  # attachments files behavior
+  # Note: Attachments are served through the app to enforce permissions. The app
+  #       accesses them through the bucket directly, and has AWS permissions to
+  #       do so. They shouldn't normally be available through cloudfront.
+  #ordered_cache_behavior {
+  #  path_pattern           = "/attachments/*"
+  #  allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+  #  cached_methods         = ["GET", "HEAD", "OPTIONS"]
+  #  target_origin_id       = "advise_attachments"
+  #  cache_policy_id        = aws_cloudfront_cache_policy.advise_s3_endpoints.id
+  #  viewer_protocol_policy = "redirect-to-https"
+  #}
+
+  # static files behavior
+  ordered_cache_behavior {
+    path_pattern           = "/media/*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id       = "advise_media"
     cache_policy_id        = aws_cloudfront_cache_policy.advise_s3_endpoints.id
     viewer_protocol_policy = "redirect-to-https"
   }

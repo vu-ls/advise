@@ -476,7 +476,7 @@ ALLOW_ANONYMOUS_REPORTS = os.environ.get('ALLOW_ANONYMOUS_REPORTS', True)
 CASE_IDENTIFIER = "CASE#"
 
 # email configuration
-CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL', 'vuls@vu.ls')
+CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL', 'vuls@localhost')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', CONTACT_EMAIL)
 REPLY_TO_EMAIL = os.environ.get('REPLY_TO_EMAIL', CONTACT_EMAIL)
 EMAIL_HEADERS = {}

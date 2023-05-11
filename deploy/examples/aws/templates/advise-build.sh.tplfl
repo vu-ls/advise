@@ -23,7 +23,7 @@ fi
 
 #DIR="$( cd "$( dirname "$${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-aws ecr get-login-password --region us-east-2 | \
+aws ecr get-login-password --region ${aws_region} | \
     docker login --username AWS --password-stdin ${ecr_registry_id}.dkr.ecr.${aws_region}.amazonaws.com
 
 # get us into a sane location
@@ -34,6 +34,7 @@ docker buildx build --platform linux/amd64 \
     -f deploy/docker/Dockerfile-django \
     --build-arg ASSET_PATH="/static/webpack_bundles/" \
     --build-arg API_URL="https://${advise_app_fqdn}/advise" \
+    --build-arg RECAPTCHA_SITE_KEY="${advise_recaptcha_site_key}" \
     --build-arg REQUIREMENTS_FILE="requirements-aws.txt" \
     --push -t ${ecr_app_repository_url}:${advise_image_version} .
 docker buildx build --platform linux/amd64 \

@@ -126,6 +126,14 @@ module "app_service" {
       value = "${var.advise_contact_address}"
     },
     {
+      name  = "DEFAULT_FROM_EMAIL"
+      value = coalesce(var.advise_default_from_email, var.advise_contact_address)
+    },
+    {
+      name  = "REPLY_TO_EMAIL"
+      value = coalesce(var.advise_reply_to_email, var.advise_contact_address)
+    },
+    {
       name  = "USE_PROVIDER"
       value = "${var.advise_use_provider}"
     },
@@ -253,10 +261,6 @@ module "oauth_service" {
       value = "${var.aws_region}"
     },
     {
-      name  = "ACCOUNT_EMAIL_VERIFICATION"
-      value = var.account_email_verification
-    },
-    {
       name  = "ACCOUNT_DEFAULT_HTTP_PROTOCOL"
       value = "https"
     },
@@ -287,6 +291,14 @@ module "oauth_service" {
     {
       name  = "CONTACT_EMAIL"
       value = "${var.oauth_contact_address}"
+    },
+    {
+      name  = "DEFAULT_FROM_EMAIL"
+      value = coalesce(var.oauth_default_from_email, var.oauth_contact_address)
+    },
+    {
+      name  = "REPLY_TO_EMAIL"
+      value = coalesce(var.oauth_reply_to_email, var.oauth_contact_address)
     },
     {
       name  = "RECAPTCHA_SITE_KEY"

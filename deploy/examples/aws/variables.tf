@@ -110,6 +110,19 @@ variable "advise_contact_address" {
   type        = string
 }
 
+variable "advise_default_from_email" {
+  description = "Default email from address (defaults to advise_contact_address)"
+  type        = string
+  default     = null
+}
+
+variable "advise_reply_to_email" {
+  description = "Default reply-to email address (defaults to advise_contact_address)"
+  type        = string
+  default     = null
+}
+
+
 variable "advise_use_provider" {
   description = "Name of AdVISE OAuth provider to use as primary login source"
   type        = string
@@ -142,6 +155,18 @@ variable "oauth_email_backend" {
 variable "oauth_contact_address" {
   description = "OAuth email contact address for outgoing mail"
   type        = string
+}
+
+variable "oauth_default_from_email" {
+  description = "Default email from address (defaults to oauth_contact_address)"
+  type        = string
+  default     = null
+}
+
+variable "oauth_reply_to_email" {
+  description = "Default reply-to email address (defaults to oauth_contact_address)"
+  type        = string
+  default     = null
 }
 
 variable "account_email_verification" {
@@ -199,6 +224,24 @@ variable "db_oauth_master_username" {
   default     = "db_oauth_admin"
 }
 
+variable "db_deletion_protection" {
+  description = "Protect databases from deletion?"
+  type        = bool
+  default     = true
+}
+
+variable "db_backup_retention" {
+  description = "number of days to retain automatic snapshots"
+  type        = number
+  default     = 7
+}
+
+variable "db_skip_final_snapshot" {
+  description = "Skip final database snapshot on delete?"
+  type = bool
+  default = false
+}
+
 variable "ssh_key_name" {
   type = string
 }
@@ -228,8 +271,8 @@ locals {
   unique_id        = random_id.id.hex
 
   bastion_fqdn   = "${var.bastion_hostname}.${var.domain_name}"
-  app_svc_fqdn   = "${var.advise_app_hostname}-svc.${var.domain_name}"
-  app_fqdn       = "${var.advise_app_hostname}.${var.domain_name}"
+  app_svc_fqdn   = "${var.advise_app_hostname != "" ? var.advise_app_hostname : "app"}-svc.${var.domain_name}"
+  app_fqdn       = "${var.advise_app_hostname != "" ? "${var.advise_app_hostname}." : ""}${var.domain_name}"
   oauth_svc_fqdn = "${var.advise_oauth_hostname}-svc.${var.domain_name}"
   oauth_fqdn     = "${var.advise_oauth_hostname}.${var.domain_name}"
 }

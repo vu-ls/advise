@@ -106,6 +106,11 @@ of system failure.
    Set to True to enable DEBUG testing and logging. Not recommended for production use.
 
 
+#### RECAPTCHA_SITE_KEY
+   Set to the value of the ReCAPTCHA site key for this installation. 
+
+#### RECAPTCHA_SECRET_KEY
+   Set to the value of the ReCAPTCHA secret key for this installation. 
 ## Other settings:
 
 #### EMAIL_HEADERS (={})

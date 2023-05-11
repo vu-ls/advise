@@ -13,10 +13,10 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.57"
+      version = "4.66.1"
     }
   }
-  required_version = "~> 1.4"
+  required_version = "~> 1.4.6"
 }
 resource "aws_acm_certificate" "acm_cert" {
   domain_name       = var.domain_name

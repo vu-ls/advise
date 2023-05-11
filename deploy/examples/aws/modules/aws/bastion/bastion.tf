@@ -15,6 +15,10 @@ resource "aws_instance" "bastion" {
       #account_id                  = data.aws_caller_identity.current.account_id
   })
 
+  tags = {
+    "Name" = var.fqdn
+  }
+
   #  lifecycle {
   #    ignore_changes = [
   #      ami,

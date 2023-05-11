@@ -19,8 +19,6 @@ resource "aws_route53_record" "app_lb" {
 # certificate for advise app lb
 module "lb_cert" {
   source = "../cf_cert"
-  # don't send a provider because the LB cert should be created in the same
-  # region as the LB
   #providers = {
   #  aws = aws #.cf_certs_region
   #}

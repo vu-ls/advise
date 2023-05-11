@@ -37,7 +37,8 @@
   },
   "scripts": {
     "dev": "webpack --mode development --watch",
-    "build": "webpack --mode production --devtool source-map"
+    "build": "webpack --mode production --devtool source-map",
+    "build-nomaps": "webpack --mode production --no-devtool"
   },
   "repository": {
     "type": "git",
