@@ -4,6 +4,7 @@ import '../css/casethread.css';
 import ContactAPI from './ContactAPI';
 import DeleteConfirmation from './DeleteConfirmation';
 import validator from "validator";
+
 const contactapi = new ContactAPI();
 
 const GroupContactApp = (props) => {

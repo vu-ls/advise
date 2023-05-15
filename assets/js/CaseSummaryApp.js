@@ -17,8 +17,6 @@ const CaseSummaryApp = (props) => {
     const [activeTab, setActiveTab] = useState("casedetails");
     const [vuls, setVuls] = useState([]);
     const [owner, setOwner] = useState(false);
-    const [statusRequired, setStatusRequired] = useState(false);
-    const [statusCheck, setStatusCheck] = useState(false);
 
     useEffect(() => {
 	setCaseInfo(props.caseInfo);
@@ -26,21 +24,7 @@ const CaseSummaryApp = (props) => {
 	if (props.caseInfo.report == null) {
 	    setActiveTab("casedetails");
 	}
-	if ((props.user.role === 'vendor') && (vuls.length > 0)) {
-	    /* also need to get status for this vendor */
-	    setStatusRequired(true);
-	}
-
     }, [props]);
-
-
-    useEffect(() => {
-        if (vuls) {
-            setStatusCheck(vuls.some(item => item.affected_products.length > 0));
-            console.log("vuls are updated");
-        }
-    }, [vuls]);
-
 
     const setActiveTabNow = (props) => {
         setFeedback(null);
@@ -77,18 +61,10 @@ const CaseSummaryApp = (props) => {
 
 			<Nav.Item>
                             <Nav.Link eventKey="status">
-				{statusCheck ?
-				 <>
-                                     <span className="text-nowrap">Status <i className="fas fa-check text-success"></i></span>
-                                 </>
-                                 :
-                                 <>
-				     {statusRequired ?
-                                      <>Status Required <i class="fas fa-exclamation-triangle link-danger"></i></>
-				      :
-				     "Status"
-				     }
-                                 </>
+				{props.user.status_needed ?
+				 <span className="text-nowrap">Status Required <i className="fas fa-exclamation-triangle link-danger"></i></span>
+				 :
+				 <span className="text-nowrap">Status {vuls.length > 0 && <i className="fas fa-check text-success"></i>}</span>
                                 }
 			    </Nav.Link>
                         </Nav.Item>

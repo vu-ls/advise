@@ -83,14 +83,10 @@ export default function PostDisplay(props) {
 			}
 			<div className="author_info px-3">
 			    <div className="post_author ml-3">{post.author.name }</div>
-			    {post.group ?
+			    {post.group &&
 			     <div className="post_org">{post.group.name}</div>
-			     :
-			     <div className="post_org">{post.author_role}</div>
 			    }
-			    {post.author.title && (
-				<span className="small text-muted">({post.author.title})</span>
-			    )}
+			    <span className="small text-muted">({post.author_role})</span>
 			</div>
 			{post.pinned && (
 			    <div className="post-pinned fw-semibold">

@@ -199,20 +199,21 @@ const ManageCVEApp = () => {
 	() => [
 	    {
                 Header: 'name',
-                accessor: d => d.name.first + " " + d.name.last
+                accessor: d => d.name.first + " " + d.name.last,
             },
             {
                 Header: 'username',
-                accessor: 'username'
+                accessor: 'username',
             },
             {
                 Header: 'active',
-                accessor: d => d.active.toString()
+                accessor: d => d.active.toString(),
             },
 	     {
                 Header: 'Action',
                 accessor: 'action',
-                Cell: props => (<div className="text-nowrap"><Button variant="btn-icon px-1" onClick={() => editUserNow(props)}><i className="fas fa-edit"></i></Button> <Button variant="btn-icon px-1" onClick={() => viewDetails(props)}><i className="fas fa-search-plus"></i></Button></div>)
+                 Cell: props => (<div className="text-nowrap"><Button variant="btn-icon px-1" onClick={() => editUserNow(props)}><i className="fas fa-edit"></i></Button> <Button variant="btn-icon px-1" onClick={() => viewDetails(props)}><i className="fas fa-search-plus"></i></Button></div>),
+		 
 	    }
 
 	], []

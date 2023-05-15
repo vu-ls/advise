@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import CaseThreadAPI from './ThreadAPI';
 import ComponentAPI from './ComponentAPI';
 import DeleteConfirmation from "./DeleteConfirmation";
-import {Card, DropdownButton, Dropdown, Table, Accordion, Row, Col, Button, Form} from 'react-bootstrap';
+import {Card, ButtonGroup, ToggleButton, DropdownButton, Dropdown, Table, Accordion, Row, Col, Button, Form} from 'react-bootstrap';
 import DisplayVulStatus from './DisplayVulStatus';
 import {AsyncTypeahead} from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.bs5.css';
@@ -96,6 +96,7 @@ const StatusAddForm = (props) => {
     const [invalidVuls, setInvalidVuls] = useState(false);
     const [vulStatement, setVulStatement] = useState("");
     const [editStatus, setEditStatus] = useState(null);
+    const [shareStatus, setShareStatus] = useState(false);
     const [displayConfirmationModal, setDisplayConfirmationModal] = useState(false);
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [removeID, setRemoveID] = useState(null);
@@ -109,6 +110,11 @@ const StatusAddForm = (props) => {
 
     const formRef = useRef(null);
     const navRef = useRef(null);
+
+    const radios = [
+	{ name: 'Share', value: true },
+	{ name: "Don't Share", value: false },
+    ];
 
     function removeStatus(id) {
         console.log("remove", id);
@@ -183,8 +189,13 @@ const StatusAddForm = (props) => {
 	setVersionRange(q.version_range);
 	setCheckedVuls([q.vul.id]);
 	setStatus(q.status);
+	setShareStatus(q.share);
         setFormTitle(`Edit status for ${c.component.name} ${q.version}`)
         setShowForm(true);
+    }
+
+    function viewStatusDetails(q) {
+	console.log("open modal to view");
     }
 
 
@@ -224,6 +235,7 @@ const StatusAddForm = (props) => {
 	    setInvalidStatus(false);
 	}
 	formDataObj['vuls'] = checkedVuls;
+	formDataObj['share'] = shareStatus;
 	if (error == false) {
 	    try {
 		if (editStatus) {
@@ -261,10 +273,14 @@ const StatusAddForm = (props) => {
 	    setCheckedVuls((checked) => checked.filter((select) => select != value))
 	}
     };
-
-
+    /*
+    useEffect(() => {
+	console.log("SOMETHING CHANGED");
+    }, [shareStatus]);
+    */
     useEffect(() => {
 	setIsLoading(false);
+	console.log(`STATUS VULS ADDED ${reqUser}`);
     }, [vuls]);
     
     useEffect(() => {
@@ -281,7 +297,7 @@ const StatusAddForm = (props) => {
 	if (['owner', 'vendor'].includes(props.user.role)) {
 	    setAllowAddStatus(true);
 	}
-    }, [])
+    }, [props])
 
 
     const getSelectedComponents = async () => {
@@ -305,6 +321,7 @@ const StatusAddForm = (props) => {
 	setVulStatement("");
 	setEndVersion("");
 	setStatus("");
+	setShareStatus(false);
     }
 
     useEffect(() => {
@@ -329,9 +346,13 @@ const StatusAddForm = (props) => {
                  <Button variant="btn-icon px-1" onClick={(e)=>editStatusNow(component, vul)}>
 		     <i className="fas fa-edit"></i>
                  </Button>
+		 <Button variant="btn-icon px-1" onClick={(e)=>viewStatusDetails(vul.id)}>
+		     <i className="fas fa-search-plus"></i>
+                 </Button>
                  <Button variant="btn-icon px-1" onClick={(e)=>removeStatus(vul.id)}>
 		     <i className="fas fa-trash"></i>
                  </Button>
+		 
 	     </td>
 	     //:
 	     //""
@@ -371,7 +392,7 @@ const StatusAddForm = (props) => {
 		 {reqUser.role === "owner" ?
 		  <p>Add a vulnerability before adding affected component status.</p>
 		  :
-		  <p>Status will be added once vulnerabilities are defined.</p>
+		  <p>Status can be added once vulnerabilities are defined.</p>
 		 }
 	     </>
 	    }
@@ -635,6 +656,26 @@ const StatusAddForm = (props) => {
 			     <Form.Label>Optional Statement/Comment</Form.Label>
 			     <Form.Control name="statement" as="textarea" rows={3} value={vulStatement} onChange={(e)=>setVulStatement(e.target.value)}/>
 			 </Form.Group>
+			 <Form.Group className="mb-3">
+			     <Form.Label>Share status with other case participants?</Form.Label><br/>
+			     <ButtonGroup>
+				 {radios.map((radio, idx) => (
+				     <ToggleButton
+					 key={idx}
+					 id={`radio-${idx}`}
+					 type="radio"
+					 variant={idx ? 'outline-danger' : 'outline-success'}
+					 name="share"
+
+					 value={radio.value}
+					 checked={shareStatus === radio.value}
+					 onChange={(e) => setShareStatus(e.currentTarget.value)}
+				     >
+					 {radio.name}
+				     </ToggleButton>
+				 ))}
+			     </ButtonGroup>
+			 </Form.Group>
 			 <Button className="m-2" type="Cancel" variant="secondary" onClick={(e)=>(e.preventDefault(), setShowForm(false))}>
                              Cancel
                          </Button>
@@ -653,7 +694,7 @@ const StatusAddForm = (props) => {
                 message={deleteMessage} />
 	</>
     :
-    <p className="lead">No status yet</p>
+	<p className="lead">Once vulnerabilites have been added, we will request that you update your status.</p>
     )
 
 }

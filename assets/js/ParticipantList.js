@@ -1,10 +1,10 @@
 import React from 'react';
 import ReactDOM from "react-dom";
 import CaseThreadAPI from './ThreadAPI';
-import { useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import DisplayLogo from "./DisplayLogo";
 import Dropdown from 'react-bootstrap/Dropdown';
-import {Modal, Card, Alert, Button} from 'react-bootstrap';
+import {Modal, Popover, OverlayTrigger, Tooltip, Card, Alert, Button} from 'react-bootstrap';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import ParticipantModal from './ParticipantModal.js';
 import DeleteConfirmation from "./DeleteConfirmation";
@@ -30,11 +30,17 @@ export default function ParticipantList(props) {
     const [caseInfo, setCaseInfo] = useState(null);
     const [warning, setWarning] = useState(null);
     const [error, setError] = useState(null);
-    
+
     const hideParticipantModal = () => {
         setDisplayParticipantModal(false);
 
     };
+
+    const loadPopoverContent = () => {
+	console.log("LOAD CONTENT");
+    };
+
+
 
     const showDeleteModal = (id) => {
         setRemoveID(id);
@@ -99,7 +105,6 @@ export default function ParticipantList(props) {
 	}
     }, [props.activethread, props.participants, props.caseInfo])
 
-
     return (
 	<Card className="mt-3 mb-3">
 	    <Card.Header className="d-flex align-items-center justify-content-between">
@@ -119,7 +124,7 @@ export default function ParticipantList(props) {
 			  <Dropdown.Item eventKey='archive' onClick={(e)=>props.removeThread(props.activethread)}>Archive Thread</Dropdown.Item>
 		      </>
 		     }
-		     
+
 		 </DropdownButton>
 		}
 	    </Card.Header>
@@ -145,15 +150,21 @@ export default function ParticipantList(props) {
 		     participants.map((post,index) => {
 			 return (
 			     <div className="d-flex justify-content-between" key={index}>
+
 				 <div className="d-flex align-items-center gap-2 mt-2 mb-2">
 				     <DisplayLogo
 					 photo = {post.participant.photo}
 					 color = {post.participant.logocolor}
 					 name= {post.participant.name}
 				     />
-				     <a href="#" className="participant">
-					 { post.participant.name } ({post.participant.role})
-				     </a>
+				     <OverlayTrigger
+                                         placement="bottom"
+                                         overlay={<Popover><Popover.Header className="text-center border-bottom pb-2">{post.participant.name}</Popover.Header><Popover.Body className="text-center m-2">{post.participant.users.length > 0 ? <>Group<br/>({post.participant.role})<br/>Members:<br/>{post.participant.users.map(u=><>{u}<br/></>)}</> : <>{post.participant.participant_type} <br/>({post.participant.role})</>}</Popover.Body></Popover>}
+				     >
+					 <a href="#" onClick={(e)=>e.preventDefault()}>
+					     { post.participant.name } ({post.participant.role})
+					 </a>
+				     </OverlayTrigger>
 				 </div>
 				 {showRemove &&
 				  <Button variant="btn p-0"
@@ -162,7 +173,7 @@ export default function ParticipantList(props) {
 				  </Button>
 				 }
 			     </div>
-			     
+
 			 )
 		     })
 		 )
@@ -195,3 +206,8 @@ export default function ParticipantList(props) {
     )
 }
 
+/*					  <OverlayTrigger
+					      placement="bottom"
+					      overlay={popoverRight}
+					      onToggle={loadPopoverContent}>
+overlay={<Popover><Popover.Header className="text-center">{post.participant.name}</Popover.Header><Popover.Body>something something something</Popover.Body></Popover>}*/

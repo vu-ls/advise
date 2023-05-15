@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from "react-dom";
-import Image from 'react-bootstrap/Image'
+import Image from 'react-bootstrap/Image';
 
 export default function DisplayLogo(props) {
 
@@ -22,8 +22,8 @@ export default function DisplayLogo(props) {
 	)
     } else {
 	return (
-            <div className="profile-pic rounded-circle text-center flex-shrink-0" style={style}>
-            <span className="logo-initial">{name ? name[0] : "?"}</span></div>
+	    <div className="profile-pic rounded-circle text-center flex-shrink-0" style={style}>
+	    <span className="logo-initial">{name ? name[0] : "?"}</span></div>
 	)
     }
 }

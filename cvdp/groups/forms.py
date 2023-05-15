@@ -12,20 +12,12 @@ from django.contrib.auth import get_user_model
 
 class GroupForm(forms.ModelForm):
 
-    vendor_type = forms.ChoiceField(
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        choices=GroupProfile.VENDOR_TYPE,
-        required=True,
-        label=_('Type'),
-    )
-
     def __init__(self, *args, **kwargs):
         super(GroupForm, self).__init__(*args, **kwargs)
-        self.fields['vendor_type'].initial='Vendor'
 
     class Meta:
         model = Group
-        fields = ['name', 'vendor_type']
+        fields = ['name', ]
 
 
 class ContactForm(forms.ModelForm):

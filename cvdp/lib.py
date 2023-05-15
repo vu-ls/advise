@@ -1,9 +1,10 @@
 from cvdp.models import *
+from cvdp.components.models import ComponentStatus, Product
 from django.contrib.auth.models import Group
 from django.conf import settings
 from cvdp.md_utils import markdown
 import random
-from cvdp.permissions import InvalidRoleException
+from cvdp.permissions import InvalidRoleException, my_case_vendors
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from django.utils.encoding import smart_str
@@ -401,3 +402,15 @@ def create_contact_change(action, field, old_value, new_value):
                            new_value=new_value)
     change.save()
     return change
+
+def get_status_status(case, user):
+    # if no vuls, no status
+    if (not Vulnerability.objects.filter(case=case).exists()):
+        return False
+    # is status required for this case by this user?
+
+    components = ComponentStatus.objects.filter(vul__case=case).distinct('component__name').order_by('component__name')
+    case_components = components.values_list('component__id', flat=True)
+    my_groups = my_case_vendors(user, case)
+    products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
+    return not(components.filter(component__id__in=products).exists())

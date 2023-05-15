@@ -23,11 +23,9 @@ class GroupSerializer(serializers.ModelSerializer):
     def get_url(self, obj):
         return reverse("cvdp:group", args=[obj.id])
 
+    #not currently using type
     def get_type(self, obj):
-        if obj.groupprofile:
-            return obj.groupprofile.vendor_type
-        else:
-            return "group"
+        return "Group"
 
     def get_photo(self, obj):
         if obj.groupprofile:
@@ -70,16 +68,13 @@ class GroupProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model=GroupProfile
-        fields=['group', 'active', 'vendor_type']
+        fields=['group', 'active', ]
 
     def create(self, validated_data):
-        group_data = validated_data.pop('vendor_type')
         g = Group(name=validated_data.pop('name'))
         g.save()
         profile, created = GroupProfile.objects.update_or_create(group=g,
-                                                                 active=True,
-                                                                 vendor_type=group_data)
-
+                                                                 active=True)
         return profile
 
 

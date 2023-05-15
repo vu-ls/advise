@@ -153,6 +153,8 @@ class ProductAPIView(viewsets.ModelViewSet):
         dependency = get_object_or_404(Component, id=request.data.get('dependency'))
         product = Product.objects.filter(component=instance).first()
         if product:
+            if product.component == dependency:
+                return Response({'detail': 'You can not add this component as a dependency of itself.'}, status=status.HTTP_400_BAD_REQUEST)
             product.dependencies.add(dependency)
         else:
             product = Product(component=instance)
@@ -298,7 +300,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
             return components.filter(component__id__in=products)
             
-
+    #TO DO ADD A SHARED COMPONENT STATUS VIEW
     
     def create(self, request, *args, **kwargs):
         logger.debug("In STATUS CREATE VIEW")
@@ -322,7 +324,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             return JsonResponse(errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-        #check status fiels are all there
+        #check status fields are all there
         serializer = StatusSerializer(data=request.data)
         if serializer.is_valid():
 
@@ -352,9 +354,12 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
 
             #get vuls
             for v in request.data['vuls']:
+                share =	False
+                if request.data.get('share'):
+                    share = True if (request.data['share'] == "true" or request.data['share'] == True) else False
                 vul = get_object_or_404(Vulnerability, id=v)
                 cs, created = ComponentStatus.objects.update_or_create(component=component,
-                                                              vul=vul)
+                                                                       vul=vul, defaults={'share': share})
                 logger.debug(serializer.validated_data)
                 sr  = StatusRevision(**serializer.validated_data)
                 logger.debug(sr)
@@ -386,6 +391,10 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
         component = self.get_object()
         
         data = request.data
+        share = False
+        if data.get('share'):
+            share = True if (data['share'] == "true" or data['share'] == True) else False
+            
         logger.debug(request.data)
         if request.data.get('vuls') == None:
             errors = {'type': 'invalid-format', 'status': status.HTTP_400_BAD_REQUEST, 'vuls':'missing required fields or invalid format'}
@@ -397,7 +406,8 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             for v in request.data['vuls']:
                 vul = get_object_or_404(Vulnerability, id=v)
                 cs, created = ComponentStatus.objects.update_or_create(component=component.component,
-                                                                       vul=vul)
+                                                                       vul=vul,
+                                                                       defaults={'share':share})
                 logger.debug(serializer.validated_data)
                 sr  = StatusRevision(**serializer.validated_data)
                 logger.debug(sr)

@@ -273,6 +273,9 @@ class ComponentStatus(models.Model):
         Vulnerability,
         on_delete = models.CASCADE)
 
+    share = models.BooleanField(
+        default=False)
+    
     def add_revision(self, new_revision, save=True):
         """
         Sets the properties of a revision and ensures its the current

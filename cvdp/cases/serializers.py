@@ -1,7 +1,7 @@
 from cvdp.models import *
 from cvdp.components.models import ComponentStatus, Product
 from django.core.exceptions import ObjectDoesNotExist
-from cvdp.permissions import my_case_role, is_my_case
+from cvdp.permissions import my_case_role, is_my_case, my_case_vendors
 from cvdp.serializers import ChoiceField, UserSerializer
 from cvdp.groups.serializers import GroupSerializer
 from rest_framework import serializers
@@ -151,11 +151,12 @@ class CaseSerializer(serializers.ModelSerializer):
 
     
 class UserCaseState:
-    def __init__(self, user, contact, last_viewed, role):
+    def __init__(self, user, contact, last_viewed, role, status_needed):
         self.user = user
         self.contact = contact
         self.last_viewed = last_viewed
         self.role = role
+        self.status_needed = status_needed
         if user.is_staff:
             self.delete_perm = True
     
@@ -166,7 +167,8 @@ class UserCaseStateSerializer(serializers.Serializer):
     contact = serializers.IntegerField()
     last_viewed = serializers.DateTimeField()
     delete_perm = serializers.BooleanField(default=False)
-    role = serializers.CharField()    
+    role = serializers.CharField()
+    status_needed = serializers.BooleanField(default=False)
 
 
 class Notification:
@@ -216,10 +218,11 @@ class CaseParticipantSerializer(serializers.ModelSerializer):
     added_by = serializers.CharField(source='user.screen_name')
     uuid = serializers.SerializerMethodField()
     roles_available = serializers.SerializerMethodField()
+    users = serializers.SerializerMethodField()
     
     class Meta:
         model = CaseParticipant
-        fields = ('id', 'name', 'participant_type', 'added_by', 'photo', 'logocolor', 'role', 'uuid',  'added', 'notified', 'roles_available')
+        fields = ('id', 'name', 'participant_type', 'added_by', 'photo', 'logocolor', 'role', 'uuid',  'added', 'notified', 'roles_available', 'users')
 
 
     def get_name(self, obj):
@@ -236,6 +239,13 @@ class CaseParticipantSerializer(serializers.ModelSerializer):
         else:
             return "?"
 
+    def get_users(self, obj):
+        if obj.group:
+            #get users in group
+            return list(User.objects.filter(groups__id=obj.group.id).exclude(api_account=True).values_list('screen_name', flat=True))
+        else:
+            return []
+        
     def get_roles_available(self, obj):
         if obj.contact:
             if obj.contact.user:
@@ -254,8 +264,11 @@ class CaseParticipantSerializer(serializers.ModelSerializer):
     def get_participant_type(self, obj):
         if obj.group:
             return "group"
-        else:
-            return "contact"
+        elif obj.contact:
+            if obj.contact.user:
+                return "user"
+            else:
+                return "contact"
 
     def get_photo(self, obj):
         request = self.context.get('request')
@@ -527,7 +540,16 @@ class VulSerializer(serializers.ModelSerializer):
 
     def get_affected_products(self, obj):
         #get all *Affected* status related to this vul
-        status = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
+        user = self.context.get('user')
+        if user:
+            my_groups = my_case_vendors(user, obj.case)
+            components = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
+            case_components = components.values_list('component__id', flat=True)
+            products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
+            #get all my components/or component status set to Share
+            status = components.filter(component__id__in=products)
+        else:
+            status = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
         serializer = AffectedProductSerializer(status, many=True)
         return serializer.data
     

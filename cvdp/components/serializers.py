@@ -6,6 +6,7 @@ from django.urls import reverse
 from authapp.models import User
 from cvdp.cases.serializers import VulSerializer
 from cvdp.groups.serializers import GroupSerializer
+from cvdp.serializers import UserSerializer
 from django.db.models import F, Count
 import logging
 
@@ -94,7 +95,7 @@ class VulStatusSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ComponentStatus
-        fields = ('id', 'status', 'version', 'version_end_range', 'version_range', 'user', 'statement', 'vul', 'revisions', 'revision_number', 'created', 'modified', )
+        fields = ('id', 'status', 'version', 'version_end_range', 'version_range', 'user', 'statement', 'vul', 'revisions', 'revision_number', 'created', 'modified', 'share',)
 
     def get_revisions(self, obj):
         return obj.statusrevision_set.count() - 1
@@ -177,3 +178,26 @@ class ComponentStatusSerializer(serializers.ModelSerializer):
             return obj.current_revision.user.screen_name
         else:
             return "Unknown"
+
+
+class StatusActionSerializer(serializers.ModelSerializer):
+    user = UserSerializer(source='component_status.current_revision.user')
+    url = serializers.SerializerMethodField()
+    change = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StatusRevision
+        fields = ['user', 'title', 'created', 'url', 'change',]
+
+    def get_url(self, obj):
+        return reverse("cvdp:case", args=[obj.component_status.vul.case.case_id])
+
+    def get_change(self, obj):
+        return []
+
+    def get_title(self, obj):
+        if (obj.revision_number > 0):
+            return f"modified status to {obj.get_status_display()} for vul {obj.component_status.vul} and component {obj.component_status.component.name} {obj.version_value}"
+        else:
+            return f"added {obj.get_status_display()} status for vul {obj.component_status.vul} and component {obj.component_status.component.name} {obj.version_value}"

@@ -29,6 +29,8 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.views import APIView
 from cvdp.permissions import *
 from cvdp.cases.serializers import *
+from cvdp.components.serializers import StatusActionSerializer
+from cvdp.components.models import StatusRevision
 from cvdp.lib import *
 # Create your views here.
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -869,15 +871,18 @@ class UserCaseStateAPIView(generics.RetrieveAPIView):
         #get case last viewed state
         case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         role = my_case_role(user, case)
+        status_needed = False
         if (role != "owner" and user.is_coordinator):
             #this is a special role - because coordinators should be able to do
             # some special editing things, like inital assignment,
             role = "coordinator"
+        elif (role == "vendor"):
+            status_needed = get_status_status(case, user)
         cv = CaseViewed.objects.filter(case=case, user=user).first()
         if (cv):
-            cs = UserCaseState(user, contact.id, cv.date_viewed, role)
+            cs = UserCaseState(user, contact.id, cv.date_viewed, role, status_needed)
         else:
-            cs = UserCaseState(user, contact.id, None, role)
+            cs = UserCaseState(user, contact.id, None, role, status_needed)
 
         #update time viewed
         cviewed, created = CaseViewed.objects.update_or_create(case=case, user=user,
@@ -954,6 +959,16 @@ class VulAPIView(viewsets.ModelViewSet):
     def get_view_name(self):
         return f"Case Vulnerabilities"
 
+    def list(self, request, *args, **kwargs):
+        content = self.get_queryset()
+        return Response(self.serializer_class(content, many=True,
+                                           context={'user': request.user}).data)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"user": self.request.user})
+        return context
+    
     def get_queryset(self):
         logger.debug("IN VULS API");
         if getattr(self, 'swagger_fake_view', False):
@@ -1386,7 +1401,10 @@ class CaseActivityAPIView(APIView):
             advisory_serializer = AdvisoryActionSerializer(advisory, many=True)
             advisory_actions = advisory_serializer.data
 
-
+            status = StatusRevision.objects.filter(component_status__vul__case__in=cases)
+            status_serializer = StatusActionSerializer(status, many=True)
+            status_actions = status_serializer.data
+            
         else:
             actions = CaseAction.objects.filter(case__in=cases, action_type=2)
             action_serializer = CaseActionSerializer(actions, many=True)
@@ -1403,7 +1421,11 @@ class CaseActivityAPIView(APIView):
             advisory_serializer = AdvisoryActionSerializer(advisory, many=True)
             advisory_actions = advisory_serializer.data
 
-        results = case_actions + post_actions + advisory_actions
+            status = StatusRevision.objects.filter(component_status__vul__case__in=cases, component_status__share=True)
+            status_serializer =	StatusActionSerializer(status, many=True)
+            status_actions = status_serializer.data
+
+        results = case_actions + post_actions + advisory_actions + status_actions
         qs = sorted(results,
                     key=lambda instance: instance['created'],
                     reverse=True)

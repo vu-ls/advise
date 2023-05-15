@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ComponentAPI from './ComponentAPI';
-import {Row, Card, Col, Button, Form, Dropdown, InputGroup, DropdownButton} from 'react-bootstrap';
-import GenericTable from "./GenericTable";
+import {Row, Alert, Card, Col, Button, Form, Dropdown, InputGroup, DropdownButton} from 'react-bootstrap';
+import ResizableTable from "./ResizableTable";
 import '../css/casethread.css';
 import AddComponentModal from './AddComponentModal';
 import DeleteConfirmation from "./DeleteConfirmation";
 import ComponentDetailModal from "./ComponentDetailModal";
 import SelectGroupModal from "./SelectGroupModal";
+import axios from 'axios';
+
+
 
 const componentapi = new ComponentAPI();
 
@@ -32,10 +35,10 @@ const Searchbar = ({ onChange, value }) => {
 const ComponentTable = (props) => {
 
     const [data, setData] = useState([]);
+    const [error, setError] = useState(null);
     const [count, setCount] = useState(0);
     const [response, setResponse] = useState(null);
     const [nextUrl, setNextUrl] = useState(null);
-    const [filteredData, setFilteredData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedRows, setSelectedRows] = useState([]);
     const [searchVal, setSearchVal] = useState(null);
@@ -53,7 +56,7 @@ const ComponentTable = (props) => {
 
     const columns = useMemo(
         () => [
-            {
+            /*{
 		id: "selection",
 		// The header can use the table's getToggleAllRowsSelectedProps method
 		// to render a checkbox
@@ -68,11 +71,13 @@ const ComponentTable = (props) => {
                     <div>
 			<input type="checkbox" {...row.getToggleRowSelectedProps()} />
                     </div>
-		)
-	    },
+		),
+		width: 50,
+		disableSizing: true,
+	    },*/
 	    {
 		Header: 'name',
-		accessor: 'name'
+		accessor: 'name',
 	    },
             {
 		Header: 'version',
@@ -162,7 +167,9 @@ const ComponentTable = (props) => {
     const submitRemoveComponent = () => {
         componentapi.removeComponents(removeID).then((response) => {
             fetchInitialData();
-        });
+        }).catch(err => {
+	    setError(`Error removing components: ${err.response.data.detail}`);
+	})
         setDisplayConfirmationModal(false);
     };
 
@@ -204,15 +211,21 @@ const ComponentTable = (props) => {
 
     const filterData = (value) => {
         if (value === "") {
-	    setFilteredData([]);
-	    setNextUrl(response.next);
+	    /* get full data set back */
+	    fetchInitialData();
         } else {
 	    setNextUrl(null);
 	    let query = `search=${value}`;
+	    /* stash full data set in filtered data */
 	    componentapi.getComponents(query).then((response) => {
 		console.log(response);
-		setFilteredData(response.results);
-	    });
+		setData(response.results);
+		setCount(response.count);
+                setNextUrl(response.next);
+		
+	    }).catch(err => {
+		setError(`Error filtering components: ${err.response.data.detail}`) ;
+	    })
 	    /*
             const result = data.filter((item) => {
                 return (
@@ -263,18 +276,26 @@ const ComponentTable = (props) => {
 	}
     }
 
-    function submitDependencies () {
-	let adddeps = [];
-	selectedRows.map(item => {
-            adddeps.push(item.original.id)
-        });
-	componentapi.addDependency(product.id, adddeps).then((response) => {
-	    setProduct(null);
-	    setSelectedRows([]);
-	    setSearchVal(null);
-	    fetchInitialData();
-	});
-    }
+   const submitDependencies = async () =>{
+       const axiosArray = []
+
+       setError(null);
+       
+       selectedRows.map(item => {
+	   let data = {'dependency': item.original.id}
+	   axiosArray.push(componentapi.addOneDependency(product.id, data));
+       });
+
+       try {
+	   await axios.all(axiosArray);
+	   setProduct(null)
+	   setSelectedRows([]);
+	   setSearchVal(null);
+	   fetchInitialData();
+       } catch(err) {
+	   setError(`Error adding dependency: ${err.response.data.detail}`);
+       };
+   }
     // Async Fetch
     const fetchInitialData = async () => {
         console.log("fetching components");
@@ -298,6 +319,7 @@ const ComponentTable = (props) => {
 		})
 	    }
         } catch (err) {
+	    setError(`Error retrieving components: ${err.response.data.detail}`);
             console.log('Error:', err)
         }
     }
@@ -320,6 +342,7 @@ const ComponentTable = (props) => {
                 })
             }
         } catch (err) {
+	    setError(`Error retrieving components: ${err.response.data.detail}`);
 	    console.log('Error:', err)
         }
     }
@@ -377,8 +400,8 @@ const ComponentTable = (props) => {
 	    <>
 		{data.map((x, i) => {
 		    return (
-			<tr {...rowProps} key={`${rowProps.key}-expanded-${i}`} className="text-center">
-			    <td colSpan={visibleColumns.length}>
+			<tr key={`${rowProps.key}-expanded-${i}`} className="text-center">
+			    <td colSpan={visibleColumns.length} className="text-center noborder">
 				{x}
 			    </td>
 			</tr>
@@ -449,7 +472,7 @@ const ComponentTable = (props) => {
                     <Searchbar onChange={onSearchbarChange} />
 
 		    {product ?
-		     <Button variant="primary" onClick={(e)=>submitDependencies()} disabled={btnDisabled}>Add Selected Dependencies</Button>
+		     <Button variant="primary" onClick={(e)=>submitDependencies()} disabled={btnDisabled}>Add Selected Dependencies for {product.name}</Button>
 		     :
                     <DropdownButton
                         variant="primary"
@@ -470,21 +493,22 @@ const ComponentTable = (props) => {
                 </div>
             </Card.Header>
             <Card.Body>
+		{error &&
+		 <Alert variant="danger">{error}</Alert>
+		}
+		
 		{ isLoading ?
 		  <div className="text-center">
                       <div className="lds-spinner"><div></div><div></div><div></div></div>
                   </div>
 		  :
-		  <div className="flex justify-center mt-8">
-		      <GenericTable columns={columns}
-				    data= {filteredData.length > 0 ? filteredData : data}
-				    setSelectedRows = {handleSelectedRows}
-				    update={fetchMoreData}
-				    showRowExpansion={showDeps}
-				    hasMore={nextUrl ? true : false}
-		      />
-
-		  </div>
+		  <ResizableTable columns={columns}
+				  data= {data}
+				  setSelectedRows = {handleSelectedRows}
+				  update={fetchMoreData}
+				  showRowExpansion={showDeps}
+				  hasMore={nextUrl ? true : false}
+		  />
 		}
 	    </Card.Body>
 

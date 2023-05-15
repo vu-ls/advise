@@ -232,7 +232,7 @@ const CaseThreadApp = (caseid) => {
 				  <Dropdown.Item eventKey='add' onClick={(e)=>setActiveTabNow("addTab")}>Add a Thread</Dropdown.Item>
 				 }
 				 {reqUser.role === "owner" && threads.length > 1 &&
-				  <Dropdown.Item eventKey='remove' onClick={(e)=>(setShowRemove(true))}> Remove Threads </Dropdown.Item>
+				  <Dropdown.Item eventKey='remove' onClick={(e)=>(setShowRemove(true))}> Archive Threads </Dropdown.Item>
 				 }
 				 {showArchived ?
 				  <Dropdown.Item eventKey='current' onClick={(e)=>(fetchInitialData())}> Show Current Threads </Dropdown.Item>

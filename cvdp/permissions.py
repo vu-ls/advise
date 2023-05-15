@@ -1,6 +1,6 @@
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, BasePermission, SAFE_METHODS
 from django.shortcuts import get_object_or_404
-from cvdp.models import Case, CaseParticipant, Contact, CaseThreadParticipant, ContactAssociation
+from cvdp.models import Case, CaseParticipant, Contact, CaseThreadParticipant, ContactAssociation, GlobalSettings
 from cvdp.components.models import Component, Product
 from django.db.models import Q
 from django.contrib.auth.models import Group
@@ -118,8 +118,20 @@ def my_case_role(user, case):
 #returns a list of all groups in this case that the user belongs to
 def my_case_vendors(user, case):
     groups = user.groups.all()
+    if user.is_coordinator:
+        contact = Contact.objects.filter(user=user).first()
+        cp = CaseParticipant.objects.filter(case=case, contact=contact).first()
+        if cp and cp.role=="owner":
+            if groups:
+                return groups
+            elif GlobalSettings.objects.all().exists():
+                gs = GlobalSettings.objects.all().first()
+                return Group.objects.filter(id = gs.id)
+
     cp = CaseParticipant.objects.filter(case=case, group__in=groups).values_list('group__id', flat=True)
-    return Group.objects.filter(id__in=cp)
+    if cp:
+        return Group.objects.filter(id__in=cp)
+    return []
     
 
 class ContactAPIPermission(BasePermission):

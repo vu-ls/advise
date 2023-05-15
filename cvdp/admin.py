@@ -105,7 +105,9 @@ class ContactAdmin(admin.ModelAdmin):
             return True
         return False
 
-    
+admin.site.site_header = "AdVISE Admin"
+admin.site.site_title = "AdVISE Admin Portal"
+
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(GlobalSettings)
 admin.site.unregister(Group)

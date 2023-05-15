@@ -61,6 +61,17 @@ export default class ComponentAPI {
 	const data = {'dependency': deps[0]}
         return axios.all(deps.map((item) => {data.dependency=item; axios.patch(url, data)})).then((data) => data)
     }
+
+    addOneDependency(item, data) {
+	const url = `${API_URL}/api/components/${item}/dependency/`;
+	return axios.patch(url, data);
+    }
+
+    getAddDependencyURL(item) {
+	const url = `${API_URL}/api/components/${item}/dependency/`;
+	return url;
+    }
+    
     updateComponent(c, data) {
 	const url = `${API_URL}/api/component/${c}/`;
         return axios.patch(url, data).then(response=>response.data);

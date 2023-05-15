@@ -36,6 +36,11 @@ logger.setLevel(logging.DEBUG)
 User = get_user_model()
 
 
+def _verify_contact(instance):
+    if instance.contact.user:
+        instance.group.user_set.add(instance.contact.user)
+        logger.debug(f"Added {instance.contact.user} to {instance.group}")
+
 class StandardResultsPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -397,7 +402,7 @@ class GroupDetailAPIView(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         if self.request.user.is_superuser:
             g = self.get_object()
-            action = create_group_action(f"removed group: {g.name}", request.user, None)
+            action = create_group_action(f"removed group: {g.group.name}", request.user, None)
             g.group.delete()
             return Response({}, status=status.HTTP_202_ACCEPTED)
         raise PermissionDenied()
@@ -539,6 +544,8 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
             action = create_contact_action(f"removed user {ca.contact.email} from group {ca.group.name}", request.user, ca.contact)
             action.group=ca.group
             action.save()
+            #remove user from group
+            ca.group.user_set.remove(ca.contact.user)
             # if there is a user associated with this contact, just remove the association
             ca.delete()
         else:
@@ -640,7 +647,9 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
             action.save()
             for field, val in data.items():
                 if (val != getattr(instance, field, None)):
-                    create_contact_change(action, field, getattr(instance, field), val);
+                    create_contact_change(action, field, getattr(instance, field), val)
+                    if (field == "verified"):
+                        _verify_contact(instance)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
@@ -678,10 +687,8 @@ class CreateGroupView(LoginRequiredMixin, UserPassesTestMixin, FormView, FormMix
     def form_valid(self, form):
         logger.debug("VALID FORM")
         group = form.save()
-        gp = GroupProfile(group = group,
-                          vendor_type = form.cleaned_data['vendor_type'])
+        gp = GroupProfile(group = group)
         gp.save()
-
         create_group_action(f"created group {group.name}", self.request.user, group)
 
         return JsonResponse({'new':reverse("cvdp:group", args=[group.id])}, status=200)
