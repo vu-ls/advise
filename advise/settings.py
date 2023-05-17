@@ -14,7 +14,6 @@ import os
 import logging.config
 import environ
 import json
-from advise.storage_backends import ArtifactFileStorage
 
 env = environ.Env(
     DEBUG=(bool, False)
