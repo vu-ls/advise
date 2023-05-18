@@ -36,6 +36,11 @@
     position: relative;
 }
 */
+
+.postcontent img {
+    max-width:200px;
+}
+
 .authentication-wrapper-wide .authentication-inner {
     max-width: 750px;
     position: relative;

@@ -18,6 +18,12 @@
   {% if contact and user.is_coordinator %}
   <div id="contact" val="{{ contact }}"></div>
   {% endif %}
+
+  {% if message %}
+  <div id="message" val="{{ message }}"></div>
+  {% if activetab %}<div id="activetab" val="{{ activetab }}"></div>{% endif %}
+  {% endif %}
+  
 </div>
 {% render_bundle 'inbox' %}
 {% endblock %}

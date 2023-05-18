@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {Card, Alert} from 'react-bootstrap';
+import {Card, Alert, DropdownButton, Dropdown} from 'react-bootstrap';
 import CaseThreadAPI from './ThreadAPI';
 import '../css/casethread.css';
 import ActivityApp from './ActivityApp';
+import ActivityModal from './ActivityModal';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import 'react-perfect-scrollbar/dist/css/styles.css'
 
@@ -15,7 +16,7 @@ const CaseActivityApp = (props) => {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activity, setActivity] = useState([]);
-
+    const [displayActivityModal, setDisplayActivityModal] = useState(false);
 
     const fetchInitialData = async () => {
 	console.log("get case activity");
@@ -26,6 +27,11 @@ const CaseActivityApp = (props) => {
 	    setError(err.response.data.message);
 	});
     }
+
+    const hideActivityModal = () => {
+        setDisplayActivityModal(false);
+
+    };
     
     useEffect(() => {
 	setCaseInfo(props.caseInfo);
@@ -42,11 +48,16 @@ const CaseActivityApp = (props) => {
     return (
         caseInfo ?
             <Card className="mt-2">
-                <Card.Header>
+                <Card.Header className="d-flex align-items-center justify-content-between pb-2">
                     <Card.Title>Case Activity</Card.Title>
 		    { error &&
 		      <Alert variant="danger">{error}</Alert>
 		    }
+                    <DropdownButton variant="btn p-0"
+                                    title={<i className="bx bx-dots-vertical-rounded"></i>}
+                    >                                                                                       
+                        <Dropdown.Item eventKey='viewall' onClick={(e)=>(setDisplayActivityModal(true))}>View All</Dropdown.Item>            
+                    </DropdownButton>
 		</Card.Header>
 
 		
@@ -73,6 +84,11 @@ const CaseActivityApp = (props) => {
 			</PerfectScrollbar>
 		    </div>
 		</Card.Body>
+		<ActivityModal
+                     showModal = {displayActivityModal}
+                     hideModal = {hideActivityModal}
+                     caseInfo = {caseInfo}
+                 />             
 	    </Card>
 	:
 	""

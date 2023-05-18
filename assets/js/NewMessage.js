@@ -3,12 +3,11 @@ import { Alert, Modal, Card, Badge, FloatingLabel, Button, InputGroup, Form, Row
 import {AsyncTypeahead} from 'react-bootstrap-typeahead';
 import { useCallback, useState, useEffect } from 'react';
 import MessageAPI from './MessageAPI';
+import Messenger from './Messenger';
 import 'react-bootstrap-typeahead/css/Typeahead.bs5.css';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import '../css/casethread.css'
 import DisplayLogo from "./DisplayLogo";
-import ReactQuill, { Quill,editor } from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 import ContactAPI from './ContactAPI';
 import DeleteConfirmation from './DeleteConfirmation';
 import ReCAPTCHA from "react-google-recaptcha";
@@ -53,25 +52,13 @@ const NewMessage = (props) => {
     const [displayConfirmationModal, setDisplayConfirmationModal] = useState(false);
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [allowSelectUser, setAllowSelectUser] = useState(false);
-
+    const globalRef = React.createRef(null);
 
     const closeMessage = (e) => {
 	console.log("close message");
 	setDeleteMessage("Your message is unsent.  Do you really want to cancel?")
 	setDisplayConfirmationModal(true);
     }
-
-    const modules = React.useMemo(
-        () => ({
-            toolbar: [
-            [{ header: '1' }, { header: '2' }],
-		[('bold', 'italic', 'indent', 'underline', 'strike', 'blockquote')],
-		[{ list: 'ordered' }, { list: 'bullet' }],
-		['link', 'image', 'formula'],
-		['code-block']
-            ],
-	}), []
-    );
 
     const handleInputChange = (q) => {
 	setQuery(q);
@@ -81,6 +68,15 @@ const NewMessage = (props) => {
         setMessage('');
     }
 
+    const uploadFiles = async(formData, filename) => {
+        console.log(`Uploading ${filename}: ${formData}`);
+        let data = await messageapi.addImage(formData);
+        let results = await data.data;
+        console.log(results);
+        return results['image_url'];
+
+    };
+    
     const lookupContact = async(contact) => {
 	console.log("IN LOOKUP CONTACT!")
 
@@ -163,7 +159,7 @@ const NewMessage = (props) => {
 	    formField.append('token', token);
 	}
 
-	if (message == "") {
+	if (message === "") {
 	    setInvalidMessage(true);
 	    return;
 	} else {
@@ -263,21 +259,17 @@ const NewMessage = (props) => {
 		    }
 		    <Form.Group className="mb-3">
 			<Form.Label>Message:</Form.Label>
-			<ReactQuill
-                            style={{
-				height: '25vh',
-				fontSize: '18px',
-				marginBottom: '50px',
-                            }}
-                            value={message}
+			<Messenger
+			    placeholder="Write your message"
+			    setValue={setMessage}
+			    value={message}
+			    ref={globalRef}
 			    isInvalid={invalidMessage}
-                            modules={{...modules}}
-                            placeholder="Write your message"
-                            onChange={setMessage}
+			    uploadFiles={uploadFiles}
 			/>
 		    </Form.Group>
 		    {invalidMessage &&
-                     <Form.Text className="error">
+                     <Form.Text className="error pt-4">
                          This field is required.
                      </Form.Text>
                     }
@@ -288,7 +280,7 @@ const NewMessage = (props) => {
                          sitekey={RECAPTCHA_SITE_KEY}
                      />
                     }   
-		    <div className="text-end pt-3">
+		    <div className="text-end pt-4">
 			<button onClick={clearText} className="mx-1 btn btn-outline-secondary">Cancel</button>
 			<button onClick={(e) => submitPost(e)} className="btn btn-primary">Submit</button>
 		    </div>

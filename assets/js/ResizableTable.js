@@ -44,6 +44,7 @@ const Styles = styled.div`
       overflow-wrap: break-word;
       overflow-x: hidden;
       white-space: normal !important;
+      max-width: 150px;
 
       :last-child {
         border-right: 0;

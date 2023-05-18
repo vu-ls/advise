@@ -1,12 +1,51 @@
 import React, {useEffect, useCallback, createRef, useState, useRef} from 'react';
-import ReactQuill, { Quill,editor } from 'react-quill';
+import ReactQuill, { Quill, editor } from 'react-quill';
+import ImageResize from 'quill-image-resize-module-react';
+import CaseThreadAPI from './ThreadAPI';
 import "quill-mention";
 
 import 'react-quill/dist/quill.snow.css';
 import 'quill-mention/dist/quill.mention.css';
 
-const RichText = React.forwardRef((props, ref) => {
+Quill.register('modules/imageResize', ImageResize);
 
+const threadapi = new CaseThreadAPI();
+
+var people = [
+    {id: 1, participant: {name: 'boosh'}},
+]
+
+var globalref = null;
+
+const mention = {
+    allowedChars: /^[A-Za-z\sÅÄÖåäö]*$/,
+    mentionDenotationChars: ["@"],
+    spaceAfterInsert: true,
+    source: function(searchTerm, renderList, mentionChar) {
+        let values;
+        console.log("IN CALLBACK ", searchTerm);
+        values = people.map(v => {
+            return {
+                id: v.id,
+                value: v.participant.name
+            }
+        })
+        if (searchTerm.length === 0) {
+            renderList(values, searchTerm);
+        } else {
+            const matches = [];
+            console.log("val", values);
+            for (let i = 0; i < values.length; i++)
+                if (
+                    ~values[i].value.toLowerCase().indexOf(searchTerm.toLowerCase())
+                )
+                    matches.push(values[i]);
+            renderList(matches, searchTerm);
+        }
+    }
+}
+
+const RichText = React.forwardRef((props, ref) => {
 
     const formats = [
         'font','size', 'mention',
@@ -17,9 +56,38 @@ const RichText = React.forwardRef((props, ref) => {
 	'direction','align',
         'link','image','video','formula',
     ]
+
+
+    const imageHandler = useCallback(() => {
+	
+	const input = document.createElement('input');  
+	
+	input.setAttribute('type', 'file');  
+	input.setAttribute('accept', 'image/*');  
+	input.click();  
+    
+	input.onchange = async () => {  
+	    var file = input.files[0];  
+	    var formData = new FormData();  
+	    
+	    formData.append('image', file);  
+	    
+	    var fileName = file.name;  
+	    
+	    const res = await props.uploadFiles(formData, fileName);
+	    console.log(res);
+	    console.log(globalref);
+	    const range = globalref.current.selection;
+	    console.log(range);
+            globalref.current.getEditor().insertEmbed(range.index, 'image', res);
+	    globalref.current.getEditor().setSelection(range.index + 1);
+	    
+	};
+    }, []);
     
     const modules = {
-	toolbar: [
+	toolbar: {
+	    container: [
 	    [{ font: [] }],
 	    [{ size: ["small", false, "large", "huge"] }],
 	    ["bold", "italic", "underline", "strike", "blockquote"],
@@ -27,39 +95,26 @@ const RichText = React.forwardRef((props, ref) => {
 	    [{ align: [] }],
 	    [{ color: [] }, { background: [] }],
 	    ["image"],
-	    ["clean"],
-    ],
-	mention: {
-	    allowedChars: /^[A-Za-z\sÅÄÖåäö]*$/,
-	    mentionDenotationChars: ["@"],
-	    spaceAfterInsert: true,
-	    source: useCallback((searchTerm, renderList, mentionChar) => {
-		let values;
-                console.log("IN CALLBACK ", searchTerm);
-                console.log(props.people);
-		values = props.people.map(v => {
-                    return {
-                        id: v.id,
-                        value: v.participant.name
-                    }
-                })
-		if (searchTerm.length === 0) {
-		    renderList(values, searchTerm);
-		} else {
-		    const matches = [];
-		    console.log("val", values);
-		    for (let i = 0; i < values.length; i++)
-			if (
-			    ~values[i].value.toLowerCase().indexOf(searchTerm.toLowerCase())
-			)
-			    matches.push(values[i]);
-		    renderList(matches, searchTerm);
-		}
-	    }, []),
+		["clean"],
+	    ],
+	    handlers: {
+		'image': imageHandler
+	    }
+	},
+	mention: mention,
+	imageResize: {
+	    parchment: Quill.import('parchment')
 	},
     };
+
+
+    useEffect(() => {
+	people = props.people;
+	globalref = ref;
+    }, [props.people, ref]);
     
     return (
+	
 	<ReactQuill
 	    style={{
                 height: '30vh',

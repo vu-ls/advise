@@ -25,7 +25,9 @@ const UploadFileModal = ({ showModal, hideModal, confirmModal}) => {
 	}
     };
 
-    
+    useEffect(() => {
+	setButtonDisabled(false);
+    }, [showModal]);
     
     return (
         <Modal show={showModal} onHide={hideModal}>

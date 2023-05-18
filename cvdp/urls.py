@@ -54,12 +54,15 @@ urlpatterns = [
     re_path('^report/add/case/(?P<caseid>\d+)/$', reportviews.AddReportView.as_view(), name='addreport'),
     re_path('^report/case/(?P<caseid>\d+)/add/$', reportviews.AddCaseReportView.as_view(), name='add_case_report'),
     path('inbox/', msgviews.InboxView.as_view(), name='inbox'),
+    re_path('^inbox/thread/(?P<pk>\d+)/$', msgviews.InboxView.as_view(), name='inboxthread'),
     re_path('^inbox/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/$', msgviews.InboxView.as_view(), name='msg_contact'),
     re_path('^artifact/(?P<path>.*)/$', views.ArtifactView.as_view(), name='artifact'),
     path('api/form/submissions/', reportviews.ReportsAPIView.as_view({'get': 'list'}), name='reportsapi'),
     path('api/inbox/unread/', msgviews.UnreadMessageAPI.as_view(), name='unread'),
     re_path('^api/inbox/thread/(?P<pk>\d+)/$', msgviews.MessageAPIView.as_view({'get':'list', 'post': 'create'}), name='msgapi'),
     path('api/inbox/', msgviews.ThreadAPIView.as_view({'get':'list', 'post': 'create'}), name='inboxapi'),
+    path('api/inbox/upload/', msgviews.MessageUploadView.as_view(), name='newmsgupload'),
+    re_path('^api/inbox/thread/(?P<pk>\d+)/upload/$', msgviews.MessageUploadView.as_view(), name='msgupload'),
     path('group/admin/', groupviews.GroupAdminView.as_view(), name='groupadmin'),
     path('api/manage/group/admin/', groupviews.GroupAdminAPIView.as_view({'get': 'list'}), name='groupadminapi'),
     re_path('^api/manage/group/(?P<pk>[0-9]+)/api/$', groupviews.GroupAPIAccountView.as_view({'get': 'list', 'post': 'create'}), name='groupapikeys'),
@@ -101,9 +104,11 @@ urlpatterns = [
     re_path('^case/thread/post/diff/(?P<revision_id>[0-9]+)/$', caseviews.PostDiffView.as_view(), name='diff'),
     re_path('^api/case/(?P<caseid>\d+)/threads/archived/$', caseviews.ArchivedThreadView.as_view({'get': 'list'}), name='archived'),
     re_path('^api/case/thread/(?P<pk>\d+)/posts/$', post_list, name='postlistapi'),
+    
     re_path('^api/case/thread/post/(?P<pk>[0-9]+)/$', post_detail, name='postapi'),
     re_path('^api/case/(?P<caseid>\d+)/threads/$', thread_list, name='threadlistapi'),
     re_path('^api/case/thread/(?P<pk>[0-9]+)/$', thread_detail, name='threadapi'),
+    re_path('^api/case/thread/(?P<pk>\d+)/upload/$', caseviews.UploadPostFile.as_view(), name='uploadfile'),
     re_path('^api/case/thread/(?P<pk>[0-9]+)/participants/$', caseviews.CaseThreadParticipantAPIView.as_view({'get': 'list', 'post':'create'}), name='thread_participant_api'),
     re_path('^api/case/thread/participant/(?P<pk>[0-9]+)/$', caseviews.CaseThreadParticipantAPIView.as_view({'delete':'destroy'}), name='thread_participant_api'),
     re_path('^api/case/(?P<caseid>\d+)/user/$', caseviews.UserCaseStateAPIView.as_view(), name='usercaseapi'),
@@ -167,8 +172,7 @@ urlpatterns = [
 
     re_path('^api/case/(?P<caseid>[0-9]+)/components/$', componentviews.ComponentStatusAPIView.as_view({'get':'list', 'post':'create'}), name='statusapi'),
     re_path('^api/case/component/(?P<pk>[0-9]+)/status/$', componentviews.ComponentStatusAPIView.as_view({'get':'retrieve', 'delete':'destroy', 'patch': 'partial_update'}), name='statusapi-detail'),
-    
-    
+    re_path('^api/components/(?P<pk>\d+)/cases/$', componentviews.CaseComponentAPIView.as_view({'get':'list'}), name='casecompapi'),
 ]
 
 

@@ -1,3 +1,4 @@
+
 .card-wrapper {
     display: flex;
     justify-content: space-between;
@@ -6,6 +7,10 @@
 
 .dashboard-activity-scroll {
     /*max-height: 900px;*/
+}
+
+.thread-preview-list img {
+    max-width: 30px;
 }
 
 #scrollableDiv {
@@ -223,4 +228,10 @@ pre.cvejson {
     height: 500px;
 }
 
+#component-modal {
+    background-color: #f5f5f9;
+}
 
+#component-modal .tab-content {
+    background-color: #FFF;
+}

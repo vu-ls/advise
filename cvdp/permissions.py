@@ -1,6 +1,6 @@
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, BasePermission, SAFE_METHODS
 from django.shortcuts import get_object_or_404
-from cvdp.models import Case, CaseParticipant, Contact, CaseThreadParticipant, ContactAssociation, GlobalSettings
+from cvdp.models import Case, CaseParticipant, Contact, CaseThreadParticipant, ContactAssociation, GlobalSettings, MessageThread, UserThread, GroupThread
 from cvdp.components.models import Component, Product
 from django.db.models import Q
 from django.contrib.auth.models import Group
@@ -66,6 +66,15 @@ def is_my_case_thread(user, thread):
     p = CaseParticipant.objects.filter(case=thread.case).filter(Q(contact=contact) | Q(group__in=user_groups))
     return CaseThreadParticipant.objects.filter(thread=thread, participant__in=p).exists()
 
+
+def is_my_msg_thread(user, thread):
+    if UserThread.objects.filter(thread=thread, user=user).exists():
+        return True
+    gt = GroupThread.objects.filter(thread=thread).first()
+    if gt:
+        if user.groups.filter(id=gt.group.id).exists():
+            return True
+    return False
 
 def is_case_owner(user, case):
     #get my contact

@@ -47,7 +47,7 @@ def _is_my_component(user, component):
 
 
 class StandardResultsPagination(PageNumberPagination):
-    page_size = 10
+    page_size = 20
     page_size_query_param = 'page_size'
     max_page_size= 100
 
@@ -421,5 +421,24 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
-    
-    
+class CaseComponentAPIView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, PendingUserPermission)
+    serializer_class = ComponentStatusSerializer
+
+    def list(self, request, *args, **kwargs):
+        content = self.get_queryset()
+        return Response(self.serializer_class(content, many=True,
+                                              context={'user': request.user}).data)
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"user": self.request.user})
+        return context
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view',None):
+            return ComponentStatus.objects.none()
+        component = get_object_or_404(Component, id=self.kwargs['pk'])
+        if not(_is_my_component(self.request.user, component)):
+            raise PermissionDenied()
+        cases = my_cases(self.request.user)
+        return ComponentStatus.objects.filter(component=component, vul__case__in=cases)

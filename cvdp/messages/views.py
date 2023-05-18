@@ -21,7 +21,7 @@ from cvdp.permissions import *
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import traceback
 from cvdp.forms import *
-from cvdp.lib import validate_recaptcha
+from cvdp.lib import validate_recaptcha, add_artifact
 from cvdp.models import *
 from django.core.paginator import Paginator
 from rest_framework.views import APIView
@@ -58,6 +58,14 @@ class InboxView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
     template_name = "cvdp/new_inbox.html"
     login_url="authapp:login"
 
+    def dispatch(self, request, *args, **kwargs):
+        if self.kwargs.get('pk'):
+            thread = get_object_or_404(MessageThread, id=self.kwargs['pk'])
+            if is_my_msg_thread(self.request.user, thread):
+                return super().dispatch(request, *args, **kwargs)
+            raise Http404
+        return super().dispatch(request, *args, **kwargs)
+    
     def get_context_data(self, **kwargs):
         context = super(InboxView, self).get_context_data(**kwargs)
         context['inboxpage'] = 1
@@ -65,9 +73,35 @@ class InboxView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
             context['contact'] = self.kwargs['contact']
         #get coord team
         context['team'] = GlobalSettings.objects.all().first()
-        
-            
+        if self.kwargs.get('pk'):
+            context['message'] = self.kwargs.get('pk')
+            thread = MessageThread.objects.get(id=self.kwargs['pk'])
+            if not UserThread.objects.filter(thread=thread, user=self.request.user).exists():
+                gt = GroupThread.objects.filter(thread=thread).first()
+                if gt:
+                    logger.debug("SETTING ACTIVE TAB");
+                    context['activetab'] = gt.group.id
         return context
+
+class MessageUploadView(LoginRequiredMixin, generic.TemplateView):
+    login_url = "authapp:login"
+    template_name='cvdp/notemplate.html'
+
+    def post(self, request, *args, **kwargs):
+        thread = None
+        if self.kwargs.get('pk'):
+            logger.debug("CHECKING....")
+            thread = get_object_or_404(MessageThread, id=self.kwargs['pk'])
+            if not is_my_msg_thread(self.request.user, thread):
+                raise PermissionDenied()
+        logger.debug(f"Files Post: {self.request.FILES}")
+        artifact = add_artifact(self.request.FILES['image'])
+        ca = MessageAttachment(file=artifact,
+                               thread=thread,
+                               user=self.request.user)
+        ca.save()
+        url = reverse("cvdp:artifact", args=[ca.file.uuid])
+        return JsonResponse({'status': 'success', 'image_url': url}, status=200)
 
     
 class ThreadAPIView(viewsets.ModelViewSet):
@@ -118,7 +152,9 @@ class ThreadAPIView(viewsets.ModelViewSet):
                 return Response({'message': 'Invalid ReCAPTCHA. Please try again'}, status=status.HTTP_400_BAD_REQUEST)
         
         content = request.data.get('content', None)
-        if not content:
+        if not content or (content == "<p><br></p>"):
+            #this is equivalent to an empty message (for some reason when you enter and then remove content,
+            #quill automatically adds this and there's no way to remove it"
             return Response({'message': 'No message content present'},
                             status=status.HTTP_400_BAD_REQUEST)
             

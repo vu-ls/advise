@@ -41,11 +41,20 @@ export default function Editor(props) {
     }, [props.reply]);
 
     useEffect(() => {
-	console.log(props.participants);
 	setUsers(props.participants);
     }, [props.participants]);
 
 
+    const uploadFiles = async(formData, filename, ref) => {
+	console.log(`Uploading ${filename}: ${formData}`);
+	let data = await threadapi.addPostImage(formData, props.thread)
+	let results = await data.data;
+	console.log(results);
+	return results['image_url'];
+	
+    };
+
+    
     const clearText = (e) => {
 	e.preventDefault()
 	if (props.post) {
@@ -74,6 +83,8 @@ export default function Editor(props) {
 	    /* just need to update this post */
 	    threadapi.editPost(text, props.post).then((response) => {
 		props.dataUpdated()
+	    }).catch(err => {
+		setError(`Error editing post: ${err.response.data.error}`);
 	    });
 	} else {
 	    let url = `${API_URL}/api/case/thread/${props.thread.id}/posts/`;
@@ -112,6 +123,7 @@ export default function Editor(props) {
 			     setValue={handleChange}
 			     value={text}
 			     ref={editorRef}
+			     uploadFiles = {uploadFiles}
 			 />
 			 {invalidPost &&
 			  <Form.Text className="error">

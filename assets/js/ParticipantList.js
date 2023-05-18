@@ -140,8 +140,7 @@ export default function ParticipantList(props) {
 		     <>{error}</>
 		    }
 		</>
-		<div className="participant-list">
-		    <PerfectScrollbar>
+		<PerfectScrollbar className="participant-list">
 
 		{isLoading ?
 		 <p>Loading...</p>
@@ -178,8 +177,7 @@ export default function ParticipantList(props) {
 		     })
 		 )
 		}
-		    </PerfectScrollbar>
-		</div>
+		</PerfectScrollbar>
 	    </Card.Body>
 	    {props.user.role === "owner" &&
 	     <>

@@ -13,7 +13,12 @@ export default class ComponentAPI {
 	const url = `${API_URL}/api/components/${item}/dependency/`;
         return axios.get(url).then(response => response.data);
     }
-    
+
+    getComponentCases(c) {
+	let url = `${API_URL}/api/components/${c.id}/cases/`;
+	return axios.get(url).then(response => response.data);
+    }
+        
     getComponents(query) {
 	let url = `${API_URL}/api/components/`;
 	if (query) {

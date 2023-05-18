@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import ThreadDisplay from './ThreadDisplay';
 import ThreadSearchForm from './ThreadSearch';
-import {Card, DropdownButton, Dropdown, InputGroup, FloatingLabel, Form, Container, Row, Col, Tab, Tabs, Nav, Button} from 'react-bootstrap';
+import {Card, DropdownButton, Dropdown, InputGroup, FloatingLabel, Form, Container, Alert, Row, Col, Tab, Tabs, Nav, Button} from 'react-bootstrap';
 import CaseThreadAPI from './ThreadAPI';
 import PostList from './PostList';
-import Editor from "./Editor";
 import ParticipantList from './ParticipantList';
 import '../css/casethread.css';
 import CaseDetailApp from './CaseDetailApp';
@@ -17,6 +16,7 @@ const threadapi = new CaseThreadAPI();
 
 const CaseThreadApp = (caseid) => {
 
+    const [threadError, setThreadError] = useState(null);
     const [threads, setThreads] = useState([]);
     const [threadSubject, setThreadSubject] = useState("");
     const [invalidSubject, setInvalidSubject] = useState(false);
@@ -118,7 +118,12 @@ const CaseThreadApp = (caseid) => {
 
     const closeTab = (thread) => {
         setRemoveID(thread.id);
-        setDeleteMessage(`Are you sure you want to archive this thread with subject ${thread.subject}?`);
+	if (thread.archived) {
+	    setDeleteMessage(`Are you sure you want to unarchive this thread wtih subject ${thread.subject}?`);
+	} else {
+            setDeleteMessage(`Are you sure you want to archive this thread with subject ${thread.subject}?`);
+
+	}
         setDisplayConfirmationModal(true);
     }
 
@@ -126,12 +131,14 @@ const CaseThreadApp = (caseid) => {
 	setShowArchived(true);
 	try {
 	    await threadapi.getArchivedThreads(caseid).then((response) => {
-		setActiveTab(response[0]);
+		console.log(response);
+		if (response.length > 0) {
+		    setActiveTab(response[0]);
+		}
                 setThreads(response);
-                console.log("SETTING ACTIVE TAB");
-                console.log(response[0].id);
             })
-	}catch (err) {
+	} catch (err) {
+	    setThreadError(err.response.data.detail);
 	    console.log('Error:' , err)
 	}
     }
@@ -231,14 +238,24 @@ const CaseThreadApp = (caseid) => {
 				  :
 				  <Dropdown.Item eventKey='add' onClick={(e)=>setActiveTabNow("addTab")}>Add a Thread</Dropdown.Item>
 				 }
-				 {reqUser.role === "owner" && threads.length > 1 &&
-				  <Dropdown.Item eventKey='remove' onClick={(e)=>(setShowRemove(true))}> Archive Threads </Dropdown.Item>
-				 }
 				 {showArchived ?
-				  <Dropdown.Item eventKey='current' onClick={(e)=>(fetchInitialData())}> Show Current Threads </Dropdown.Item>
+				  <>
+				      <Dropdown.Item eventKey='current' onClick={(e)=>(fetchInitialData())}> Show Current Threads </Dropdown.Item>
+				      {reqUser.role === "owner" && threads.length > 1 &&
+				       <Dropdown.Item eventKey='remove' onClick={(e)=>(setShowRemove(true))}> Revive (Unarchive) Threads </Dropdown.Item>
+
+				      }
+				  </>
 				  :
-				  <Dropdown.Item eventKey='archived' onClick={(e)=>(getArchivedThreads())}> Show Archived </Dropdown.Item>
+				  <>
+				      <Dropdown.Item eventKey='archived' onClick={(e)=>(getArchivedThreads())}> Show Archived </Dropdown.Item>
+				      {reqUser.role === "owner" && threads.length > 1 &&
+				       <Dropdown.Item eventKey='remove' onClick={(e)=>(setShowRemove(true))}> Archive Threads </Dropdown.Item>
+				      }
+				  </>
 				 }
+
+
 
 			     </DropdownButton>
 			      }
@@ -247,9 +264,14 @@ const CaseThreadApp = (caseid) => {
 
 			     <ThreadSearchForm
 				 onSubmit={searchThreads}
-			    />
+			     />
+			     {threads.length > 0 && showArchived &&
+			      <Alert variant="info">Archived threads are read-only</Alert>
+			     }
+			     
 			     {threads.length == 0 ?
-			      ""
+			      
+			      <Alert variant="warning">No Threads to display</Alert>
 			      : (
 				  <Tab.Container
 				      defaultActiveKey={threads[0].id}
@@ -287,6 +309,7 @@ const CaseThreadApp = (caseid) => {
 
 				      </Nav>
 				      <Tab.Content id="thread-list">
+					  
 					  {
 					      threads.map((thread, index) => {
 						  if (thread.id == activeTab.id) {
@@ -376,7 +399,9 @@ const CaseThreadApp = (caseid) => {
 			 confirmModal={submitRemoveThread}
 			 hideModal={hideConfirmationModal}
 			 id={removeID}
-			 message={deleteMessage} />
+			 message={deleteMessage}
+			 buttonText="Confirm"
+		     />
 		 </Col>
 	     </Row>
 	    )

@@ -43,6 +43,21 @@ export default class MessageAPI{
         return axios.post(url, data);
     }
 
+    addImage(data, thread=null) {
+	console.log(data);
+	let url = `${API_URL}/api/inbox/upload/`
+	if (thread) {
+            url = `${API_URL}/api/inbox/thread/${thread.id}/upload/`;
+	}
+	
+        return axios.post(url, data, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }});
+    }
+    
+	
+    
     createMessage(thread, data) {
 	const url = `${API_URL}/api/inbox/thread/${thread.id}/`
         return axios.post(url, data).then(response => response.data);

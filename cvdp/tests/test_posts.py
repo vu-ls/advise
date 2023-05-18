@@ -71,12 +71,50 @@ class PostTests(APITestCase):
         newct = CaseThread.objects.create(case=self.case,
                                           archived=True,
                                           subject="Archived Thread")
+        
 
         response = self.api_client.get(
             reverse('cvdp:archived', args=['111111']))
         self.assertEqual(response.data, [])
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_vendor_get_archived_threads_data(self):
+        self.api_client.force_authenticate(user=self.vendor_user)
+        group = Group.objects.get(name='vendor')
+        newct = CaseThread.objects.create(case=self.case,
+                                          archived=True,
+                                          subject="Archived Thread")
+        
+        cp = CaseParticipant.objects.get(case=self.case, group=group)
+        CaseThreadParticipant.objects.create(thread=newct, participant=cp)
+        response = self.api_client.get(
+            reverse('cvdp:archived', args=['111111']))
+        cases = CaseThread.objects.filter(case=self.case, archived=True)
+        serializer = CaseThreadSerializer(cases, many=True)
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+    def test_vendor_post_archived_threads(self):
+
+        self.api_client.force_authenticate(user=self.vendor_user)
+        group = Group.objects.get(name='vendor')
+
+        newct = CaseThread.objects.create(case=self.case,
+                                          archived=True,
+                                          subject="Archived Thread")
+        cp = CaseParticipant.objects.get(case=self.case, group=group)
+        CaseThreadParticipant.objects.create(thread=newct, participant=cp)
+        
+        valid_payload = {
+            'content' : '<b>HERE IS SOME VENDOR CONTENT</b>'
+        }
+
+        response = self.api_client.post(
+            reverse('cvdp:postlistapi', args=[newct.id]),
+            data = json.dumps(valid_payload),
+            content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_thread_creation(self):
         self.api_client.force_authenticate(user=self.coord_user)
@@ -155,6 +193,19 @@ class PostTests(APITestCase):
             content_type='application/json')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        #test edit post on archived thread
+        thread.archived=True
+        thread.save()
+
+        self.api_client.force_authenticate(user=self.coord_user)
+        
+        response = self.api_client.patch(
+            reverse('cvdp:postapi', args=[post.id]),
+            data=json.dumps({'content': '<p>Updated CONTENT</p>'}),
+            content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_vendor_get_posts(self):
         #vendor get posts

@@ -13,7 +13,8 @@ const LoadInboxApp = (props) => {
     const [unreadCounts, setUnreadCounts] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
-
+    const [activeTab, setActiveTab] = useState(null);
+    
     const fetchInitialData = async () => {
 
 
@@ -40,6 +41,17 @@ const LoadInboxApp = (props) => {
 	fetchInitialData();
     }, [])
 
+    useEffect(() => {
+	if (props.message) {
+	    if (groupThreads.length > 0) {
+		if (document.getElementById('activetab')) {
+		    setActiveTab(document.getElementById('activetab').getAttribute('val'));
+		    
+		} 
+	    }
+	}
+    }, [groupThreads]);
+    
     return (
 	<>
 	    {loading ?
@@ -58,11 +70,14 @@ const LoadInboxApp = (props) => {
 		  <Tabs
 		      id="inboxapp"
 		      defaultActiveKey="user"
+		      activeKey = {activeTab ? activeTab : "user" }
+		      onSelect = {(e)=>setActiveTab(e)}
 		  >
 		      <Tab eventKey="user" title={unreadCounts['user'] ? <>My Inbox <Badge pill bg="success">{unreadCounts['user']}</Badge></> : "My Inbox"}>
-                      <InboxApp
+			  <InboxApp
 			  coord={props.coord}
 			  contactmsg={props.contactmsg}
+			  message = {props.message}
                       />
 		  </Tab>
 		      {groupThreads.map((gt, index) => {
@@ -73,6 +88,7 @@ const LoadInboxApp = (props) => {
 				      coord={props.coord}
 				      contactmsg={props.contactmsg}
 				      group = {gt.uuid}
+				      message = {props.message}
 				  />
 			      </Tab>
 			  )
@@ -82,6 +98,7 @@ const LoadInboxApp = (props) => {
 		  <InboxApp
 		      coord={props.coord}
 		      contactmsg={props.contactmsg}
+		      message={props.message}
 		  />
 		 }
 	     </>

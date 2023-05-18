@@ -547,6 +547,9 @@ class PostAPIView(viewsets.ModelViewSet):
             raise PermissionDenied()
         data = request.data
         logger.debug(request.data)
+        if (instance.thread.archived):
+            return Response({'error': 'This thread has been archived and is read-only.'},
+                            status=status.HTTP_400_BAD_REQUEST)
         serializer = self.serializer_class(instance=instance, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -562,6 +565,9 @@ class PostAPIView(viewsets.ModelViewSet):
         logger.debug(request.data)
         thread = get_object_or_404(CaseThread, id=self.kwargs['pk'])
         self.check_object_permissions(self.request, thread)
+        if (thread.archived):
+            return Response({'error': 'This thread has been archived and is read-only.'},
+                            status=status.HTTP_400_BAD_REQUEST)
         contact = Contact.objects.filter(user=self.request.user).first()
         #get my group for case?
         groups = my_case_vendors(self.request.user, thread.case)
@@ -643,6 +649,12 @@ class CaseThreadAPIView(viewsets.ModelViewSet):
         if not(is_case_owner_or_staff(self.request.user, thread.case.id)):
                raise PermissionDenied()
 
+        if (thread.archived):
+            #this thread is already archived, so unarchive
+            thread.archived=False
+            thread.save()
+            return Response({}, status=status.HTTP_202_ACCEPTED)
+           
         #check to see if this thread has posts?
         if Post.objects.filter(thread=thread).exists():
             #if so, we want to archive vs delete
@@ -880,9 +892,9 @@ class UserCaseStateAPIView(generics.RetrieveAPIView):
             status_needed = get_status_status(case, user)
         cv = CaseViewed.objects.filter(case=case, user=user).first()
         if (cv):
-            cs = UserCaseState(user, contact.id, cv.date_viewed, role, status_needed)
+            cs = UserCaseState(user, contact.uuid, cv.date_viewed, role, status_needed)
         else:
-            cs = UserCaseState(user, contact.id, None, role, status_needed)
+            cs = UserCaseState(user, contact.uuid, None, role, status_needed)
 
         #update time viewed
         cviewed, created = CaseViewed.objects.update_or_create(case=case, user=user,
@@ -1055,6 +1067,30 @@ class VulAPIView(viewsets.ModelViewSet):
 
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
+
+class UploadPostFile(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+    login_url = "authapp:login"
+    template_name='cvdp/notemplate.html'
+
+    def test_func(self):
+        casethread = get_object_or_404(CaseThread, id=self.kwargs['pk'])
+        if is_my_case_thread(self.request.user, casethread):
+            return True
+        return False
+
+    def post(self, request, *args, **kwargs):
+        casethread = get_object_or_404(CaseThread, id=self.kwargs['pk'])
+        logger.debug(f"Files Post: {self.request.FILES}")
+
+        artifact = add_artifact(self.request.FILES['image'])
+        ca = ThreadArtifact(file=artifact,
+                            thread=casethread,
+                            user=self.request.user)
+        ca.save()
+        url = reverse("cvdp:artifact", args=[ca.file.uuid])
+        return JsonResponse({'status': 'success', 'image_url': url}, status=200)
+       
+    
 class CaseArtifactAPIView(viewsets.ModelViewSet):
     serializer_class = ArtifactSerializer
     permission_classes = (IsAuthenticated, PendingUserPermission, CaseObjectAccessWritePermission)
@@ -1110,8 +1146,8 @@ class CaseArtifactAPIView(viewsets.ModelViewSet):
             case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
             self.check_object_permissions(self.request, case)
             if self.request.user.is_coordinator:
-                return CaseArtifact.objects.filter(case=case)
-            return CaseArtifact.objects.filter(case=case, shared=True)
+                return CaseArtifact.objects.filter(case=case).order_by('-action__created')
+            return CaseArtifact.objects.filter(case=case, shared=True).order_by('-action__created')
 
     def create(self, request, *args, **kwargs):
         logger.debug("IN ARTIFACT CREATE VIEW")
@@ -1375,10 +1411,14 @@ class CaseActivityAPIView(APIView):
 
         # -----------------------------------------------------------
         page_number = request.query_params.get('page', 1)
-        page_size = request.query_params.get('page_size', 10)
+        page_size = request.query_params.get('page_size', 20)
+        search = request.query_params.get('q', None)
+        if search:
+            search = search.lower()
         # -----------------------------------------------------------
         logger.debug(f"page_number is {page_number}")
         logger.debug(request.query_params)
+        
         cases = []
         if self.kwargs.get('caseid'):
             case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
@@ -1425,11 +1465,15 @@ class CaseActivityAPIView(APIView):
             status_serializer =	StatusActionSerializer(status, many=True)
             status_actions = status_serializer.data
 
+
         results = case_actions + post_actions + advisory_actions + status_actions
         qs = sorted(results,
                     key=lambda instance: instance['created'],
                     reverse=True)
 
+        if (search):
+            res = list(filter(lambda elem: search in [elem['title'].lower(), elem['user']['name'].lower()], qs))
+            qs = res
 
         paginator = Paginator(qs, page_size)
         data = paginator.page(page_number)

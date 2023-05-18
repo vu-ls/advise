@@ -153,7 +153,7 @@ class CaseSerializer(serializers.ModelSerializer):
 class UserCaseState:
     def __init__(self, user, contact, last_viewed, role, status_needed):
         self.user = user
-        self.contact = contact
+        self.contact = str(contact)
         self.last_viewed = last_viewed
         self.role = role
         self.status_needed = status_needed
@@ -164,7 +164,7 @@ class UserCaseState:
 
 class UserCaseStateSerializer(serializers.Serializer):
     user = UserSerializer()
-    contact = serializers.IntegerField()
+    contact = serializers.CharField()
     last_viewed = serializers.DateTimeField()
     delete_perm = serializers.BooleanField(default=False)
     role = serializers.CharField()
@@ -324,7 +324,7 @@ class CaseThreadSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CaseThread
-        fields = ('id', 'case', 'created', 'subject', 'official')
+        fields = ('id', 'case', 'created', 'subject', 'official', 'archived')
 
 
 class PostReplySerializer(serializers.ModelSerializer):
@@ -471,10 +471,12 @@ class VulSerializer(serializers.ModelSerializer):
     ssvc_decision = serializers.SerializerMethodField()
     ssvc_decision_tree = serializers.SerializerMethodField()
     affected_products = serializers.SerializerMethodField()
+    case = serializers.CharField(source='case.caseid')
+    url = serializers.SerializerMethodField()
     
     class Meta:
         model = Vulnerability
-        fields = ('id', 'cve', 'description', 'vul', 'date_added', 'date_public', 'problem_types', 'references', 'tags', 'cvss_vector', 'cvss_severity', 'cvss_score', 'ssvc_vector', 'ssvc_decision', 'ssvc_decision_tree', 'affected_products')
+        fields = ('id', 'cve', 'description', 'vul', 'date_added', 'date_public', 'problem_types', 'references', 'tags', 'cvss_vector', 'cvss_severity', 'cvss_score', 'ssvc_vector', 'ssvc_decision', 'ssvc_decision_tree', 'affected_products', 'case', 'url')
 
     def to_internal_value(self, data):
         if data.get('date_public') == '':
@@ -484,6 +486,9 @@ class VulSerializer(serializers.ModelSerializer):
     def get_vul(self, obj):
         return obj.vul
 
+    def get_url(self, obj):
+        return obj.get_absolute_url()
+    
     def validate_cve(self, value):
         if value != None:
             if value.lower().startswith('cve-'):
@@ -549,7 +554,9 @@ class VulSerializer(serializers.ModelSerializer):
             #get all my components/or component status set to Share
             status = components.filter(component__id__in=products)
         else:
-            status = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
+            #if user isn't present, we could possibly leak info that we shouldn't
+            #status = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
+            status = []
         serializer = AffectedProductSerializer(status, many=True)
         return serializer.data
     

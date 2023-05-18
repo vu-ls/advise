@@ -670,7 +670,7 @@ class MessageThread(models.Model):
         return objs
 
     def get_absolute_url(self):
-        return reverse('cvdp:inbox')
+        return reverse('cvdp:inboxthread', args=[self.id])
 
 class UserThread(models.Model):
 
@@ -866,8 +866,17 @@ class MessageAttachment(models.Model):
         blank=True,
 	null=True)
 
-    message = models.ForeignKey(
-        Message,
+    thread = models.ForeignKey(
+        MessageThread,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
         on_delete=models.CASCADE)
 
 
@@ -1530,6 +1539,23 @@ class CaseArtifact(models.Model):
     def __str__(self):
         return f"{self.file.filename}"
 
+class ThreadArtifact(models.Model):
+
+    file = models.ForeignKey(
+        Attachment,
+	on_delete=models.CASCADE)
+
+    thread = models.ForeignKey(
+        CaseThread,
+        on_delete=models.CASCADE)
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL)
+    
+    
 class CVEReservation(models.Model):
 
     vul = models.OneToOneField(
@@ -1866,7 +1892,6 @@ class CaseAction(Action):
         Vulnerability,
         blank=True, null=True,
         on_delete=models.SET_NULL)
-
 
     def __str__(self):
         return f"{self.user.screen_name} made change to {self.case.caseid}: {self.title}"

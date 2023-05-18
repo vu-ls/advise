@@ -4,9 +4,8 @@ import CaseThreadAPI from './ThreadAPI';
 import CaseList from './CaseList.js';
 import Searchbar from './Searchbar.js';
 import ActivityApp from './ActivityApp.js';
-import PerfectScrollbar from 'react-perfect-scrollbar';
 import InfiniteScroll from 'react-infinite-scroll-component'
-import 'react-perfect-scrollbar/dist/css/styles.css'
+
 import '../css/casethread.css';
 
 const caseapi = new CaseThreadAPI();

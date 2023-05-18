@@ -33,6 +33,13 @@ VERSION = '1.1'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
+ENVIRONMENT_NAME = os.environ.get('ENVIRONMENT_NAME', None)
+
+
+DEV_BANNER = False
+if ENVIRONMENT_NAME in ['dev', 'test']:
+    DEV_BANNER = True
+    
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
 
@@ -44,6 +51,9 @@ API_HASH_SALT = os.environ.get('API_HASH_SALT', SECRET_KEY)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
+
+# set an environment name
+ENVIRONMENT_NAME = os.environ.get('ENVIRONMENT_NAME', 'undefined')
 
 # try to set up allowed hosts
 try:

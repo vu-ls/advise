@@ -4,12 +4,11 @@ import {Typeahead} from 'react-bootstrap-typeahead';
 import MessageAPI from './MessageAPI';
 import DisplayLogo from './DisplayLogo';
 import NewMessage from './NewMessage';
+import Messenger from './Messenger';
 import { format, formatDistance } from 'date-fns'
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import 'react-perfect-scrollbar/dist/css/styles.css'
 import '../css/casethread.css';
-import ReactQuill, { Quill,editor } from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 import StandardPagination from './StandardPagination';
 
 import ReCAPTCHA from "react-google-recaptcha";
@@ -40,6 +39,17 @@ const InboxApp = (props) => {
     const [feedback, setFeedback] = useState(null);
     const [sentMessage, setSentMessage] = useState(false);
 
+    const globalRef = React.createRef(null);
+
+    const uploadFiles = async(formData, filename) => {
+        console.log(`Uploading ${filename}: ${formData}`);
+        let data = await messageapi.addImage(formData, curThread);
+	let results = await data.data;
+        console.log(results);
+        return results['image_url'];
+
+    };
+    
     const fetchInitialData = async (msg) => {
 	if (msg) {
 	    setFeedback(msg);
@@ -51,14 +61,11 @@ const InboxApp = (props) => {
 	try {
 	    if (props.group) {
 		messageapi.getGroupThreads(props.group).then((response) => {
-		    console.log("GET GROUP THREADS")
-		    console.log(response);
 		    setThreads(response.results);
 		    setItemsCount(response.count);
 		});
 	    } else {
 		messageapi.getThreads().then((response) => {
-                    console.log(response);
                     setThreads(response.results);
 		    setItemsCount(response.count);
 		});
@@ -72,7 +79,6 @@ const InboxApp = (props) => {
 
 
     useEffect(()=> {
-        console.log("currentPage in use", currentPage);
 	if (isInitialMount.current)  {
 	    console.log("do nothing");
 	} else {
@@ -83,7 +89,6 @@ const InboxApp = (props) => {
 
 
     const paginationHandler = (page) => {
-	console.log("IN PAGINATION HANDLER")
 	if (props.group) {
 	    messageapi.getGroupThreadsByPage(props.group, page).then((response) => {
 		setThreads(response.results);
@@ -101,24 +106,11 @@ const InboxApp = (props) => {
 	}
     }
 
-    const modules = React.useMemo(
-        () => ({
-            toolbar: [
-            [{ header: '1' }, { header: '2' }],
-                [('bold', 'italic', 'indent', 'underline', 'strike', 'blockquote')],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                ['link', 'image', 'formula'],
-                ['code-block']
-            ],
-        }), []
-    );
-
     useEffect(() => {
 	if (isInitialMount.current) {
 	    /* don't search threads on initial mount */
 	    isInitialMount.current = false;
 	} else {
-	    console.log("SEARCH CHANGED", search);
             let urlstr = "";
             if (search) {
 		urlstr = `search=${search}`
@@ -135,13 +127,23 @@ const InboxApp = (props) => {
     }, [search])
 
     useEffect(() => {
-	console.log(`${props.coord} ${threads}`);
 	if (threads.length > 0) {
-	    if ((curThread == null && sendMsgContact == null) || feedback) {
+	    if (curThread == null && props.message) {
+		/* find thread */
+		let st = threads.find((t) => (t.id == props.message))
+		if (st) {
+		    setCurThread(st);
+		} else {
+		    setCurThread(threads[0]);
+		}
+		setLoadingMessages(true);
+		setNewMessage(false);		
+	    } else if ((curThread == null && sendMsgContact == null) || feedback) {
 		setCurThread(threads[0])
 		setLoadingMessages(true);
-		setNewMessage(false);
+		setNewMessage(false);		
 	    }
+
 	} else {
 	    setCurThread(null)
 	    setLoadingMessages(false);
@@ -263,15 +265,15 @@ const InboxApp = (props) => {
                             ><i className="fas fa-search"></i></Button>
 			</InputGroup>
 			<PerfectScrollbar>
-			    <ul className="list-unstyled mb-0">
-				{threads.length > 0 && curThread ?
+			    <ul className="list-unstyled mb-0 thread-preview-list">
+				{threads.length > 0 ?
 				 <>
-			    {threads.map((thread, inbox) => {
-				let date = new Date(thread.last_message.created);
-				let timeago = formatDistance(date, new Date(), {addSuffix: true});
-
-				return (
-				    <li className="p-2 border-bottom" id={`inbox-${thread.id}`} key={`inbox-${thread.id}`} style={{ backgroundColor: curThread.id == thread.id ? "#eee" : 'inherit'}}>
+				     {threads.map((thread, inbox) => {
+					 let date = new Date(thread.last_message.created);
+					 let timeago = formatDistance(date, new Date(), {addSuffix: true});
+					 
+					 return (
+					     <li className="p-2 border-bottom" id={`inbox-${thread.id}`} key={`inbox-${thread.id}`} style={{ backgroundColor: (curThread && curThread.id == thread.id) ? "#eee" : 'inherit'}}>
 					<a href="#" onClick={(e)=>setCurThread(thread)} className="d-flex justify-content-between">
 					    <div className="d-flex flex-row gap-2">
 						<DisplayLogo
@@ -443,18 +445,13 @@ const InboxApp = (props) => {
 					    }
 
 					   <Card.Body>
-					       <ReactQuill
-						   style={{
-						       height: '25vh',
-						       fontSize: '18px',
-						       marginBottom: '50px',
-						   }}
-
-						   value={message}
-						   modules={{...modules}}
+					       <Messenger
 						   placeholder="Write a new message to continue the thread"
-						   onChange={setMessage}
-					       />
+						   setValue={setMessage}
+						   value={message}
+						   ref={globalRef}
+						   uploadFiles={uploadFiles}
+					       />   
 					       {RECAPTCHA_SITE_KEY &&
 						<ReCAPTCHA
 						    ref={recaptchaRef}

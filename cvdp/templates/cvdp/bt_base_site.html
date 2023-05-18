@@ -72,6 +72,12 @@
         <div class="authentication-inner">
           <!-- Register -->
           <div class="card">
+	    {% if DEV_BANNER %}
+	    <div class="container-fluid text-center bg-primary text-white p-3">
+	      <div class="lead">{% if ENVIRONMENT_NAME %}You are connected to the {{ENVIRONMENT_NAME}} instance of AdVISE{% else %}This is a non-production instance of AdVISE {% endif %}</div>
+            </div>
+	    {% endif %}
+	    
 	    {% if user.is_authenticated %}
 	    <div class="card-header text-end pb-0">
 	      <a href="{% url 'account_logout' %}" title="log out"><i class="fas fa-sign-out-alt"></i></a>

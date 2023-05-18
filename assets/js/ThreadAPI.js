@@ -30,12 +30,20 @@ export default class CaseThreadAPI{
 	return axios.get(url).then(response => response.data);
     }
 
-    getMyActivity(c) {
+    getMyActivity(c, search=null) {
 	let url = `${API_URL}/api/case/activity/`;
 	if (c) {
 	    url = `${API_URL}/api/case/activity/?page=${c}`;
+	    if (search) {
+		url = `${url}&q=${search}`;
+	    }
 	}
         return axios.get(url);
+    }
+
+    searchCaseActivity(c, search) {
+	const url = `${API_URL}/api/case/${c.case_id}/activity/?q=${search}`;
+        return axios.get(url).then(response => response.data);
     }
     
     assignCase(c, name) {
@@ -333,6 +341,15 @@ export default class CaseThreadAPI{
     removeArtifact(c) {
 	const url = `${API_URL}/api/case/artifact/${c}/`;
         return axios.delete(url).then(response => response.data);
+    }
+
+    addPostImage(data, thread) {
+	console.log(data);
+	const url = `${API_URL}/api/case/thread/${thread.id}/upload/`;
+	return axios.post(url, data, {
+            headers: {
+	        'Content-Type': 'multipart/form-data'
+            }});
     }
 
     getCVSSForm(vul) {

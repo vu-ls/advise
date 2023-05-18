@@ -2,7 +2,7 @@ import React from 'react'
 import { useState, useEffect} from 'react';
 import { Modal, Button } from "react-bootstrap";
  
-const DeleteConfirmation = ({ showModal, hideModal, confirmModal, id, message }) => {
+const DeleteConfirmation = ({ showModal, hideModal, confirmModal, id, message, buttonText="Delete" }) => {
 
     const [showDeleteButton, setShowDeleteButton] = useState(true);
 
@@ -26,7 +26,7 @@ const DeleteConfirmation = ({ showModal, hideModal, confirmModal, id, message })
     return (
         <Modal show={showModal} onHide={hideModal}>
         <Modal.Header closeButton>
-          <Modal.Title>Delete Confirmation</Modal.Title>
+          <Modal.Title>Confirm this action</Modal.Title>
         </Modal.Header>
         <Modal.Body><div className="alert alert-danger">{message}</div></Modal.Body>
         <Modal.Footer>
@@ -35,7 +35,7 @@ const DeleteConfirmation = ({ showModal, hideModal, confirmModal, id, message })
           </Button>
 	    {showDeleteButton ?
              <Button variant="danger" onClick={() => confirmModal(id) }>
-		 Delete
+		 {buttonText}
              </Button>
 	     :
 	     <Button variant="primary" onClick={hideModal}>

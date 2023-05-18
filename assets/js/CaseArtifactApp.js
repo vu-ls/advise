@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import {Card, Alert, NavDropdown, DropdownButton, Dropdown, InputGroup, FloatingLabel, Form, Container, Row, Col, Badge, Button} from 'react-bootstrap';
 import { format, formatDistance } from 'date-fns'
 import CaseThreadAPI from './ThreadAPI';
+import PerfectScrollbar from 'react-perfect-scrollbar';
+import 'react-perfect-scrollbar/dist/css/styles.css'
 import '../css/casethread.css';
 import DisplayStatus from './DisplayStatus';
 import DisplayLogo from './DisplayLogo';
@@ -119,20 +121,21 @@ const CaseArtifactApp = (props) => {
 			 <div className="d-grid mb-3"><Button variant="danger" size="sm" onClick={(e)=>setShowRemove(false)}>Cancel Remove Files</Button></div>
 			}
 		    </>
-		    
-		    {artifacts.map((a, index) => {
-			return (
-			    <DisplayFilePreview
-				key={`artifact-${index}`}
-				file={a}
-				remove = {showRemove}
-				share = {showShare}
-				removeFile = {confirmRemoveFile}
-				shareFile = {shareFile}
-			    />
-			)
-		    })
-		    }
+		    <PerfectScrollbar className="participant-list">
+			    {artifacts.map((a, index) => {
+				return (
+				    <DisplayFilePreview
+					key={`artifact-${index}`}
+					file={a}
+					remove = {showRemove}
+					share = {showShare}
+					removeFile = {confirmRemoveFile}
+					shareFile = {shareFile}
+				    />
+				)
+			    })
+			    }
+		    </PerfectScrollbar>
 		</Card.Body>
 		<UploadFileModal
 		    showModal = {showUploadModal}

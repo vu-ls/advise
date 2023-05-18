@@ -146,6 +146,7 @@ export default function PostList(props) {
 	    } else {
 		setPosts(response.results);
 	    }
+	    console.log("POSTS", response.results);
 	    setTotalPosts(response.count);
 	    setIsLoading(false);
 
@@ -208,7 +209,7 @@ export default function PostList(props) {
 			     deletePost = {showDeleteModal}
 			     replyToPost = {setReplyToPost}
 			     viewPostDiff = {showDiffModal}
-			participants = {props.participants}
+			     participants = {props.participants}
 			 />
 		     )}
 		 </>
@@ -256,12 +257,17 @@ export default function PostList(props) {
                     </Button>
                 </div>
 	    )}
-	    <Editor
-                thread = {thread}
-		dataUpdated = {getAllPosts}
-		reply = {replyPost}
-		participants = {props.participants}
-            />
+	    {thread && thread.archived ?
+	     ""
+	     :
+	     <Editor
+                 thread = {thread}
+		 dataUpdated = {getAllPosts}
+		 reply = {replyPost}
+		 participants = {props.participants}
+             />
+	    }
+	    
 	    <DeleteConfirmation
 		showModal={displayConfirmationModal}
 		confirmModal={submitDeletePost}

@@ -72,12 +72,30 @@ class ArtifactView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
     def get(self, request, *args, **kwargs):
         logger.debug(self.kwargs['path'])
         attachment = Attachment.objects.filter(uuid=self.kwargs['path']).first()
+        #all the permission checks!!!
         if attachment:
             #check permissions
             ca = CaseArtifact.objects.filter(file=attachment).first()
             if ca:
                 if not(is_my_case(self.request.user, ca.case.id)):
                     raise PermissionDenied()
+            else:
+                #check thread artifacts
+                ta = ThreadArtifact.objects.filter(file=attachment).first()
+                if ta:
+                    if not(is_my_case_thread(self.request.user, ta.thread)):
+                        raise PermissionDenied()
+                else:
+                    #check messages
+                    ma = MessageAttachment.objects.filter(file=attachment).first()
+                    if ma:
+                        if ma.thread:
+                            if not(is_my_msg_thread(self.request.user, ma.thread)):
+                                raise PermissionDenied()
+                        else:
+                            if ma.user != self.request.user:
+                                if not(self.request.user.is_coordinator):
+                                    raise PermissionDenied()
 
             mime_type = attachment.mime_type
             if attachment.file.storage.exists(attachment.file.name):
@@ -170,8 +188,8 @@ class APISearchView(APIView):
         advisory = []
         # kind of hacky but will work for now
         # -----------------------------------------------------------
-        page_number = request.query_params.get('page_number ', 1)
-        page_size = request.query_params.get('page_size ', 10)
+        page_number = request.query_params.get('page', 1)
+        page_size = request.query_params.get('page_size ', 20)
 	# -----------------------------------------------------------
         search_term = self.request.GET.get('name', None)
         logger.debug(f"SEARCH TERM IS {search_term}")

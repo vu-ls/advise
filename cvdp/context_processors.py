@@ -12,5 +12,7 @@ def advise_version(request):
     context_vars['CVDP_BASE_TEMPLATE'] = getattr(settings, 'CVDP_BASE_TEMPLATE', 'cvdp/base.html')
     context_vars['CASE_IDENTIFIER'] = settings.CASE_IDENTIFIER
     context_vars['LOGIN_URL'] = getattr(settings, reverse(settings.LOGIN_URL), reverse("authapp:login"))
+    context_vars['DEV_BANNER'] = settings.DEV_BANNER
+    context_vars['ENVIRONMENT_NAME'] = settings.ENVIRONMENT_NAME
     return context_vars
                                         

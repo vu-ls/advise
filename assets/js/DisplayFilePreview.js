@@ -46,7 +46,7 @@ const DisplayFilePreview = ({file, remove, share, removeFile, shareFile}) => {
     }
     
     return (
-	<>
+	<div key={`artifact-${file.uuid}`}>
 	    <div className="d-flex justify-content-between">   
 		<div className="d-flex align-items-center gap-2">
 		    {can_remove &&
@@ -75,7 +75,7 @@ const DisplayFilePreview = ({file, remove, share, removeFile, shareFile}) => {
 	    <div className="text-end">
 		<small className="text-muted">Uploaded by { file.user } on {format(date, 'yyyy-MM-dd H:mm:ss')}</small>
             </div>
-	</>
+	</div>
 	
     )
 
