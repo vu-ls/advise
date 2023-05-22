@@ -1,6 +1,6 @@
 -r requirements.txt
 boto3==1.26.88
-django-ses==3.3.0
+django-ses==3.5.0
 django-storages==1.13.2
 botocore==1.29.111
 jmespath==1.0.1
