@@ -201,3 +201,26 @@ class StatusActionSerializer(serializers.ModelSerializer):
             return f"modified status to {obj.get_status_display()} for vul {obj.component_status.vul} and component {obj.component_status.component.name} {obj.version_value}"
         else:
             return f"added {obj.get_status_display()} status for vul {obj.component_status.vul} and component {obj.component_status.component.name} {obj.version_value}"
+
+
+
+class ComponentChangeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ComponentChange
+        fields = ['field', 'old_value', 'new_value']
+
+        
+class ComponentActionSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    #url = serializers.SerializerMethodField()
+    change = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ComponentAction
+        fields = ['user', 'title', 'created','change',]
+
+    def get_change(self, obj):
+        changes = obj.componentchange_set.all()
+        data = ComponentChangeSerializer(changes, many=True)
+        return data.data

@@ -849,7 +849,7 @@ class ComponentAPITest(TestCase):
         products = Product.objects.filter(supplier=self.group).values_list('component__id', flat=True)
         comps= Component.objects.filter(id__in=products)
         serializer = ComponentSerializer(comps, many=True)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_non_group_get_components(self):
@@ -870,7 +870,7 @@ class ComponentAPITest(TestCase):
         products = Product.objects.filter(supplier=self.group).values_list('component__id', flat=True)
         comps= Component.objects.filter(id__in=products)
         serializer = ComponentSerializer(comps, many=True)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data['results'], serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_component_detail(self):

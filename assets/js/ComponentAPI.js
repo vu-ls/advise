@@ -18,7 +18,12 @@ export default class ComponentAPI {
 	let url = `${API_URL}/api/components/${c.id}/cases/`;
 	return axios.get(url).then(response => response.data);
     }
-        
+
+    getComponentActivity(c) {
+	let url = `${API_URL}/api/component/${c.id}/activity/`;
+        return axios.get(url).then(response => response.data);
+    }
+    
     getComponents(query) {
 	let url = `${API_URL}/api/components/`;
 	if (query) {
@@ -31,8 +36,11 @@ export default class ComponentAPI {
 	return axios.get(url).then(response=>response.data);
     }
     
-    getGroupComponents(c) {
-	const url = `${API_URL}/api/group/${c}/components/`;
+    getGroupComponents(c, query=null) {
+	let url = `${API_URL}/api/group/${c}/components/`;
+	if (query) {
+	    url = `${API_URL}/api/group/${c}/components/?${query}`;
+	}
         return axios.get(url).then(response => response.data);
     }
 
@@ -111,6 +119,22 @@ export default class ComponentAPI {
     editStatus(c, data) {
         const url = `${API_URL}/api/case/component/${c.id}/status/`;
 	return axios.patch(url, data).then(response=>response.data);
+    }
+
+    loadSPDX(data, group=null) {
+	let url = `${API_URL}/api/components/upload/`;
+	if (group) {
+	    url = `${API_URL}/api/components/group/${group}/upload/`;
+	}
+	return axios.post(url, data, {
+            headers: {
+		'Content-Type': 'multipart/form-data'
+            }}).then(response => response.data);
+    }
+    
+    getSPDX(c, format="json") {
+	let url = `${API_URL}/component/${c.id}/sbom/download/?format=${format}`;
+        return axios.get(url, {responseType: 'blob'})
     }
 
 }

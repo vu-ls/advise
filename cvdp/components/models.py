@@ -3,12 +3,13 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
+from pydoc import locate
 from django.utils import timezone
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.postgres.search import SearchVectorField
 from django.contrib.postgres.indexes import GinIndex
-from cvdp.models import Vulnerability, BaseRevisionMixin
+from cvdp.models import Vulnerability, BaseRevisionMixin, Action
 import logging
 
 
@@ -88,7 +89,10 @@ class AbstractComponent(models.Model):
     )
 
     def __str__(self):
-        return str(self.name)
+        if self.version:
+            return f"{self.name} {self.version}"
+        else:
+            return str(self.name)
 
     class Meta:
         abstract=True
@@ -303,3 +307,74 @@ class ComponentStatus(models.Model):
             return f"{self.component.name} {self.current_revision.get_status_display()}"
         obj_name = _('Status Unknown')
         return str(obj_name)
+
+class ComponentAction(Action):
+
+    ACTION_TYPE = (
+        (1, 'Create'),
+        (2, 'Edit'),
+        (3, 'SBOM'),
+        (4, 'Add Dependency'),
+        (5, 'Remove Dependency'),
+        (6, 'Status'),
+    )
+
+    component = models.ForeignKey(
+	Component,
+        help_text=_('Component'),
+	on_delete=models.CASCADE
+    )
+    
+    """
+    file = models.FileField(
+	_('SBOM File'),
+        storage=locate(settings.ATTACHMENT_FILES_STORAGE)(),
+        upload_to=get_uuid_filename,
+	max_length=1000,
+    )
+    """
+
+    action_type = models.IntegerField(
+	default = 2
+    )
+
+    
+    def __str__(self):
+        return f"{self.user.screen_name} made change to {self.component.name} {self.component.version}: {self.title}"
+
+class ComponentChange(models.Model):
+    
+    action = models.ForeignKey(
+        ComponentAction,
+        on_delete = models.CASCADE
+    )
+
+    field = models.CharField(
+        _('Field'),
+        max_length=100,
+    )
+
+    old_value = models.TextField(
+        _('Old Value'),
+	blank=True,
+        null=True,
+    )
+
+    new_value = models.TextField(
+        _('New Value'),
+	blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        out = '%s ' % self.field
+        if not self.new_value:
+            out += 'removed'
+        elif not self.old_value:
+            out += ('set to %s') % self.new_value
+        else:
+            out += ('changed from "%(old_value)s" to "%(new_value)s"') % {
+                'old_value': self.old_value,
+                'new_value': self.new_value
+            }
+        return out

@@ -165,14 +165,17 @@ urlpatterns = [
     re_path('^api/component/(?P<pk>\d+)/$', componentviews.ComponentAPIView.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='componentapi-detail'),
     path('components/', componentviews.ComponentView.as_view(), name='components'),
     path('components/add/', componentviews.AddComponentView.as_view(), name='addcomponent'),
+    path('api/components/upload/', componentviews.UploadSPDXFile.as_view(), name='spdxupload'),
+    re_path('^api/components/group/(?P<pk>\d+)/upload/', componentviews.UploadSPDXFile.as_view(), name='spdxuploadgroup'),
     path('components/update/owner/', componentviews.ChangeComponentOwnershipView.as_view(), name='change_owner'),
     re_path('^components/(?P<pk>\d+)/edit/$', componentviews.AddComponentView.as_view(), name='addcomponent'),
     re_path('^api/components/(?P<pk>\d+)/dependency/$', componentviews.ProductAPIView.as_view({'get':'retrieve', 'patch':'partial_update'}), name='dependencyapi'), 
     path('api/products/', componentviews.ProductAPIView.as_view({'get': 'list', 'post': 'create'}), name='productapi'),
-
+    re_path('^component/(?P<pk>\d+)/sbom/download/$', componentviews.DownloadSPDXFile.as_view(), name='dlsbom'),
     re_path('^api/case/(?P<caseid>[0-9]+)/components/$', componentviews.ComponentStatusAPIView.as_view({'get':'list', 'post':'create'}), name='statusapi'),
     re_path('^api/case/component/(?P<pk>[0-9]+)/status/$', componentviews.ComponentStatusAPIView.as_view({'get':'retrieve', 'delete':'destroy', 'patch': 'partial_update'}), name='statusapi-detail'),
     re_path('^api/components/(?P<pk>\d+)/cases/$', componentviews.CaseComponentAPIView.as_view({'get':'list'}), name='casecompapi'),
+    re_path('^api/component/(?P<pk>[0-9]+)/activity/$', componentviews.ComponentActionAPIView.as_view({'get':'list'}), name='compapi-activity'),
 ]
 
 

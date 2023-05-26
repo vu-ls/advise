@@ -2,7 +2,7 @@ import React from 'react'
 import { useState, useEffect} from 'react';
 import { Modal, Button, Form } from "react-bootstrap";
 
-const UploadFileModal = ({ showModal, hideModal, confirmModal}) => {
+const UploadFileModal = ({ showModal, hideModal, confirmModal, title, subtitle}) => {
 
     const [invalidSelection, setInvalidSelection] = useState(false);
     const [buttonDisabled, setButtonDisabled] = useState(false);
@@ -30,15 +30,19 @@ const UploadFileModal = ({ showModal, hideModal, confirmModal}) => {
     }, [showModal]);
     
     return (
-        <Modal show={showModal} onHide={hideModal}>
+        <Modal show={showModal} onHide={hideModal} centered>
 	    <Form onSubmit={(e) => submitForm(e) }>
-		<Modal.Header closeButton>
-		    <Modal.Title>Upload File to Case</Modal.Title>
+		<Modal.Header closeButton className="mb-0">
+		    <Modal.Title>{title ? `${title}` : "Upload File to Case"}</Modal.Title>
 		</Modal.Header>
 		<Modal.Body>
 		    
-		    <small className="form-text text-muted">                                  
-			You can attach a file such as a document or screenshot to this case.
+		    <small className="form-text text-muted">
+			{subtitle ?
+			 `${subtitle}`
+			 :
+			 "You can attach a file such as a document or screenshot to this case."
+			}
 		    </small>
 		    <Form.Group controlId="formFile" className="mb-3">
 			<Form.Label>File</Form.Label>

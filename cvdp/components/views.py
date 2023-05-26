@@ -1,8 +1,12 @@
 from django.shortcuts import render
 import logging
+import os
+from io import StringIO
 from django.shortcuts import render, redirect, get_object_or_404
+from django.core.files.base import ContentFile
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.core.management import call_command
 from django.urls import reverse, reverse_lazy
 from django.views import generic, View
 from django.utils.timesince import timesince
@@ -19,6 +23,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework import exceptions, generics, status, authentication, viewsets, mixins, filters
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+import tempfile
 from cvdp.permissions import *
 from cvdp.components.serializers import *
 from cvdp.components.forms import *
@@ -46,6 +51,29 @@ def _is_my_component(user, component):
     return Product.objects.filter(component=component, supplier__in=my_groups).exists()
 
 
+def create_component_action(title, user, comp, action):
+    action = ComponentAction(component = comp,
+                             user=user,
+                             title=title,
+                             action_type=action,
+                             created=timezone.now())
+    action.save()
+    return action
+
+
+def create_component_change(action, field, old_value, new_value):
+
+    if (not old_value and not new_value):
+        return
+
+    change = ComponentChange(action=action,
+                             field = field,
+			     old_value=old_value,
+                             new_value=new_value)
+    change.save()
+    return change
+
+
 class StandardResultsPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
@@ -57,7 +85,7 @@ class ComponentAPIView(viewsets.ModelViewSet):
     serializer_class = ComponentSerializer
     search_fields = ['name', 'supplier', 'comment']
     pagination_class = StandardResultsPagination
-    
+
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
@@ -73,7 +101,7 @@ class ComponentAPIView(viewsets.ModelViewSet):
             return obj
         else:
             raise PermissionDenied()
-    
+
     def get_view_name(self):
         return f"Components"
 
@@ -81,19 +109,20 @@ class ComponentAPIView(viewsets.ModelViewSet):
         logger.debug(request.data)
         if not(request.user.is_coordinator):
             raise PermissionDenied()
-        
+
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             component = serializer.save()
             component.added_by = self.request.user
             component.save()
+            create_component_action("created component", self.request.user, component, 1)
         else:
             logger.debug(serializer.errors)
             return Response(serializer.error_messages,
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-    
+
     def destroy(self, request, *args, **kwargs):
         #TODO: should vendors be able to remove their own components? Maybe ones they have added?
         if not(request.user.is_coordinator):
@@ -101,15 +130,21 @@ class ComponentAPIView(viewsets.ModelViewSet):
         component = get_object_or_404(Component, id=self.kwargs['pk'])
         component.delete()
         return Response({}, status=status.HTTP_202_ACCEPTED)
-    
+
     def update(self, request, **kwargs):
         instance = self.get_object()
-        
+
         data = request.data
         logger.debug(request.data)
         serializer = self.serializer_class(instance=instance, data=data, partial=True)
         if serializer.is_valid():
+            action = create_component_action("modified component", self.request.user, instance, 2)
+            for field, val in data.items():
+                if (val != getattr(instance, field, None)):
+                    create_component_change(action, field, getattr(instance, field), val);
+
             serializer.save()
+
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
@@ -130,11 +165,11 @@ class ProductAPIView(viewsets.ModelViewSet):
             return product
         else:
             raise PermissionDenied()
-    
+
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Product.objects.none()
-        
+
         if self.request.user.is_coordinator:
             return Product.objects.all()
         return _my_products(self.request.user)
@@ -143,9 +178,8 @@ class ProductAPIView(viewsets.ModelViewSet):
         #get component
         logger.debug("IN UPDATE COMPONENT -PRODUCT API VIEW")
         logger.debug(self.kwargs['pk'])
-        logger.debug(Component.objects.all())
         instance = get_object_or_404(Component, id=self.kwargs['pk'])
-        
+
         if not(_is_my_component(request.user, instance)):
             raise PermissionDenied()
         logger.debug(request.data)
@@ -153,29 +187,37 @@ class ProductAPIView(viewsets.ModelViewSet):
         dependency = get_object_or_404(Component, id=request.data.get('dependency'))
         product = Product.objects.filter(component=instance).first()
         if product:
-            if product.component == dependency:
-                return Response({'detail': 'You can not add this component as a dependency of itself.'}, status=status.HTTP_400_BAD_REQUEST)
-            product.dependencies.add(dependency)
+            if request.data.get('remove'):
+                action = create_component_action(f"removed dependency {dependency}", self.request.user, instance, 5)
+                product.dependencies.remove(dependency)
+            else:
+                if product.component == dependency:
+                    return Response({'detail': 'You can not add this component as a dependency of itself.'}, status=status.HTTP_400_BAD_REQUEST)
+                action = create_component_action(f"added dependency {dependency}", self.request.user, instance, 4)
+                product.dependencies.add(dependency)
         else:
             product = Product(component=instance)
             product.save()
             product.dependencies.add(dependency)
+            action = create_component_action(f"added dependency {dependency}", self.request.user, instance, 4)
         return Response({}, status=status.HTTP_202_ACCEPTED)
-    
+
 
 class GroupComponentsAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, GroupLevelPermission)
     serializer_class = ComponentSerializer
+    search_fields = ['name', 'supplier', 'comment']
+    pagination_class = StandardResultsPagination
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Component.objects.none()
-        
+
         group = get_object_or_404(Group, id=self.kwargs['pk'])
         self.check_object_permissions(self.request, group)
         products = Product.objects.filter(supplier=group).values_list('component__id', flat=True)
         return Component.objects.filter(id__in=products)
-    
+
     def get_view_name(self):
         group = get_object_or_404(Group, id=self.kwargs['pk'])
         return f"{group.name}'s Components"
@@ -189,6 +231,7 @@ class GroupComponentsAPIView(viewsets.ModelViewSet):
             component = serializer.save()
             component.added_by = self.request.user
             component.save()
+            action = create_component_action(f"created component for {group.name}", self.request.user, component, 1)
             p = Product(component=component,
                         supplier=group)
             p.save()
@@ -197,7 +240,7 @@ class GroupComponentsAPIView(viewsets.ModelViewSet):
             return Response(serializer.error_messages,
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-    
+
 
 """
 Components Views - React app "componentapp"
@@ -220,13 +263,13 @@ class ComponentView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateVie
             my_group = self.request.user.groups.all().first()
             return render(request, "cvdp/group_components.html", {'group': my_group, 'componentspage': 1})
 
-    
+
 
 class AddComponentView(LoginRequiredMixin, PendingTestMixin, FormView):
     template_name = "cvdp/addcomponent.html"
     login_url = "authapp:login"
     form_class = AddComponentForm
-    
+
     def get_success_url(self):
         return reverse_lazy("cvdp:components")
 
@@ -236,10 +279,11 @@ class AddComponentView(LoginRequiredMixin, PendingTestMixin, FormView):
             component = get_object_or_404(Component, id=self.kwargs['pk'])
             context['form'] = AddComponentForm(instance=component)
         return context
-            
+
 
     def form_valid(self, form):
         c = form.save()
+        action = create_component_action(f"created component", self.request.user, c, 1)
         messages.success(
             self.request,
             "Got it! Your component has been added."
@@ -261,6 +305,8 @@ class ChangeComponentOwnershipView(LoginRequiredMixin, PendingTestMixin, FormVie
                 for c in self.request.POST.getlist('components[]'):
                     component = get_object_or_404(Component, id=c)
                     # update product
+                    action = create_component_action(f"modified component owner", self.request.user, component, 2)
+                    create_component_change(action, "supplier", component.get_vendor(), group.name)
                     p = Product.objects.update_or_create(component=component,
                                                           defaults={'supplier': group})
                 return JsonResponse({}, status=status.HTTP_202_ACCEPTED)
@@ -269,7 +315,7 @@ class ChangeComponentOwnershipView(LoginRequiredMixin, PendingTestMixin, FormVie
 
         return JsonResponse({'message': 'missing required values'}, status=status.HTTP_400_BAD_REQUEST)
 
-    
+
 class ComponentStatusAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission)
     serializer_class = StatusSummarySerializer
@@ -277,7 +323,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
 
     def get_view_name(self):
         return f"Case Component Status"
-    
+
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return ComponentStatus.objects.none()
@@ -299,9 +345,9 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             my_groups = my_case_vendors(self.request.user, case)
             products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
             return components.filter(component__id__in=products)
-            
+
     #TO DO ADD A SHARED COMPONENT STATUS VIEW
-    
+
     def create(self, request, *args, **kwargs):
         logger.debug("In STATUS CREATE VIEW")
         case = get_object_or_404(Case, case_id = self.kwargs['caseid'])
@@ -314,7 +360,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             #these roles don't need to add a status
             raise PermissionDenied()
 
-            
+
         #get the vul
         if request.data.get('vuls') == None:
             errors = {'type': 'invalid-format', 'status': status.HTTP_400_BAD_REQUEST, 'vuls':'missing required fields or invalid format'}
@@ -335,18 +381,19 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                 #this really needs to be more specific
                 component = Component.objects.filter(name=request.data['component']).first()
 
-                
+
             if component == None:
                 if my_role == 'vendor':
                     my_vendors = my_case_vendors(self.request.user, case)
                     if len(my_vendors) > 1:
                         errors = {'type': 'invalid vendor', 'status': status.HTTP_400_BAD_REQUEST, 'component':'Component does not exist and user belongs to more than 1 vendor. Add component to desired vendor before continuing'}
                         return JsonResponse(errors, status=status.HTTP_400_BAD_REQUEST)
-                
+
                 #create the component
                 component = Component(name=request.data['component'],
                                       added_by=self.request.user)
                 component.save()
+                action = create_component_action(f"created component", self.request.user, component, 1)
                 #who is adding this component?
                 if my_vendors:
                     p = Product(component=component, supplier=my_vendors[0])
@@ -365,13 +412,14 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                 logger.debug(sr)
                 sr.set_from_request(self.request)
                 cs.add_revision(sr, save=True)
+                action = create_component_action(f"add component status for {vul.vul}", self.request.user, component, 6)
 
             return Response({}, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
             return Response(serializer.error_messages,
                             status=status.HTTP_400_BAD_REQUEST)
-            
+
 
     def destroy(self, request, *args, **kwargs):
         #TODO - fix permissions
@@ -380,21 +428,22 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             action = create_case_action(f"Removed status for {component.component.get_vendor()}'s component {component.component.name} {component.component.version} for vulnerability {component.vul.vul}", request.user, component.vul.case)
         else:
             action = create_case_action(f"Removed status for {component.component.name} {component.component.version} for vulnerability {component.vul.vul}", request.user, component.vul.case)
-        
+
+        action = create_component_action(f"remove component status for {component.vul.vul}", self.request.user, component.component, 6)
         component.delete()
-        
+
         return Response({}, status=status.HTTP_202_ACCEPTED)
-        
+
     def update(self, request, **kwargs):
         #TODO - fix permissions
         #component = get_object_or_404(ComponentStatus, id=self.kwargs['pk'])
         component = self.get_object()
-        
+
         data = request.data
         share = False
         if data.get('share'):
             share = True if (data['share'] == "true" or data['share'] == True) else False
-            
+
         logger.debug(request.data)
         if request.data.get('vuls') == None:
             errors = {'type': 'invalid-format', 'status': status.HTTP_400_BAD_REQUEST, 'vuls':'missing required fields or invalid format'}
@@ -402,7 +451,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
         #check status fields are all there
         serializer = StatusSerializer(data=request.data)
         if serializer.is_valid():
-             #get vuls  
+             #get vuls
             for v in request.data['vuls']:
                 vul = get_object_or_404(Vulnerability, id=v)
                 cs, created = ComponentStatus.objects.update_or_create(component=component.component,
@@ -413,7 +462,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                 logger.debug(sr)
                 sr.set_from_request(self.request)
                 cs.add_revision(sr, save=True)
-
+                action = create_component_action(f"update component status for {vul.vul}", self.request.user, component.component, 6)
             return Response({}, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
@@ -442,3 +491,94 @@ class CaseComponentAPIView(viewsets.ModelViewSet):
             raise PermissionDenied()
         cases = my_cases(self.request.user)
         return ComponentStatus.objects.filter(component=component, vul__case__in=cases)
+
+class UploadSPDXFile(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+    login_url = "authapp:login"
+    template_name='cvdp/notemplate.html'
+
+    def test_func(self):
+        if (self.kwargs.get('pk')):
+            group = get_object_or_404(Group, id=self.kwargs['pk'])
+            if self.request.user.groups.filter(id=group.id).exists():
+                return True
+        elif self.request.user.is_coordinator:
+            return True
+        raise PermissionDenied()
+
+    def post(self, request, *args, **kwargs):
+        group = None
+        if (self.kwargs.get('pk')):
+            group = get_object_or_404(Group, id=self.kwargs['pk'])
+
+        logger.debug(f"Files Post: {self.request.FILES}")
+        (this_file_name, this_file_extension) = os.path.splitext(self.request.FILES['file'].name)
+
+        tf = tempfile.NamedTemporaryFile(suffix=this_file_extension)
+        with open(tf.name, 'wb+') as destination:
+            for chunk in self.request.FILES['file'].chunks():
+                destination.write(chunk)
+        try:
+            if group:
+                call_command('loadspdx', tf.name, '--assume-relationships', f'--group={group.id}', f'--user={self.request.user.id}')
+            else:
+                call_command('loadspdx', tf.name, '--assume-relationships', f'--user={self.request.user.id}')
+        except Exception as e:
+            logger.debug(traceback.format_exc())
+            return JsonResponse({'error': f'Problem uploading SPDX file: {str(e)}'}, status=400)
+
+        return JsonResponse({'status': 'success'}, status=200)
+
+class DownloadSPDXFile(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+    login_url = "authapp:login"
+    template_name = "cvdp/notmpl"
+
+    def test_func(self):
+        obj = get_object_or_404(Component, id=self.kwargs['pk'])
+        if _is_my_component(self.request.user, obj):
+            return True
+        return False
+
+    def get(self, request, *args, **kwargs):
+        obj = get_object_or_404(Component, id=self.kwargs['pk'])
+        format = self.request.GET.get('format', 'json')
+        tf = tempfile.NamedTemporaryFile(suffix=f".{format}")
+        try:
+            call_command('createspdx', f'--out={tf.name}', f'--id={obj.id}', f'--email={self.request.user.email}', f'--creator={self.request.user.get_full_name()}')
+        except Exception as e:
+            logger.debug(traceback.format_exc())
+            return JsonResponse({'error': f'Problem generating SPDX file: {str(e)}'}, status=400)
+
+        action = create_component_action(f"create {format} spdx file", self.request.user, obj, 3)
+        with open(tf.name, 'r') as content:
+            sbom = ContentFile(content.read(), name=f"{obj.name}_{obj.version}.{format}")
+            mime_type = 'application/json'
+            response = HttpResponse(sbom, content_type = mime_type)
+            response['Content-Disposition'] = 'attachment; filename=' + sbom.name
+            response["Content-type"] = "application/json"
+            response["Cache-Control"] = "must-revalidate"
+            response["Pragma"] = "must-revalidate"
+            return response
+
+"""
+Component Action API
+"""
+class ComponentActionAPIView(viewsets.ModelViewSet):
+    serializer_class = ComponentActionSerializer
+    permission_classes = (IsAuthenticated, PendingUserPermission)
+    pagination_class=StandardResultsPagination
+
+    def get_view_name(self):
+        return f"Component Action"
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return ComponentAction.objects.none()
+        actions = []
+        if self.kwargs.get('pk'):
+            component = get_object_or_404(Component, id=self.kwargs['pk'])
+
+            if not(_is_my_component(self.request.user, component)):
+                raise PermissionDenied()
+            actions = ComponentAction.objects.filter(component=component).order_by('-created')
+
+        return actions

@@ -5,6 +5,7 @@ import ResizableTable from "./ResizableTable";
 import '../css/casethread.css';
 import AddComponentModal from './AddComponentModal';
 import DeleteConfirmation from "./DeleteConfirmation";
+import UploadFileModal from './UploadFileModal';
 import ComponentDetailModal from "./ComponentDetailModal";
 import SelectGroupModal from "./SelectGroupModal";
 import axios from 'axios';
@@ -53,7 +54,28 @@ const ComponentTable = (props) => {
     const [componentDetail, setComponentDetail] = useState(null);
     const [group, setGroup] = useState(null);
     const [showGroupModal, setShowGroupModal] = useState(false);
+    const [showUploadModal, setShowUploadModal] = useState(false);
 
+    const hideUploadModal = () => {
+        setShowUploadModal(false);
+    };
+
+    function submitFile(data) {
+        console.log("IN SUBMIT!!!");
+        console.log(data);
+	setIsLoading(true);
+        componentapi.loadSPDX(data, props.group).then((response) => {
+	    fetchInitialData();
+        }).catch(err => {
+	    console.log(err);
+	    setError(`Error uploading SBOM file: ${err.response.data.error}`);
+	    setIsLoading(false);
+	});
+	    
+        hideUploadModal();
+    }
+
+    
     const columns = useMemo(
         () => [
             /*{
@@ -217,15 +239,25 @@ const ComponentTable = (props) => {
 	    setNextUrl(null);
 	    let query = `search=${value}`;
 	    /* stash full data set in filtered data */
-	    componentapi.getComponents(query).then((response) => {
-		console.log(response);
-		setData(response.results);
-		setCount(response.count);
-                setNextUrl(response.next);
-		
-	    }).catch(err => {
-		setError(`Error filtering components: ${err.response.data.detail}`) ;
-	    })
+	    if (props.group) {
+		componentapi.getGroupComponents(props.group, query).then((response) => {
+                    setData(response.results);
+		    setCount(response.count);
+                    setNextUrl(response.next);
+                }).catch(err => {
+		    setError(`Error filtering components: ${err.response.data.detail}`);
+		});
+	    } else {
+		componentapi.getComponents(query).then((response) => {
+		    console.log(response);
+		    setData(response.results);
+		    setCount(response.count);
+                    setNextUrl(response.next);
+		    
+		}).catch(err => {
+		    setError(`Error filtering components: ${err.response.data.detail}`) ;
+		})
+	    }
 	    /*
             const result = data.filter((item) => {
                 return (
@@ -246,7 +278,6 @@ const ComponentTable = (props) => {
     function handleManage(evt, evtKey) {
         switch(evt) {
         case 'add' :
-            console.log("HERE");
             setAddComponentModal(true);
             return;
         case 'remove':
@@ -254,8 +285,11 @@ const ComponentTable = (props) => {
             return;
         case 'owner':
 	    setShowGroupModal(true);
-	    console.log("not implemented yet");
             return;
+	case 'upload':
+	    setShowUploadModal(true);
+	    return;
+	   
         }
     };
 
@@ -305,7 +339,9 @@ const ComponentTable = (props) => {
 		await componentapi.getGroupComponents(props.group).then((response) => {
 		    console.log(response);
 		    setResponse(response);
-                    setData(response);
+		    setData(response.results);
+		    setCount(response.count);
+		    setNextUrl(response.next);
                     setIsLoading(false);
 		})
 	    } else {
@@ -329,7 +365,9 @@ const ComponentTable = (props) => {
             if ('group' in props) {
 	        await componentapi.getNextGroupComponents(nextUrl).then((response) => {
                     console.log(response);
-                    setData(response);
+                    setData(data.concat(response.results));
+		    setCount(response.count);
+		    setNextUrl(response.next);
                     setIsLoading(false);
                 })
             } else {
@@ -485,6 +523,7 @@ const ComponentTable = (props) => {
 
 			<Dropdown.Item eventKey="add">Add Component</Dropdown.Item>
                         <Dropdown.Item eventKey="remove">Remove Component</Dropdown.Item>
+			<Dropdown.Item eventKey="upload">Upload SBOM (SPDX)</Dropdown.Item>
 			{props.group ? "" :
 			 <Dropdown.Item eventKey="owner">Add Component Owner</Dropdown.Item>
 			}
@@ -531,6 +570,13 @@ const ComponentTable = (props) => {
 		hideModal = {hideDetailModal}
 		id = {componentDetail}
 	    />
+	    <UploadFileModal
+		showModal = {showUploadModal}
+                hideModal = {hideUploadModal}
+                confirmModal = {submitFile}
+		title = "Upload SBOM file (SPDX format) to load components."
+		subtitle="All packages and package dependencies will be uploaded."
+            />     
 	    {props.group ? "" :
 	     <SelectGroupModal
 		 showModal = {showGroupModal}

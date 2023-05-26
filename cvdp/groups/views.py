@@ -75,6 +75,13 @@ class ContactActivityAPIView(viewsets.ModelViewSet):
     
     def get_view_name(self):
         return f"Contact Activity"
+
+    def has_contact_permission(contact, user):
+        my_groups = user.groups
+        #if contact in group?
+        if ContactAssociation.objects.filter(contact=contact, group__in=my_groups).exists():
+            return True
+        return False
     
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
@@ -83,7 +90,8 @@ class ContactActivityAPIView(viewsets.ModelViewSet):
         if self.kwargs.get('contact'):
             logger.debug(self.kwargs.get('contact'))
             contact = get_object_or_404(Contact, uuid=self.kwargs.get('contact'))
-            #TODO add CONTACT PERMISSIONS!
+            if not(self.request.user.is_coordinator or self.has_contact_permission(contact, self.request.user)):
+                raise PermissionDenied
             actions = ContactAction.objects.filter(contact=contact)
         elif self.kwargs.get('group'):
             group = get_object_or_404(Group, groupprofile__uuid=self.kwargs.get('group'))
