@@ -196,8 +196,8 @@ class ProductAPIView(viewsets.ModelViewSet):
                 action = create_component_action(f"added dependency {dependency}", self.request.user, instance, 4)
                 product.dependencies.add(dependency)
         else:
-            product = Product(component=instance)
-            product.save()
+            #sometimes we hit a race condition here when axios is submitting multiple dependencies.
+            product, created = Product.objects.update_or_create(component=instance)
             product.dependencies.add(dependency)
             action = create_component_action(f"added dependency {dependency}", self.request.user, instance, 4)
         return Response({}, status=status.HTTP_202_ACCEPTED)

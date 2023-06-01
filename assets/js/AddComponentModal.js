@@ -3,6 +3,7 @@ import { Modal, Tabs, Alert, Badge, Button, Form, Tab } from "react-bootstrap";
 import { useState, useEffect } from 'react';
 import ComponentAPI from './ComponentAPI.js'
 import ContactAPI from './ContactAPI';
+import axios from 'axios';
 
 const componentapi = new ComponentAPI();
 const contactapi = new ContactAPI();
@@ -92,15 +93,14 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 	});
 
 	setLoading(true);
-	
-	try {
-            await axios.all(axiosArray)
-	} catch(err) {
-            setError(`Error removing dependency: ${err.response.data.detail}`);
-	} finally {
+	setDependencies([]);
+        let responses = await axios.all(axiosArray).then((response) => {
 	    setRemoveList([]);
 	    fetchDependencies();
-	}
+	}).catch(err => {
+	    setError(`Error removing dependency: ${err.response.data.detail}`);
+	});
+
     }
 
     
@@ -182,7 +182,7 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 			      <ul className="list-unstyled">
 			      {dependencies.map((d, index) => {
 				  return(
-				      <li><Button variant="btn-icon" className={removeList.some(elem=>elem==d) ? `warningtext`: `goodtext`} onClick={(e)=>updateRemoveList(d)}><i className="fas fa-minus-square"></i></Button>{d.name}</li>
+				      <li key={`dep-${d.id}`}><Button variant="btn-icon" className={removeList.some(elem=>elem==d) ? `warningtext`: `goodtext`} onClick={(e)=>updateRemoveList(d)}><i className="fas fa-minus-square"></i></Button>{d.name}</li>
 				  )
 			      })}
 			      </ul>
