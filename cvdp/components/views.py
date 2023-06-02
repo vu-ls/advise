@@ -405,8 +405,10 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                 if request.data.get('share'):
                     share = True if (request.data['share'] == "true" or request.data['share'] == True) else False
                 vul = get_object_or_404(Vulnerability, id=v)
+                #does cs exist?
                 cs, created = ComponentStatus.objects.update_or_create(component=component,
                                                                        vul=vul, defaults={'share': share})
+                
                 logger.debug(serializer.validated_data)
                 sr  = StatusRevision(**serializer.validated_data)
                 logger.debug(sr)
@@ -454,12 +456,41 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
              #get vuls
             for v in request.data['vuls']:
                 vul = get_object_or_404(Vulnerability, id=v)
-                cs, created = ComponentStatus.objects.update_or_create(component=component.component,
-                                                                       vul=vul,
-                                                                       defaults={'share':share})
+
+                cs = ComponentStatus.objects.filter(component=component.component, vul=vul).first()
+                if cs:
+                    data = request.data
+                    change = False
+                    #are there any actual changes?
+                    logger.debug(cs.current_revision.get_status_display())
+                    if (cs.current_revision.get_status_display() != data["status"]):
+                        change = True
+                    elif(cs.current_revision.version_value != data["version"]):
+                        change=True
+                    elif (cs.current_revision.get_version_affected_display() != data["version_affected"]):
+                        change = True
+                    elif (cs.current_revision.statement != data["statement"]):
+                        change = True
+                    elif (cs.current_revision.justification != data["justification"]):
+                        change = True
+                    elif (cs.current_revision.version_name != data["version_end_range"]):
+                        change = True
+
+                    if cs.share != share:
+                        cs.share = share
+                        cs.save()
+                        action = create_component_action(f"modify share status for {vul.vul}", self.request.user, component, 6)
+
+                    if not change:
+                        return Response({}, status=status.HTTP_202_ACCEPTED)
+                else:
+                    cs = ComponentStatus(component=component.component,
+                                         vul=vul,
+                                         share=share)
+                    cs.save()
+
                 logger.debug(serializer.validated_data)
                 sr  = StatusRevision(**serializer.validated_data)
-                logger.debug(sr)
                 sr.set_from_request(self.request)
                 cs.add_revision(sr, save=True)
                 action = create_component_action(f"update component status for {vul.vul}", self.request.user, component.component, 6)
@@ -470,6 +501,23 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
+class ComponentStatusRevisionAPIView(viewsets.ModelViewSet):
+    serializer_class = StatusRevisionSerializer
+    permission_classes = (IsAuthenticated, PendingUserPermission)
+
+    def get_view_name(self):
+        return f"Status Revision API"
+
+    def get_queryset(self):
+        cs = get_object_or_404(ComponentStatus, id=self.kwargs['pk'])
+        case = cs.vul.case
+        if not(is_my_case(self.request.user, case.id)):
+            raise PermissionDenied()
+        if not(_is_my_component(self.request.user, cs.component)):
+            raise PermissionDenied()
+        return StatusRevision.objects.filter(component_status=cs).order_by('-revision_number')
+
+        
 class CaseComponentAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission)
     serializer_class = ComponentStatusSerializer

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import CaseThreadAPI from './ThreadAPI';
 import ComponentAPI from './ComponentAPI';
 import DeleteConfirmation from "./DeleteConfirmation";
+import StatusModal from "./StatusModal";
 import {Card, ButtonGroup, ToggleButton, DropdownButton, Dropdown, Table, Accordion, Row, Col, Button, Form} from 'react-bootstrap';
 import DisplayVulStatus from './DisplayVulStatus';
 import {AsyncTypeahead} from 'react-bootstrap-typeahead';
@@ -34,6 +35,14 @@ const STATUS_CHOICES = [
     {val: 3, desc: 'Under Investigation'},
 ]
 
+
+const JUSTIFICATION_CHOICES = [
+    {val: "component_not_present", desc: "Component Not Present"},
+    {val: "vulnerable_code_not_present", desc: "Vulnerable Code Not Present"},
+    {val: "vulnerable_code_not_in_execute_path", desc: "Vulnerable Code not in Execute Path"},
+    {val: "vulnerable_code_cannot_be_controlled_by_adversary", desc: "Vulnerable Code cannot be controlled by adversary"},
+    {val: "inline_mitigations_already_exist", desc: "Inline mitigations already exist"},
+]
 
 function makeAndHandleRequest(query, page = 1) {
     let q = `search=${query}`;
@@ -84,16 +93,20 @@ const StatusAddForm = (props) => {
     const [caseComponents, setCaseComponents] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [formTitle, setFormTitle] = useState("Add Component Status");
+    const [comp, setComp] = useState(null);
     const [selComponent, setSelComponent] = useState([]);
     const [invalidComponent, setInvalidComponent] = useState(false);
     const [version, setVersion] = useState("");
     const [status, setStatus] = useState("");
+    const [showJustification, setShowJustification] = useState(false);
+    const [justification, setJustification] = useState("");
     const [versionRange, setVersionRange]=useState(null);
     const [endVersion, setEndVersion] = useState("");
     const [checkedVuls, setCheckedVuls] = useState([]);
     const [invalidVersion, setInvalidVersion] = useState(false);
     const [invalidStatus, setInvalidStatus] = useState(false);
     const [invalidVuls, setInvalidVuls] = useState(false);
+    const [invalidJustification, setInvalidJustification] = useState(false);
     const [vulStatement, setVulStatement] = useState("");
     const [editStatus, setEditStatus] = useState(null);
     const [shareStatus, setShareStatus] = useState(false);
@@ -101,7 +114,8 @@ const StatusAddForm = (props) => {
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [removeID, setRemoveID] = useState(null);
     const [allowAddStatus, setAllowAddStatus] = useState(false);
-
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    
     /* typeahead vars */
     const [suggested, setSuggested] = useState([]);
     const [isSearchLoading, setIsSearchLoading] = useState(false);
@@ -116,6 +130,10 @@ const StatusAddForm = (props) => {
 	{ name: "Don't Share", value: false },
     ];
 
+    const hideStatusModal = () => {
+	setShowStatusModal(false);
+    }
+    
     function removeStatus(id) {
         console.log("remove", id);
         setRemoveID(id);
@@ -189,12 +207,28 @@ const StatusAddForm = (props) => {
 	setVersionRange(q.version_range);
 	setCheckedVuls([q.vul.id]);
 	setStatus(q.status);
+	if (q.justification) {
+	    let val = JUSTIFICATION_CHOICES.filter(item => item.desc == q.justification);
+	    setJustification(val[0].val);
+	}
 	setShareStatus(q.share);
         setFormTitle(`Edit status for ${c.component.name} ${q.version}`)
         setShowForm(true);
+	setInvalidJustification(false);
     }
 
-    function viewStatusDetails(q) {
+    useEffect(() => {
+	console.log(status);
+	if (status && status === "Not Affected") {
+	    setShowJustification(true);
+	};
+    }, [status]);
+
+    function viewStatusDetails(comp, vul) {
+	setEditStatus(vul);
+	setComp(comp);
+	console.log(comp);
+	setShowStatusModal(true);
 	console.log("open modal to view");
     }
 
@@ -234,8 +268,17 @@ const StatusAddForm = (props) => {
 	} else {
 	    setInvalidStatus(false);
 	}
+
 	formDataObj['vuls'] = checkedVuls;
 	formDataObj['share'] = shareStatus;
+	if (status === "Not Affected") {
+	    if (justification == "") {
+		setInvalidJustification(true);
+		error=true;
+	    } else {
+		formDataObj['justification'] = justification;
+	    }
+	}
 	if (error == false) {
 	    try {
 		if (editStatus) {
@@ -282,7 +325,7 @@ const StatusAddForm = (props) => {
 	setIsLoading(false);
 	console.log(`STATUS VULS ADDED ${reqUser}`);
     }, [vuls]);
-    
+
     useEffect(() => {
 	setIsLoading(true);
 	setVuls(props.vuls);
@@ -346,17 +389,17 @@ const StatusAddForm = (props) => {
                  <Button variant="btn-icon px-1" onClick={(e)=>editStatusNow(component, vul)}>
 		     <i className="fas fa-edit"></i>
                  </Button>
-		 <Button variant="btn-icon px-1" onClick={(e)=>viewStatusDetails(vul.id)}>
+		 <Button variant="btn-icon px-1" onClick={(e)=>viewStatusDetails(component, vul)}>
 		     <i className="fas fa-search-plus"></i>
                  </Button>
                  <Button variant="btn-icon px-1" onClick={(e)=>removeStatus(vul.id)}>
 		     <i className="fas fa-trash"></i>
                  </Button>
-		 
+
 	     </td>
 	     //:
 	     //""
-	    
+
 	)
     }
 
@@ -396,7 +439,7 @@ const StatusAddForm = (props) => {
 		 }
 	     </>
 	    }
-	
+
 	    <Accordion>
 		{caseComponents.map((c, index) => {
 		    return (
@@ -478,7 +521,7 @@ const StatusAddForm = (props) => {
 							component = {c}
                                                         vul={v}
                                                         user={reqUser}
-                                                    />  
+                                                    />
                                                 </tr>
                                             )
                                         })}
@@ -500,7 +543,7 @@ const StatusAddForm = (props) => {
                                                         component = {c}
                                                         vul={v}
                                                         user={reqUser}
-                                                    />  
+                                                    />
                                                 </tr>
                                             )
                                         })}
@@ -523,7 +566,7 @@ const StatusAddForm = (props) => {
                                                         component = {c}
                                                         vul={v}
                                                         user={reqUser}
-                                                    />  
+                                                    />
                                                 </tr>
                                             )
                                         })}
@@ -625,6 +668,31 @@ const StatusAddForm = (props) => {
                               </Form.Text>
                              }
 			 </Form.Group>
+			 {showJustification &&
+			  <Form.Group className="mb-3">
+			      <Form.Label>Justification</Form.Label><br/>
+			      <Form.Text>A "Not Affected" status requires a justification.</Form.Text>
+			      <div onChange={(e)=>setJustification(e.target.value)}>
+			      {JUSTIFICATION_CHOICES.map((type) => (
+				  <Form.Check
+                                      label={type.desc}
+                                      isInvalid={invalidVuls}
+                                      key={`status-${type.desc}`}
+                                      name="justification"
+                                      checked = {justification === type.val ? true : false }
+                                      value={type.val}
+                                      onChange={setJustification}
+                                      type="radio"
+                                  />
+                              ))}
+			      </div>
+			      {invalidJustification &&
+                              <Form.Text className="error">
+                                  This field is required when status is "Not Affected."
+                              </Form.Text>
+                             }
+			  </Form.Group>
+			 }
 			 <Form.Group className="mb-3">
 			     <Row>
 				 <Col lg={4} md={6} sm={12}>
@@ -692,6 +760,13 @@ const StatusAddForm = (props) => {
                 hideModal={hideConfirmationModal}
                 id={removeID}
                 message={deleteMessage} />
+	    <StatusModal
+		showModal = {showStatusModal}
+		hideModal = {hideStatusModal}
+		component = {comp}
+		status = {editStatus}
+		
+	    />
 	</>
     :
 	<p className="lead">Once vulnerabilites have been added, we will request that you update your status.</p>

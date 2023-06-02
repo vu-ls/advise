@@ -174,6 +174,7 @@ urlpatterns = [
     re_path('^component/(?P<pk>\d+)/sbom/download/$', componentviews.DownloadSPDXFile.as_view(), name='dlsbom'),
     re_path('^api/case/(?P<caseid>[0-9]+)/components/$', componentviews.ComponentStatusAPIView.as_view({'get':'list', 'post':'create'}), name='statusapi'),
     re_path('^api/case/component/(?P<pk>[0-9]+)/status/$', componentviews.ComponentStatusAPIView.as_view({'get':'retrieve', 'delete':'destroy', 'patch': 'partial_update'}), name='statusapi-detail'),
+    re_path('^api/case/component/(?P<pk>[0-9]+)/status/revisions/$', componentviews.ComponentStatusRevisionAPIView.as_view({'get':'list'}), name='statusrevapi-detail'),
     re_path('^api/components/(?P<pk>\d+)/cases/$', componentviews.CaseComponentAPIView.as_view({'get':'list'}), name='casecompapi'),
     re_path('^api/component/(?P<pk>[0-9]+)/activity/$', componentviews.ComponentActionAPIView.as_view({'get':'list'}), name='compapi-activity'),
 ]

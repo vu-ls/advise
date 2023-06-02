@@ -197,6 +197,13 @@ VERSION_RANGE_CHOICES = (
     ('>=', '>='),
 )
 
+JUSTIFICATION_CHOICES = (
+    ("component_not_present", "Component Not Present"),
+    ("vulnerable_code_not_present", "Vulnerable Code Not Present"),
+    ("vulnerable_code_not_in_execute_path", "Vulnerable Code not in Execute Path"),
+    ("vulnerable_code_cannot_be_controlled_by_adversary", "Vulnerable Code cannot be controlled by adversary"),
+    ("inline_mitigations_already_exist", "Inline mitigations already exist"),
+)
 
 class StatusRevision(BaseRevisionMixin, models.Model):
 
@@ -229,7 +236,13 @@ class StatusRevision(BaseRevisionMixin, models.Model):
         blank=True,
         null=True)
 
-
+    justification = models.CharField(
+        _('Justification when status is Not Affected'),
+        choices = JUSTIFICATION_CHOICES,
+        blank=True,
+        null=True,
+        max_length=100)
+    
     def __str__(self):
         if self.revision_number:
             return "(%d)" % self.revision_number

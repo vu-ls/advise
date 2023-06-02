@@ -6,6 +6,7 @@ from django.urls import reverse
 from authapp.models import User
 from cvdp.cases.serializers import VulSerializer
 from cvdp.groups.serializers import GroupSerializer
+import difflib
 from cvdp.serializers import UserSerializer
 from django.db.models import F, Count
 import logging
@@ -68,16 +69,59 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ('component', 'dependencies', )
 
 
+class StatusRevisionSerializer(serializers.ModelSerializer):
+    status = ChoiceField(VUL_STATUS_CHOICES)
+    version = serializers.CharField(source='version_value')
+    version_end_range = serializers.CharField(source='version_name', required=False, allow_blank=True)
+    version_affected = serializers.ChoiceField(VERSION_RANGE_CHOICES, required=False, allow_blank=True)
+    statement = serializers.CharField(required=False, allow_blank=True)
+    justification = serializers.ChoiceField(JUSTIFICATION_CHOICES, required=False, allow_blank=True)
+    user = serializers.SerializerMethodField()
+    diff = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = StatusRevision
+        fields = ('status', 'version', 'version_affected', 'version_end_range', 'statement', 'justification', 'revision_number', 'user', 'created', 'modified', 'diff',)
+    
+    def get_user(self, obj):
+        if obj.user:
+            return obj.user.screen_name
+        else:
+            return "Unknown"
+    
+    def get_diff(self, obj):
+        all_diffs = {}
+        other_revision = obj.previous_revision
+        baseText = other_revision.statement if other_revision is not None else ""
+        newText = obj.statement
+
+        differ = difflib.Differ(charjunk=difflib.IS_CHARACTER_JUNK)
+        d = differ.compare(
+            baseText.splitlines(keepends=True), newText.splitlines(keepends=True)
+        )
+        if len(list(d))>0:
+            all_diffs['stmt_diff'] = d
+        if other_revision:
+            if other_revision.status != obj.status:
+                all_diffs['status'] = f"Status changed from {other_revision.get_status_display()} to {obj.get_status_display()}"
+            if (other_revision.version_name != obj.version_name) or (other_revision.version_affected != obj.version_affected) or (other_revision.version_value != obj.version_value):
+                all_diffs['version'] = f"Version changed from {other_revision.version_value} {other_revision.version_affected} {other_revision.version_end_range} to {obj.version_value} {obj.version_affected} {obj.version_end_range}"
+            if (other_revision.justification != obj.justification):
+                all_diffs['justification'] = f"Justification changed from {other_revision.justification} to {obj.justification}"
+            
+        return all_diffs
+        
 class StatusSerializer(serializers.ModelSerializer):
     status = ChoiceField(VUL_STATUS_CHOICES)
     version = serializers.CharField(source='version_value')
     version_end_range = serializers.CharField(source='version_name', required=False, allow_blank=True)
     version_affected = serializers.ChoiceField(VERSION_RANGE_CHOICES, required=False, allow_blank=True)
     statement = serializers.CharField(required=False, allow_blank=True)
+    justification = serializers.ChoiceField(JUSTIFICATION_CHOICES, required=False, allow_blank=True)
     
     class Meta:
         model = StatusRevision
-        fields = ('status', 'version', 'version_affected', 'version_end_range', 'statement')
+        fields = ('status', 'version', 'version_affected', 'version_end_range', 'statement', 'justification')
 
 class VulStatusSerializer(serializers.ModelSerializer):
 
@@ -92,10 +136,11 @@ class VulStatusSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     created = serializers.DateTimeField(source='current_revision.created')
     modified = serializers.DateTimeField(source='current_revision.modified')
+    justification = ChoiceField(source='current_revision.justification', choices=JUSTIFICATION_CHOICES)
     
     class Meta:
         model = ComponentStatus
-        fields = ('id', 'status', 'version', 'version_end_range', 'version_range', 'user', 'statement', 'vul', 'revisions', 'revision_number', 'created', 'modified', 'share',)
+        fields = ('id', 'status', 'version', 'version_end_range', 'version_range', 'user', 'statement', 'vul', 'revisions', 'revision_number', 'created', 'modified', 'share', 'justification', )
 
     def get_revisions(self, obj):
         return obj.statusrevision_set.count() - 1

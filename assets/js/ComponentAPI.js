@@ -105,6 +105,11 @@ export default class ComponentAPI {
 	const url = `${API_URL}/api/case/${c.case_id}/components/`;
         return axios.get(url).then(response => response.data);
     }
+
+    getComponentStatusActivity(c) {
+	const url = `${API_URL}/api/case/component/${c}/status/revisions/`;
+        return axios.get(url).then(response => response.data);
+    }
     
     addStatus(c, data) {
 	const url = `${API_URL}/api/case/${c.case_id}/components/`;
