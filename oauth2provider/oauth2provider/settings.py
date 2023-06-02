@@ -37,7 +37,10 @@ SECRET_KEY = env('SECRET_KEY')
 #SECRET_KEY = '^k#&_@*dtt_af(=0$v_fgyj^is6q)9fkkuz&ecfkwj=ry^tx9m'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
+
+# set default site id
+SITE_ID = 1
 
 # try to set up allowed hosts
 try:
@@ -92,6 +95,7 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'oauth2_provider',
