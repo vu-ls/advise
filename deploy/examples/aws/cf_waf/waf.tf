@@ -44,6 +44,38 @@ resource "aws_wafv2_web_acl" "default" {
     }
   }
 
+  rule {
+    name     = "${var.shortname}-allow-canaries"
+    priority = 15
+
+    action {
+      allow {}
+    }
+
+    statement {
+      byte_match_statement {
+        positional_constraint = "EXACTLY"
+        search_string         = var.canary_header.http_header_value
+
+        field_to_match {
+          single_header {
+            name = var.canary_header.http_header_name
+          }
+        }
+
+        text_transformation {
+          priority = 5
+          type     = "NONE"
+        }
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = false
+      metric_name                = "${var.name_prefix}-waf-synthetics-rule-${var.shortname}-${var.unique_id}"
+      sampled_requests_enabled   = false
+    }
+  }
+
   visibility_config {
     cloudwatch_metrics_enabled = false
     metric_name                = "${var.name_prefix}-waf-web-acl-${var.shortname}-${var.unique_id}"

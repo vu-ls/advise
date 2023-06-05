@@ -82,6 +82,10 @@ module "app_service" {
       value = "${var.aws_region}"
     },
     {
+      name  = "ENVIRONMENT_NAME"
+      value = "${local.environment_name}"
+    },
+    {
       name  = "ACCOUNT_EMAIL_VERIFICATION"
       value = var.account_email_verification
     },
@@ -259,6 +263,10 @@ module "oauth_service" {
     {
       name  = "AWS_REGION"
       value = "${var.aws_region}"
+    },
+    {
+      name  = "ENVIRONMENT_NAME"
+      value = "${local.environment_name}"
     },
     {
       name  = "ACCOUNT_DEFAULT_HTTP_PROTOCOL"

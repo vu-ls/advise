@@ -175,6 +175,48 @@ variable "account_email_verification" {
   default     = "mandatory"
 }
 
+variable "ecs_notify_webhook_url" {
+  description = "URL for webhook to receive notification events from ECS info events"
+  type        = string
+  default     = null
+}
+
+variable "ecs_notify_webhook_token" {
+  description = "Access token to use for webhook URL for ECS info event notifications"
+  type        = string
+  default     = null
+}
+
+variable "cpu_alarm_threshold" {
+  description = "Percent CPU for alarm thresholds"
+  type        = number
+  default     = 75
+}
+
+variable "memory_alarm_threshold" {
+  description = "Percent memory use for alarm thresholds"
+  type        = number
+  default     = 75
+}
+
+variable "db_connections_threshold" {
+  description = "Number of DB connections to use for alarm thresholds"
+  type        = number
+  default     = 60
+}
+
+variable "db_free_storage_threshold" {
+  description = "Free storage threshold in bytes for DB alarms"
+  type        = number
+  default     = 5000000000
+}
+
+variable "elb_5xx_alarm_threshold" {
+  description = "Threshold for 5xx errors in one minute"
+  type        = number
+  default     = 10
+}
+
 variable "multi_az" {
   type    = bool
   default = false
@@ -238,8 +280,8 @@ variable "db_backup_retention" {
 
 variable "db_skip_final_snapshot" {
   description = "Skip final database snapshot on delete?"
-  type = bool
-  default = false
+  type        = bool
+  default     = false
 }
 
 variable "ssh_key_name" {

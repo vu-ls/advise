@@ -328,6 +328,7 @@ module "cf_waf_advise" {
 
   allowed_cidrs = var.advise_allowed_cidrs
   vpc_nat_ips   = module.advise_vpc.nat_public_ips
+  canary_header = module.monitoring.canary_header
   shortname     = "advise"
   name_prefix   = local.name_prefix
   unique_id     = local.unique_id

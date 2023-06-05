@@ -8,6 +8,15 @@ variable "vpc_nat_ips" {
   type        = list(string)
   default     = []
 }
+
+variable "canary_header" {
+  description = "Canary header config to allow through WAF"
+  type = object({
+    http_header_name  = string
+    http_header_value = string
+  })
+}
+
 variable "name_prefix" {
   description = "name prefix for resource creation"
   type        = string
