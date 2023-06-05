@@ -230,7 +230,7 @@ class GroupAPIView(APIView):
         search_type = self.request.GET.get('type', "All").lower()
         if (search_term):
             groups = Group.objects.filter(name__icontains=search_term).order_by('-groupprofile__created')
-            contacts = Contact.objects.filter(name__icontains=search_term).exclude(user__api_account=True).order_by('-created')
+            contacts = Contact.objects.filter(Q(name__icontains=search_term)|Q(email__icontains=search_term)|Q(user__screen_name__icontains=search_term)).exclude(user__api_account=True).order_by('-created')
         else:
             groups = Group.objects.all().order_by('-groupprofile__created')
             contacts = Contact.objects.all().exclude(user__api_account=True).order_by('-created')
@@ -801,3 +801,4 @@ class ContactView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
 
         context['associations'] = ContactAssociation.objects.filter(contact=self.object)
         return context
+

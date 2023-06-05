@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from django.test import TestCase, Client, modify_settings
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from cvdp.models import *
 from cvdp.components.models import *
 from cvdp.components.serializers import *
@@ -664,7 +665,8 @@ class GroupAPITests(TestCase):
         ContactAssociation.objects.create(contact=contact, group=group,
                                           added_by=self.coord_user)
         self.case = Case.objects.create(case_id = '123456', title='Test Case', summary="This is a summary of test case", status=Case.ACTIVE_STATUS)
-        CaseParticipant.objects.create(case=self.case, group=group)
+        CaseParticipant.objects.create(case=self.case, group=group, notified=timezone.now())
+        
         Case.objects.create(case_id = '111111', status=Case.ACTIVE_STATUS, title='Test Case', summary="This is a summary of test case")
         
         #create API account

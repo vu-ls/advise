@@ -32,7 +32,7 @@ def my_cases(user):
     if user.is_coordinator or user.is_staff or user.is_superuser:
         return Case.objects.all()
     groups = _my_groups(user)
-    my_cases = CaseParticipant.objects.filter(Q(group__in=groups)|Q(contact__user=user)).values_list('case')
+    my_cases = CaseParticipant.objects.filter(Q(group__in=groups)|Q(contact__user=user)).exclude(notified__isnull=True).values_list('case')
     if my_cases:
         return Case.objects.filter(id__in=my_cases).exclude(status=Case.PENDING_STATUS)
     else:
@@ -49,7 +49,7 @@ def is_my_case(user, case):
     #get my contact
     contact = Contact.objects.filter(user=user).first()
     if groups:
-        return CaseParticipant.objects.filter(case__id=case).filter(Q(contact=contact) | Q(group__in=user_groups)).exists()
+        return CaseParticipant.objects.filter(case__id=case).filter(Q(contact=contact) | Q(group__in=user_groups)).exclude(notified__isnull=True).exists()
     else:
         return CaseParticipant.objects.filter(case__id=case, contact=contact).exists()
 
@@ -63,8 +63,11 @@ def is_my_case_thread(user, thread):
     #get my contact
     contact = Contact.objects.filter(user=user).first()
     #get case participant
-    p = CaseParticipant.objects.filter(case=thread.case).filter(Q(contact=contact) | Q(group__in=user_groups))
-    return CaseThreadParticipant.objects.filter(thread=thread, participant__in=p).exists()
+    p = CaseParticipant.objects.filter(case=thread.case).filter(Q(contact=contact) | Q(group__in=user_groups)).exclude(notified__isnull=True)
+    if p:
+        return CaseThreadParticipant.objects.filter(thread=thread, participant__in=p).exists()
+    else:
+        return False
 
 
 def is_my_msg_thread(user, thread):

@@ -17,6 +17,7 @@ All notable changes to AdVISE will be documented in this file.
 - Component changelog/activity
 - Add popover to case participant list to show included users
 - Add justification option when case participant selects "Not Affected" as status
+- Add view to see cases per group
 
 ### Changed
 
@@ -30,6 +31,7 @@ All notable changes to AdVISE will be documented in this file.
 - Fix loading threads when sending a message to the group
 - Fix pagination on global search
 - Allow MFA setup through admin login
+- Case Participants should only have access to a case once notified
 - Other bug fixes
 
 ### Removed

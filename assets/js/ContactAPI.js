@@ -178,4 +178,21 @@ export default class ContactAPI{
         return axios.post(url, formField).then(response => response.data);
     }
 
+    getGroupCases(g) {
+	const url = `${API_URL}/api/group/${g}/cases/`;
+	return axios.get(url).then(response => response.data);
+    }
+    getContactCases(g) {
+        const url = `${API_URL}/api/contact/${g}/cases/`;
+        return axios.get(url).then(response => response.data);
+    }
+
+    getContactCaseActivity(g, next=null) {
+        let url = `${API_URL}/api/contact/${g}/cases/activity/`;
+	if (next) {
+	    url = next;
+	}
+        return axios.get(url).then(response => response.data);
+    }
+    
 }

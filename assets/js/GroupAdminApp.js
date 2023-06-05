@@ -11,6 +11,7 @@ import ComponentTable from './ComponentTable';
 import DisplayLogo from "./DisplayLogo";
 import '../css/casethread.css';
 import ContactAPI from './ContactAPI';
+import CaseList from './CaseList.js';
 import DeleteConfirmation from './DeleteConfirmation';
 import AddContactModal from './AddContactModal';
 import GroupContactApp from './GroupContactApp';
@@ -47,7 +48,11 @@ const GroupAdminApp = (props) => {
     const [activityLoading, setActivityLoading] = useState(true);
     const [admin, setAdmin] = useState([]);
     const [groupAdmin, setGroupAdmin] = useState(false);
-    
+    const [cases, setCases] = useState([]);
+    const [casesLoading, setCasesLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsCount, setItemsCount] = useState(0);
+
     const columns = useMemo(
 	() => [
             {
@@ -339,7 +344,7 @@ const GroupAdminApp = (props) => {
 	    } else {
 		setGroupAdmin(false);
 	    }
-	    
+
 	}
 
     }, [selectedGroup]);
@@ -486,6 +491,26 @@ const GroupAdminApp = (props) => {
         }
     }
 
+    const fetchCases = async() => {
+	try {
+	    setCasesLoading(true);
+	    await contactapi.getGroupCases(selectedGroup.uuid).then((response) => {
+		setCases(response.results);
+		setItemsCount(response.count);
+		setCasesLoading(false);
+	    })
+	} catch(err) {
+	    console.log('Error: ', err);
+	    setApiError(err.response.data.message);
+	}
+    }
+
+    useEffect(() => {
+	if (activeTab == "cases") {
+	    fetchCases();
+	}
+    }, [activeTab])
+
     const hideContactModal = () => {
 	setAddContactModal(false);
 	setEditContact(null);
@@ -508,9 +533,9 @@ const GroupAdminApp = (props) => {
 	    setAdmin(admin_groups);
             fetchInitialData();
 	}
-	
-	
-	
+
+
+
     }, []);
 
     function noSelect(rows) {
@@ -581,20 +606,25 @@ const GroupAdminApp = (props) => {
 			     <Nav.Item key="permissions">
 				 <Nav.Link eventKey="permissions"><i className="fas fa-user-lock"></i>{" "} Permissions</Nav.Link>
                              </Nav.Item>
-			     
+
 			     <Nav.Item key="verifications">
 				 <Nav.Link eventKey="verifications"><i className="bx bx-bell"></i>{" "}Unverified users {unverifiedContacts.length > 0 ? <i className="fas fa-exclamation-triangle text-danger"></i> : "" }</Nav.Link>
                              </Nav.Item>
-			     
+
 			     <Nav.Item key="api">
 				 <Nav.Link eventKey="api"><i className="fas fa-key"></i>{" "} API</Nav.Link>
                              </Nav.Item>
 			 </>
 			}
 			{props.group &&
-			 <Nav.Item key="components">
-			     <Nav.Link eventKey="components"><i className="fas fa-microchip"></i>{" "}Components</Nav.Link>
-			 </Nav.Item>
+			 <>
+			     <Nav.Item key="cases">
+				 <Nav.Link eventKey="cases"><i className="fas fa-briefcase"></i>{" "}Cases</Nav.Link>
+			     </Nav.Item>
+			     <Nav.Item key="components">
+				 <Nav.Link eventKey="components"><i className="fas fa-microchip"></i>{" "}Components</Nav.Link>
+			     </Nav.Item>
+			 </>
 			}
 
 
@@ -677,7 +707,7 @@ const GroupAdminApp = (props) => {
 						  <Dropdown.Item eventKey="delete">Remove Group</Dropdown.Item>
 					      </>
 					     }
-					     
+
 					 </DropdownButton>
 					}
 				    </div>
@@ -740,9 +770,9 @@ const GroupAdminApp = (props) => {
 					 Group Case Permissions
                                      </Card.Header>
 				 </Card>
-				 
+
                              </Tab.Pane>
-			     
+
 			     <Tab.Pane eventKey="verifications" key="verifications">
 				 <Card>
                                      <Card.Header>
@@ -763,9 +793,9 @@ const GroupAdminApp = (props) => {
 					 </div>
                                      </Card.Body>
 				 </Card>
-				 
+
                              </Tab.Pane>
-			     
+
 			     <Tab.Pane eventKey="api" key="api">
 				 <Card>
                                      <Card.Header>
@@ -795,9 +825,9 @@ const GroupAdminApp = (props) => {
 					      </Alert>
 					     }
 					 </>
-					 
+
 					 {selectedGroup.support_email ?
-					  
+
 					  <>
 					      {keys.length > 0 ?
 					       <Table striped bordered hover>
@@ -811,10 +841,10 @@ const GroupAdminApp = (props) => {
 						   </thead>
 						   <tbody>
 						       {keys.map((k, index) => {
-							   
+
 							   let created = new Date(k.created);
 							   let last_used = k.last_used ? formatDistance(new Date(k.last_used), new Date(), {addSuffix: true}) : "Not used";
-							   
+
 							   return (
 							       <tr key={k.last_four}>
 								   <td>
@@ -837,7 +867,7 @@ const GroupAdminApp = (props) => {
 					       </Table>
 					       :
 					       <p>No API accounts have been created.</p>
-					       
+
 					      }
 					  </>
 					  :
@@ -845,17 +875,42 @@ const GroupAdminApp = (props) => {
 					 }
 				     </Card.Body>
 				 </Card>
-				 
+
                              </Tab.Pane>
 			 </>
 			}
-			
+
 			{props.group &&
-			 <Tab.Pane eventKey="components" key="components">
-			     <ComponentTable
-				 group={props.group}
-			     />
-			 </Tab.Pane>
+			 <>
+			     <Tab.Pane eventKey="cases" key="cases">
+				 <Card>
+				     <Card.Header>
+					 <Card.Title>Cases</Card.Title>
+				     </Card.Header>
+				     <Card.Body>
+					 {casesLoading ?
+					  <div className="text-center">
+					      <div className="lds-spinner"><div></div><div></div><div></div></div>
+					  </div>
+					  :
+					 <CaseList
+					     cases={cases}
+					     count={itemsCount}
+					     page = {currentPage}
+					     setCurrentPage={setCurrentPage}
+					     emptymessage="This group is not participating in any cases."
+					 />
+					 }
+				     </Card.Body>
+				 </Card>
+			     </Tab.Pane>
+
+			     <Tab.Pane eventKey="components" key="components">
+				 <ComponentTable
+				     group={props.group}
+				 />
+			     </Tab.Pane>
+			 </>
 			}
 
 		    </Tab.Content>
@@ -882,7 +937,7 @@ const GroupAdminApp = (props) => {
 			     <ListGroup variant="flush">
                                  {activity.map((a, index) => {
                                      return (
-                                         <ListGroup.Item action className="p-2 border-bottom" key={`activity-${index}`}>           
+                                         <ListGroup.Item action className="p-2 border-bottom" key={`activity-${index}`}>
                                              <ActivityApp
                                                  activity = {a}
 					     />

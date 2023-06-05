@@ -27,10 +27,6 @@ const StatusModal = ({showModal, hideModal, component, status}) => {
         }
     }
 
-    const handleSubmit = (event) => {
-
-    }
-
     const createVexStatement = () => {
 	const build_vex = {};
 	const stmts = [];

@@ -84,8 +84,9 @@ urlpatterns = [
     re_path('^api/contact/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/activity/$', groupviews.ContactActivityAPIView.as_view({'get': 'list'}), name='contact_activityapi'),
     re_path('^api/group/(?P<group>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/activity/$', groupviews.ContactActivityAPIView.as_view({'get': 'list'}), name='group_activityapi'),
     re_path('^api/contact/activity/$', groupviews.ContactActivityAPIView.as_view({'get': 'list'}), name='contactactivityapi'),
-
-    
+    re_path('^api/group/(?P<group>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/cases/$', caseviews.GroupCasesAPIView.as_view({'get': 'list'}), name='group_caseapi'),
+    re_path('^api/contact/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/cases/$', caseviews.ContactCasesAPIView.as_view({'get': 'list'}), name='contact_caseapi'),
+    re_path('^api/contact/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/cases/activity/$', caseviews.ContactActivityAPIView.as_view({'get': 'list'}), name='contact_caseactivityapi'),
     path('api/case/notifications/', caseviews.CaseNotificationAPI.as_view(), name='notifications'), 
     re_path('^case_search/$', caseviews.CaseFilter.as_view(), name='casesearch'),
     path('case/new/', caseviews.CreateNewCaseView.as_view(), name='newcase'),

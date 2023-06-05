@@ -25,7 +25,7 @@ class VulTests(APITestCase):
         group.user_set.add(self.vendor_user)
 
         self.case = Case.objects.create(case_id = '111111', title='Test Case', summary="This is a summary of test case", status=Case.ACTIVE_STATUS)
-        cp = CaseParticipant.objects.create(case=self.case, group=group)
+        cp = CaseParticipant.objects.create(case=self.case, group=group, notified=timezone.now())
         thread = CaseThread.objects.filter(case=self.case, archived=False).first()
         CaseThreadParticipant.objects.create(thread=thread, participant=cp)
 
@@ -604,7 +604,7 @@ class VulStatusTests(APITestCase):
         group.user_set.add(self.vendor_user)
 
         self.case = Case.objects.create(case_id = '111111', title='Test Case', summary="This is a summary of test case", status=Case.ACTIVE_STATUS)
-        cp = CaseParticipant.objects.create(case=self.case, group=group)
+        cp = CaseParticipant.objects.create(case=self.case, group=group, notified=timezone.now())
         contact = Contact.objects.get(user=self.coord_user)
         CaseParticipant.objects.create(case=self.case, contact=contact, role="owner")
         Vulnerability.objects.create(case=self.case, description="Let's do this!")

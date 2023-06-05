@@ -2,38 +2,33 @@ upstream advise_app {
     server ${APP_UPSTREAM_NAME}:${APP_UPSTREAM_PORT};
 }
 
-# simple health check for nginx
-# TODO: implement some useful real health check
+# health checks, dump any other connections with a 403
 server {
     listen ${PROXY_PORT} default_server;
     server_tokens off;
+
+    # app health check
+    location /health/app {
+        access_log off;
+        proxy_pass http://advise_app/;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $real_scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+    }
+
+    # simple health check for nginx
     location /health {
         access_log off;
         add_header 'Content-Type' 'application/json';
         return 200 '{"status":"UP"}';
     }
 
+    # 403 to anything else
     location / {
         default_type text/plain;
         return 403 '403 Forbidden';
     }
-
-    #location /health/app {
-    #    access_log off;
-    #    proxy_pass http://advise_app/;
-    #    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    #    proxy_set_header X-Forwarded-Proto $scheme;
-    #    proxy_set_header Host $http_host;
-    #    proxy_redirect off;
-    #}
-    #location /health/auth {
-    #    access_log off;
-    #    proxy_pass http://oauth2provider_app/;
-    #    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    #    proxy_set_header X-Forwarded-Proto $scheme;
-    #    proxy_set_header Host $http_host;
-    #    proxy_redirect off;
-    #}
 }
 
 # if X-Forwarded-Proto is set on incoming, use it

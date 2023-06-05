@@ -47,8 +47,8 @@ class GetAllCasesTest(TestCase):
         case = Case.objects.create(case_id = '111111', status=Case.ACTIVE_STATUS, title='Test Case', summary="This is a summary of test case")
         pendingcase = Case.objects.create(case_id='444444', title='Pending Test', summary='This case is still pending')
         
-        CaseParticipant.objects.create(case=case, group=group)
-        CaseParticipant.objects.create(case=acase, group=group)
+        CaseParticipant.objects.create(case=case, group=group, notified=timezone.now())
+        CaseParticipant.objects.create(case=acase, group=group, notified=timezone.now())
 
 
     def test_coordinator_get_all_cases(self):
@@ -447,6 +447,20 @@ class CaseAdvisoryTest(TestCase):
 
         response = client.get(
             reverse('cvdp:advisoryapi-list', args=['111111']))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+
+    def test_notified_vendor_get_all_revisions(self):
+        client = APIClient()
+        client.force_authenticate(user=self.vendor_user)
+
+        group = Group.objects.get(name='vendor')
+        cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
+        cp.notified = timezone.now()
+        cp.save()
+        
+        response = client.get(
+            reverse('cvdp:advisoryapi-list', args=['111111']))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
@@ -454,6 +468,11 @@ class CaseAdvisoryTest(TestCase):
         client = APIClient()
         client.force_authenticate(user=self.vendor_user)
 
+        group = Group.objects.get(name='vendor')
+        cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
+        cp.notified = timezone.now()
+        cp.save()
+        
         #make advisory shared
         ca = CaseAdvisory.objects.get(case=self.case)
         ca.current_revision.date_shared=timezone.now()
@@ -470,6 +489,11 @@ class CaseAdvisoryTest(TestCase):
         client = APIClient()
         client.force_authenticate(user=self.vendor_user)
 
+        group = Group.objects.get(name='vendor')
+        cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
+        cp.notified = timezone.now()
+        cp.save()
+        
         #make advisory shared
         ca = CaseAdvisory.objects.get(case=self.case)
         ca.current_revision.date_shared=timezone.now()
@@ -484,6 +508,9 @@ class CaseAdvisoryTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
+
+
+        
 class CaseArtifactTest(TestCase):
 
     def setUp(self):
@@ -495,6 +522,7 @@ class CaseArtifactTest(TestCase):
         group = Group.objects.create(name='vendor')
         group.user_set.add(self.vendor_user)
         case = Case.objects.create(case_id = '111111', title='Test Case', summary="This is a summary of test case", status=Case.ACTIVE_STATUS)
+        self.case = case
         contact = Contact.objects.get(user=self.coord_user)
         CaseParticipant.objects.create(case=case, group=group)
         CaseParticipant.objects.create(case=case, contact=contact, role="owner")
@@ -569,6 +597,10 @@ class CaseArtifactTest(TestCase):
     def test_vendor_post_case_artifact(self):
         client = APIClient()
         client.force_authenticate(user=self.vendor_user)
+        group = Group.objects.get(name='vendor')
+        cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
+        cp.notified = timezone.now()
+        cp.save()
         artifact = SimpleUploadedFile("artifact.jpg", b"RANDOM COnTEJKLDSJFSINTt", content_type="image/jpeg")
         response = client.post(
             reverse('cvdp:artifactapi', args=['111111']),
@@ -621,6 +653,10 @@ class CaseArtifactTest(TestCase):
     def test_vendor_get_artifact(self):
         client = APIClient()
         client.force_authenticate(user=self.vendor_user)
+        group = Group.objects.get(name='vendor')
+        cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
+        cp.notified = timezone.now()
+        cp.save()
         response = client.get(
             reverse('cvdp:artifactapi', args=['111111']))
         #should be empty since artifact wasn't shared
@@ -644,11 +680,28 @@ class CaseArtifactTest(TestCase):
         response = client.get(
             reverse('cvdp:artifactapi', args=['111111']))
         #should be empty since artifact wasn't shared
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+    def test_notified_vendor_get_shared_artifact(self):
+        client = APIClient()
+        client.force_authenticate(user=self.vendor_user)
+        group = Group.objects.get(name='vendor')
+        cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
+        cp.notified = timezone.now()
+        cp.save()
+
+        artifact = CaseArtifact.objects.all().first()
+        artifact.shared=True
+        artifact.save()
+        response = client.get(
+            reverse('cvdp:artifactapi', args=['111111']))
+        #should be empty since artifact wasn't shared                                                             
         artifacts = CaseArtifact.objects.all()
         serializer = ArtifactSerializer(artifacts, many=True, context={'user':self.vendor_user})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
+        
 class ComponentAPITest(TestCase):
 
     def setUp(self):

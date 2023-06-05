@@ -112,6 +112,11 @@ class ComponentAPIView(viewsets.ModelViewSet):
 
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
+            #does component already exist?
+            comp = Component.objects.filter(name__iexact=request.data['name'], version=request.data['version']).first()
+            if comp:
+                return Response({'detail': 'component already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
             component = serializer.save()
             component.added_by = self.request.user
             component.save()
@@ -135,9 +140,17 @@ class ComponentAPIView(viewsets.ModelViewSet):
         instance = self.get_object()
 
         data = request.data
+        version = data.get('version', instance.version)
+        name = data.get('name', instance.name)
         logger.debug(request.data)
         serializer = self.serializer_class(instance=instance, data=data, partial=True)
         if serializer.is_valid():
+            #does component already exist?
+            if ((version != instance.version) or (name != instance.name)):
+                #something changed, so check to see if new tuple alreay exists
+                comp = Component.objects.filter(name__iexact=name, version=version).first()
+                if comp:
+                    return Response({'detail': 'component already exists'}, status=status.HTTP_400_BAD_REQUEST)
             action = create_component_action("modified component", self.request.user, instance, 2)
             for field, val in data.items():
                 if (val != getattr(instance, field, None)):
@@ -228,6 +241,10 @@ class GroupComponentsAPIView(viewsets.ModelViewSet):
         self.check_object_permissions(self.request, group)
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
+            #does component already exist?
+            comp = Product.objects.filter(component__name__iexact=request.data['name'], component__version=request.data['version'], supplier=group).first()
+            if comp:
+                return Response({'detail': 'Component already exists'}, status=status.HTTP_400_BAD_REQUEST)
             component = serializer.save()
             component.added_by = self.request.user
             component.save()
@@ -408,7 +425,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                 #does cs exist?
                 cs, created = ComponentStatus.objects.update_or_create(component=component,
                                                                        vul=vul, defaults={'share': share})
-                
+
                 logger.debug(serializer.validated_data)
                 sr  = StatusRevision(**serializer.validated_data)
                 logger.debug(sr)
@@ -517,7 +534,7 @@ class ComponentStatusRevisionAPIView(viewsets.ModelViewSet):
             raise PermissionDenied()
         return StatusRevision.objects.filter(component_status=cs).order_by('-revision_number')
 
-        
+
 class CaseComponentAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission)
     serializer_class = ComponentStatusSerializer

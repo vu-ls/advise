@@ -125,7 +125,7 @@ const GroupApp = () => {
 				   <nav className="navbar navbar-expand-lg">
 				       <div className="collapse navbar-collapse">
 					   <div className="navbar-nav me-auto search-menu">
-					       <a href="#" onClick={(e)=>(e.preventDefault(), setSearchType("All"))} className="nav-item nav-link active">All</a>
+					       <a href="#" onClick={(e)=>(e.preventDefault(), setSearchType("All"))} className={searchType=='All' ? "active nav-item nav-link" : "nav-item nav-link"}>All</a>
 					       <a href="#" onClick={(e)=>(e.preventDefault(), setSearchType("Contacts"))} className="nav-item nav-link">Contacts</a>
 					       <a href="#" onClick={(e)=>(e.preventDefault(), setSearchType("Groups"))} className="nav-item nav-link">Groups</a>
 					       <a href="#" onClick={(e)=>(e.preventDefault(), setSearchType("Users"))} className="nav-item nav-link">Users</a>

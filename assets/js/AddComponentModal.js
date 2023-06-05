@@ -56,28 +56,34 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 	fetchInitialData();
     }, [edit]);
 
+    useEffect(() => {
+	setError(null);
+    }, [hideModal]);
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
 	event.preventDefault();
 	const formData = new FormData(event.target),
               formDataObj = Object.fromEntries(formData.entries());
 	console.log(formDataObj);
-	try {
-	    if (edit) {
-		componentapi.updateComponent(edit, formDataObj).then((response) => {
-		    hideModal();
-		})
-	    } else if (group) {
-		componentapi.addGroupComponent(group, formDataObj).then((response) => {
-		    hideModal();
-		})
-	    } else {
-		componentapi.addComponent(formDataObj).then((response) => {
-		    hideModal();
-		})
-	    }
-	} catch (err) {
-	    console.log(err);
+
+	if (edit) {
+	    await componentapi.updateComponent(edit, formDataObj).then((response) => {
+		hideModal();
+	    }).catch(err => {
+		setError(`Error adding component: ${err.response.data.detail}`);
+	    });
+	} else if (group) {
+	    await componentapi.addGroupComponent(group, formDataObj).then((response) => {
+		hideModal();
+	    }).catch(err => {
+		setError(`Error adding component: ${err.response.data.detail}`);
+	    });
+	} else {
+	    await componentapi.addComponent(formDataObj).then((response) => {
+		hideModal();
+	    }).catch(err => {
+		setError(`Error adding component: ${err.response.data.detail}`);
+	    });
 	}
 
     }

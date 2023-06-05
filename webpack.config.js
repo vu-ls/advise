@@ -29,6 +29,7 @@ module.exports = {
 	group_components: './assets/js/groupcomponents',
 	groupadmin: './assets/js/groupadmin',
 	myreports: './assets/js/myreports',
+	contactapp: './assets/js/contact',
     },
 
     output: {

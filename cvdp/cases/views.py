@@ -68,9 +68,9 @@ def _my_case_roles(user, case):
     #get my contact
     contact = Contact.objects.filter(user=user).first()
     if user_groups:
-        return CaseParticipant.objects.filter(case__id=case).filter(Q(contact=contact) | Q(group__in=user_groups))
+        return CaseParticipant.objects.filter(case__id=case).filter(Q(contact=contact) | Q(group__in=user_groups)).exclude(notified__isnull=True)
     else:
-        return CaseParticipant.objects.filter(case__id=case, contact=contact)
+        return CaseParticipant.objects.filter(case__id=case, contact=contact).exclude(notified__isnull=True)
 
 
 def _my_case_threads(user, case):
@@ -87,9 +87,9 @@ def _my_threads(user):
     #get my contact
     contact = Contact.objects.filter(user=user).first()
     if user_groups:
-        cps = CaseThreadParticipant.objects.filter(Q(participant__contact=contact) | Q(participant__group__in=user_groups)).values_list('thread__id', flat=True)
+        cps = CaseThreadParticipant.objects.filter(Q(participant__contact=contact) | Q(participant__group__in=user_groups)).exclude(participant__notified__isnull=True).values_list('thread__id', flat=True)
     else:
-        cps = CaseThreadParticipant.objects.filter(participant__contact=contact).values_list('thread__id', flat=True)
+        cps = CaseThreadParticipant.objects.filter(participant__contact=contact).exclude(participant__notified__isnull=True).values_list('thread__id', flat=True)
     return CaseThread.objects.filter(id__in=cps)
 
 @login_required(login_url="authapp:login")
@@ -720,7 +720,10 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
         logger.debug("IN CASE PARTICIPANT API");
         c = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         self.check_object_permissions(self.request, c)
-        return CaseParticipant.objects.filter(case=c)
+        if self.request.user.is_coordinator:
+            return CaseParticipant.objects.filter(case=c)
+        else:
+            return CaseParticipant.objects.filter(case=c).exclude(notified__isnull=True)
 
     def get_object(self):
         obj = get_object_or_404(CaseParticipant, id=self.kwargs['pk'])
@@ -802,7 +805,10 @@ class CaseParticipantSummaryAPIView(generics.GenericAPIView):
 
     def get_queryset(self):
         c = get_object_or_404(Case, case_id=self.kwargs['caseid'])
-        return CaseParticipant.objects.filter(case=c)
+        if self.request.user.is_coordinator:
+            return CaseParticipant.objects.filter(case=c)
+        else:
+            return CaseParticipant.objects.filter(case=c).exclude(notified__isnull=True)
 
     def get(self, request, *args, **kwargs):
         logger.debug("IN CASE PARTICIPANT SUMMARY API");
@@ -1483,3 +1489,47 @@ class CaseActivityAPIView(APIView):
             next_page = None
         
         return Response({'results':data.object_list, 'next_page': next_page})
+
+class GroupCasesAPIView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
+    serializer_class = CaseSerializer 
+    pagination_class=StandardResultsPagination
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Case.objects.none()
+        # get cases group is involved in
+        group = get_object_or_404(Group, groupprofile__uuid=self.kwargs.get('group'))
+        cp = CaseParticipant.objects.filter(group=group).values_list('case__id', flat=True)
+        return Case.objects.filter(id__in=cp)
+
+class ContactCasesAPIView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
+    serializer_class = CaseSerializer
+    pagination_class=StandardResultsPagination
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Case.objects.none()
+        # get cases contact is involved in
+        contact = get_object_or_404(Contact, uuid=self.kwargs.get('contact'))
+        cp = CaseParticipant.objects.filter(contact=contact).values_list('case__id', flat=True)
+        return Case.objects.filter(id__in=cp)
+
+class ContactActivityAPIView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
+    serializer_class = CaseActionSerializer
+    pagination_class=StandardResultsPagination
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Case.objects.none()
+        # get cases contact is involved in
+        contact = get_object_or_404(Contact, uuid=self.kwargs.get('contact'))
+        if contact.user:
+            return CaseAction.objects.filter(user=contact.user).order_by('-created')
+        
+        cp = CaseParticipant.objects.filter(contact=contact)
+        return CaseAction.objects.filter(participant__in=cp).order_by('-created')
+
+    

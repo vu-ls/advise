@@ -215,7 +215,7 @@ class APISearchView(APIView):
                 if search_term:
                     
                     groups = GroupProfile.objects.filter(group__name__icontains=search_term).order_by('-modified')
-                    contacts = Contact.objects.filter(name__icontains=search_term).exclude(user__api_account=True).order_by('-modified')
+                    contacts = Contact.objects.filter(Q(name__icontains=search_term)|Q(email__icontains=search_term)|Q(user__screen_name__icontains=search_term)).exclude(user__api_account=True).order_by('-modified')
                 else:
                     groups = GroupProfile.objects.all().order_by('-modified')
                     contacts = Contact.objects.all().exclude(user__api_account=True).order_by('-modified')

@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from django.test import TestCase, Client, modify_settings
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from cvdp.models import Case, CaseParticipant, Contact, CaseArtifact, Action
 from django.contrib.auth.models import Group
 from authapp.models import APIToken, User
@@ -71,7 +72,23 @@ class PostTests(APITestCase):
         newct = CaseThread.objects.create(case=self.case,
                                           archived=True,
                                           subject="Archived Thread")
-        
+
+
+        response = self.api_client.get(
+            reverse('cvdp:archived', args=['111111']))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_notified_vendor_get_archived_threads(self):
+        self.api_client.force_authenticate(user=self.vendor_user)
+        group = Group.objects.get(name='vendor')
+        cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
+        cp.notified = timezone.now()
+        cp.save()
+        newct = CaseThread.objects.create(case=self.case,
+                                          archived=True,
+                                          subject="Archived Thread")
+
 
         response = self.api_client.get(
             reverse('cvdp:archived', args=['111111']))
@@ -84,8 +101,10 @@ class PostTests(APITestCase):
         newct = CaseThread.objects.create(case=self.case,
                                           archived=True,
                                           subject="Archived Thread")
-        
+
         cp = CaseParticipant.objects.get(case=self.case, group=group)
+        cp.notified=timezone.now()
+        cp.save()
         CaseThreadParticipant.objects.create(thread=newct, participant=cp)
         response = self.api_client.get(
             reverse('cvdp:archived', args=['111111']))
@@ -93,7 +112,7 @@ class PostTests(APITestCase):
         serializer = CaseThreadSerializer(cases, many=True)
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
     def test_vendor_post_archived_threads(self):
 
         self.api_client.force_authenticate(user=self.vendor_user)
@@ -104,7 +123,32 @@ class PostTests(APITestCase):
                                           subject="Archived Thread")
         cp = CaseParticipant.objects.get(case=self.case, group=group)
         CaseThreadParticipant.objects.create(thread=newct, participant=cp)
-        
+
+        valid_payload = {
+            'content' : '<b>HERE IS SOME VENDOR CONTENT</b>'
+        }
+
+        response = self.api_client.post(
+            reverse('cvdp:postlistapi', args=[newct.id]),
+            data = json.dumps(valid_payload),
+            content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_notified_vendor_post_archived_threads(self):
+
+        self.api_client.force_authenticate(user=self.vendor_user)
+        group = Group.objects.get(name='vendor')
+
+        newct = CaseThread.objects.create(case=self.case,
+                                          archived=True,
+                                          subject="Archived Thread")
+        cp = CaseParticipant.objects.get(case=self.case, group=group)
+        cp.notified= timezone.now()
+        cp.save()
+        CaseThreadParticipant.objects.create(thread=newct, participant=cp)
+
         valid_payload = {
             'content' : '<b>HERE IS SOME VENDOR CONTENT</b>'
         }
@@ -199,7 +243,7 @@ class PostTests(APITestCase):
         thread.save()
 
         self.api_client.force_authenticate(user=self.coord_user)
-        
+
         response = self.api_client.patch(
             reverse('cvdp:postapi', args=[post.id]),
             data=json.dumps({'content': '<p>Updated CONTENT</p>'}),
@@ -214,9 +258,25 @@ class PostTests(APITestCase):
         response = self.api_client.get(
             reverse('cvdp:postlistapi', args=[thread.id]))
 
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_notified_vendor_get_posts(self):
+        #vendor get posts
+        self.api_client.force_authenticate(user=self.vendor_user)
+
+        group = Group.objects.get(name='vendor')
+        cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
+        cp.notified = timezone.now()
+        cp.save()
+        
+        thread = CaseThread.objects.filter(case=self.case, archived=False).first()
+        response = self.api_client.get(
+            reverse('cvdp:postlistapi', args=[thread.id]))
+
         posts = Post.objects.filter(thread=thread)
         serializer = PostSerializer(posts, many=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
         self.assertEqual(response.data['results'], serializer.data)
 
     def test_vendor_post_post(self):
@@ -230,8 +290,25 @@ class PostTests(APITestCase):
             data = json.dumps(valid_payload),
             content_type='application/json')
 
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+
+    def test_notified_vendor_post_post(self):
+        self.api_client.force_authenticate(user=self.vendor_user)
+        group = Group.objects.get(name='vendor')
+        cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
+        cp.notified = timezone.now()
+        cp.save()
+        thread = CaseThread.objects.filter(case=self.case, archived=False).first()
+        valid_payload = {
+            'content' : '<b>HERE IS SOME VENDOR CONTENT</b>'
+        }
+        response = self.api_client.post(
+            reverse('cvdp:postlistapi', args=[thread.id]),
+            data = json.dumps(valid_payload),
+            content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
     def test_send_post_email(self):
         self.api_client.force_authenticate(user=self.coord_user)
@@ -269,7 +346,7 @@ class PostTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         self.assertEqual(len(mail.outbox), 1)
-        
+
     def test_reporter_get_posts(self):
         self.api_client.force_authenticate(user=self.reporter_user)
         thread = CaseThread.objects.filter(case=self.case, archived=False).first()
@@ -325,8 +402,19 @@ class CaseParticipantTest(APITestCase):
         response = self.api_client.get(
             reverse('cvdp:case_participant_api_list', args=['111111']))
 
+        #vendor not notified
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        cp.notified = timezone.now()
+        cp.save()
+
+        response = self.api_client.get(
+            reverse('cvdp:case_participant_api_list', args=['111111']))
+
+        #vendor now notified
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        cps = CaseParticipant.objects.filter(case=self.case)
+
+        cps = CaseParticipant.objects.filter(case=self.case).exclude(notified__isnull=True)
         serializer = CaseParticipantSerializer(cps, many=True)
         self.assertEqual(serializer.data, response.data)
 
