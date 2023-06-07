@@ -218,6 +218,12 @@ export default class CaseThreadAPI{
 	const url = `${API_URL}/case/${c.case}/participants/notify/`;
 	return axios.post(url, data).then(response=> response.data);
     }
+
+    notifyAllParticipants(c, data) {
+	console.log(data);
+	const url = `${API_URL}/case/${c.case}/participants/notify/all/`;
+        return axios.post(url, data).then(response=> response.data);
+    }
     
     searchPosts(c, search) {
 	console.log(search);

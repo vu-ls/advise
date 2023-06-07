@@ -120,6 +120,7 @@ urlpatterns = [
     re_path('^api/case/participant/(?P<pk>[0-9]+)/$', caseviews.CaseParticipantAPIView.as_view({'patch': 'partial_update', 'delete': 'destroy'}), name='case_participant_api'),
     re_path('^api/case/(?P<caseid>\d+)/participants/summary/$', caseviews.CaseParticipantSummaryAPIView.as_view(), name='case_participant_summary_api'),
     re_path('^case/(?P<caseid>\d+)/participants/notify/$', caseviews.NotifyVendorsView.as_view(), name='notifyvendors'),
+    re_path('^case/(?P<caseid>\d+)/participants/notify/all/$', caseviews.NotifyVendorsView.as_view(), name='notifyallvendors'),
     re_path('^api/case/(?P<caseid>[0-9]+)/vuls/$', caseviews.VulAPIView.as_view({'get': 'list', 'post':'create'}), name='vulapi'),
     re_path('^api/case/(?P<caseid>[0-9]+)/artifacts/$', caseviews.CaseArtifactAPIView.as_view({'get': 'list', 'post':'create'}), name='artifactapi'),
     re_path('^api/case/artifact/(?P<uuid>.*)/$', caseviews.CaseArtifactAPIView.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete':'destroy'}), name='artifactapi-detail'),

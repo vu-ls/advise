@@ -471,7 +471,10 @@ class CaseAPIView(viewsets.ModelViewSet):
             action = create_case_action("modified case details", request.user, instance, True)
             for field, val in data.items():
                 if (val != getattr(instance, field, None)):
-                    create_case_change(action, field, getattr(instance, field), val);
+                    if (field == "status"):
+                        create_case_change(action, field, instance.get_status_display(), val);
+                    else:
+                        create_case_change(action, field, getattr(instance, field), val);
             serializer.save()
             logger.debug(serializer.data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -1392,6 +1395,11 @@ class NotifyVendorsView(LoginRequiredMixin, UserPassesTestMixin, generic.Templat
 
         subject = self.request.POST.get('subject', None);
         content = self.request.POST.get('content', None);
+
+        if not participants and "all" in request.path:
+            #get all participants that haven't been notified
+            participants = CaseParticipant.objects.filter(case=case).exclude(notified__isnull=False).values_list('id', flat=True)
+        
         if not participants or not subject or not content:
             return JsonResponse({'message': 'participants, subject, and content required'}, status=400)
 

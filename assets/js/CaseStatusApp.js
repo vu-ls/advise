@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import {Card, Alert, NavDropdown, DropdownButton, Dropdown, InputGroup, FloatingLabel, Form, Container, Row, Col, Badge, Button, OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {Card, Modal, Alert, NavDropdown, DropdownButton, Dropdown, InputGroup, FloatingLabel, Form, Container, Row, Col, Badge, Button, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {createEvent} from 'ics';
 import { format, formatDistance } from 'date-fns'
 import CaseThreadAPI from './ThreadAPI';
@@ -9,6 +9,7 @@ import DisplayStatus from './DisplayStatus';
 import DisplayLogo from './DisplayLogo';
 import {Typeahead} from 'react-bootstrap-typeahead';
 import AutoAssignModule from './AutoAssignModule';
+import NotifyVendorModal from "./NotifyVendorModal";
 
 const threadapi = new CaseThreadAPI();
 
@@ -23,11 +24,29 @@ const CaseStatusApp = (props) => {
     const [roles, setRoles] = useState([]);
     const [showAutoAssign, setShowAutoAssign] = useState(false);
     const [error, setError] = useState(null);
-
-
+    const [showNotifyPrompt, setShowNotifyPrompt] = useState(false);
+    const [newStatus, setNewStatus] = useState(null);
+    const [displayVNModal, setDisplayVNModal] = useState(false);
+    const [notifyVendorCount, setNotifyVendorCount] = useState(0);
+    
     const hideAutoAssign = () => {
         setShowAutoAssign(false);
     };
+
+    const hideVNModal = () => {
+	setDisplayVNModal(false);
+	/* if we get here, that means user decided not to notify vendors
+	   at the email prompt, so we need to update status */
+	props.updateStatus();
+  
+    }
+    
+    const hideNotifyPrompt = () => {
+	setShowNotifyPrompt(false);
+
+	updateStatus("Active");
+	
+    }
 
     function assignUser(evtKey, evt) {
 	if (evtKey == 0) {
@@ -46,11 +65,49 @@ const CaseStatusApp = (props) => {
         });
     }
 
-    function changeStatus(evtKey, evt) {
-	const data = {'status': evtKey};
+    const submitNotifyVendors = async (subject, content) => {
+
+	let formField = new FormData();
+	formField.append('subject', subject);
+        formField.append('content', content);
+        console.log(formField);
+
+        await threadapi.notifyAllParticipants({'case': caseInfo.case_id}, formField).then((response) => {
+	    setDisplayVNModal(false);
+	    props.updateStatus();
+	    props.reload();
+
+        }).catch(err => {
+	    console.log(err);
+	});
+        
+    }
+	
+    function updateStatus(status) {
+	const data = {'status': status};
         threadapi.updateCase(caseInfo, data).then((response) => {
-            props.updateStatus();
-        });
+	    props.updateStatus();
+        });	
+
+    }
+    
+    function changeStatus(evtKey, evt) {
+	if (caseInfo.status != "Active" && evtKey == "Active") {
+	    /*check to see if there are unnotified vendors and prompt user to notify*/
+	    threadapi.getCaseParticipantSummary({'case':caseInfo.case_id}).then((response) => {
+		console.log("SUMMARY", response);
+		if (response.data.count != response.data.notified) {
+		    setNotifyVendorCount(response.data.count-response.data.notified);
+		    /* prompt user to notify participants */
+		    console.log("PROMPT USER MODAL");
+		    setShowNotifyPrompt(true);
+		} else {
+		    updateStatus(evtKey);
+		}
+	    });
+	} else {
+	    updateStatus(evtKey);
+	}
     };
 
 
@@ -128,6 +185,35 @@ const CaseStatusApp = (props) => {
                 </Dropdown.Item>
 	    </Dropdown.Menu>
 	</Dropdown>
+	)
+    }
+
+    const notifyAll = async () => {
+	setShowNotifyPrompt(false);
+        const data = {'status': "Active"};
+        await threadapi.updateCase(caseInfo, data).then((response) => {
+	    setDisplayVNModal(true);
+	});
+    }
+	
+
+    const NotifyPrompt = (props) => {
+
+	return (
+            <Modal show={props.show} centered onHide={props.hide} backdrop="static">
+		<Modal.Header closeButton>
+		    <Modal.Title>{props.title}</Modal.Title>
+		</Modal.Header>
+		<Modal.Body>{props.message}</Modal.Body>
+		<Modal.Footer>
+		    <Button variant="secondary" onClick={props.hide}>
+			No
+		    </Button>
+		    <Button variant="primary" onClick={notifyAll}>
+			Yes
+		    </Button>
+		</Modal.Footer>
+	    </Modal>
 	)
     }
 
@@ -373,7 +459,7 @@ const CaseStatusApp = (props) => {
 			    }
 			</Col>
 		    </Row>
-                    <Row className="mb-2">
+                    <Row className="mb-2 align-items-center">
                         <Col sm={4}>
                             <Form.Label>Assigned To</Form.Label>
                         </Col>
@@ -451,12 +537,26 @@ const CaseStatusApp = (props) => {
 
 		</Card.Body>
 		{['owner', 'coordinator'].includes(props.user.role) &&
-		<AutoAssignModule
-		    showModal = {showAutoAssign}
-		    hideModal = {hideAutoAssign}
-		    confirmModal = {autoAssignUser}
-		    roles = {roles}
-		/>
+		 <>
+		     <AutoAssignModule
+			 showModal = {showAutoAssign}
+			 hideModal = {hideAutoAssign}
+			 confirmModal = {autoAssignUser}
+			 roles = {roles}
+		     />
+		     <NotifyPrompt
+			 show = {showNotifyPrompt}
+			 hide = {hideNotifyPrompt}
+			 title="Do you want to notify all participants?"
+			 message="Now that the case is public, do you want to notify all participants that haven't been notified?"
+		     />
+		     <NotifyVendorModal
+			 showModal = {displayVNModal}
+			 hideModal = {hideVNModal}
+			 confirmModal = {submitNotifyVendors}
+			 count={notifyVendorCount}
+		     />  
+		 </>
 		}
 	    </Card>
 	:<></>

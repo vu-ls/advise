@@ -2,6 +2,14 @@
 
 All notable changes to AdVISE will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Prompt user to notify case participants when case status changes to "Active"
+
+
+
 ## [1.2.0] - 2023-06-06
 
 ### Added
