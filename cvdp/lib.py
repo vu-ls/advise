@@ -181,6 +181,8 @@ def add_new_case_participant(thread, name, user, role):
                 #TODO: ADD Activity for role change
                 if role == "owner":
                     if contact.user:
+                        if user == contact.user:
+                            cp.notified=timezone.now()
                         if not contact.user.is_coordinator:
                             raise InvalidRoleException("Participant can't be case owner")
                     else:

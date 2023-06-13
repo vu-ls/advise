@@ -372,10 +372,32 @@ class CaseReport(models.Model):
         blank=True,
         null=True)
 
+    copy = models.BooleanField(
+        default = False)
+    
     def __str__(self):
         return str(self.report)
 
+class CaseReportOriginal(models.Model):
 
+    report = models.ForeignKey(
+        CaseReport,
+        on_delete = models.CASCADE)
+
+    case = models.ForeignKey(
+        "Case",
+        on_delete=models.CASCADE)
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL)
+
+    created = models.DateTimeField(
+        default=timezone.now)
+    
+    
 class CaseManager(models.Manager):
     def search(self, query=None):
         qs = self.get_queryset()

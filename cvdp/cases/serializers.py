@@ -27,11 +27,26 @@ class ReportSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
     case_url = serializers.SerializerMethodField()
+    report = serializers.SerializerMethodField()
     
     class Meta:
         model = CaseReport
-        fields = ('received', 'title', 'case_url', 'source', 'submitter', "report", "status", )
+        fields = ('received', 'title', 'case_url', 'source', 'submitter', "report", "status", "copy", )
 
+    def get_report(self, obj):
+        user = self.context.get('user')
+        if user and user.is_coordinator:
+            return obj.report
+        else:
+            #remove private fields
+            redacted_report = []
+            for x in obj.report:
+                if x.get('priv', False):
+                    continue
+                redacted_report.append(x)
+            return redacted_report
+                    
+        
     def get_submitter(self, obj):
         if obj.entry:
             if obj.entry.created_by:
@@ -54,17 +69,58 @@ class ReportSerializer(serializers.ModelSerializer):
         else:
             return ""
 
+        
     def get_title(self, obj):
         if obj.entry:
             if obj.entry.form:
                 return obj.entry.form.title
         return ""
-        
+
+class CoordReportSerializer(serializers.ModelSerializer):
+    submitter = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    case_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CaseReport
+        fields = ('received', 'title', 'case_url', 'source', 'submitter', "report", "status", "copy", )
+
+    def get_submitter(self, obj):
+        if obj.entry:
+            if obj.entry.created_by:
+                return obj.entry.created_by.screen_name
+        else:
+            return "Anonymous"
+
+    def get_status(self, obj):
+        cr = Case.objects.filter(report=obj).first()
+        if cr:
+            return cr.get_status_display()
+        return "Pending"
+
+    def get_case_url(self, obj):
+        cr = Case.objects.filter(report=obj).first()
+        user = self.context.get('user')
+
+        if user and cr and  cr.status == Case.ACTIVE_STATUS and is_my_case(user, cr.id):
+            return reverse("cvdp:case", args=[cr.case_id])
+        else:
+            return ""
+
+
+    def get_title(self, obj):
+        if obj.entry:
+            if obj.entry.form:
+                return obj.entry.form.title
+        return ""
+
+    
 class CaseCoordinatorSerializer(serializers.ModelSerializer):
 
     case_identifier = serializers.CharField(source='get_caseid')
     created_by = serializers.SerializerMethodField()
-    report = ReportSerializer()
+    report = CoordReportSerializer()
     status = ChoiceField(Case.STATUS_CHOICES)
     owners = serializers.SerializerMethodField()
     advisory_status = serializers.SerializerMethodField()

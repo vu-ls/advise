@@ -358,6 +358,7 @@ const CaseThreadApp = (caseid) => {
 			 caseInfo = {caseInfo}
 			 updateStatus = {fetchInitialData}
 			 user = {reqUser}
+			 reload = {getThreadParticipants}
 		     />
 		     <CaseArtifactApp
 			 caseInfo = {caseInfo}

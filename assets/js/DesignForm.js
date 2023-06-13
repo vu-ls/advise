@@ -260,11 +260,11 @@ const DesignForm = (form) => {
 		     }
 		     <Form.Group className="mb-3" controlId="RequiredCheck">
 			 <Form.Label>Required</Form.Label>
-			 <Form.Check type="checkbox" name="required" label="Is this field required?" checked={required} onChange={(e)=>(console.log(e), setRequired(e.target.checked))}/>
+			 <Form.Check type="checkbox" name="required" label="Is this field required?" checked={required} onChange={(e)=>(setRequired(e.target.checked))}/>
 		     </Form.Group>
 		     <Form.Group className="mb-3" controlId="PrivateCheck">
 			 <Form.Label>Keep answers private</Form.Label>
-			 <Form.Check type="checkbox" name="private" label="Keep answers private?" checked={priv} onChange={(e)=>(console.log(e), setPriv(e.target.checked))}/>
+			 <Form.Check type="checkbox" name="private" label="Keep answers private?" checked={priv} onChange={(e)=>(setPriv(e.target.checked))}/>
 		     </Form.Group>
 		     <Button className="m-2" type="Cancel" variant="secondary" onClick={(e)=>(e.preventDefault(), setShowForm(false), setEditQuestion(null))}>
 			 Cancel

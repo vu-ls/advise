@@ -1,0 +1,33 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load i18n crispy_forms_tags %}
+{% block content %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  {% url 'cvdp:case' case.case_id as bread_url %}
+  {% include 'cvdp/include/top_panel.html' with title="Edit Report" secondcrumbs=case.case_for_url breadcrumbs="Cases" bread_url=bread_url %}
+  <div class="card">
+    <div class="card-header">
+      <div class="alert alert-warning">By editing this report, a copy of the original report will remain in tact and will be available to case coordinators. All other case participants will only see the edited copy.</div> 
+    </div>
+    <div class="card-body">
+      {% if current_form.fields|length > form.fields|length %}
+      <div class="alert alert-danger">
+	<div class="d-flex justify-content-between align-items-center">
+	  <p>There have been additional questions added to the report since this report has been submitted. Do you want to add them?</p>
+	  <a href="{% url 'cvdp:editreport' case.case_id %}?add=1" class="btn btn-sm btn-primary">Update Report</a>
+	</div>
+      </div>
+      {% elif form.fields|length < case.report.report|length %}			    
+			    <div class="alert alert-danger">The form has changed since this report has been submitted.  Some questions may not be listed below. By editing this report, case participants will now see the edited copy. You will still have access to the original. </div>
+			    {% endif %}
+      <form method="post" enctype="multipart/form-data" id="login-form">
+        {% csrf_token %}
+	{{ form|crispy }}
+	<a href="{{ case.get_absolute_url }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

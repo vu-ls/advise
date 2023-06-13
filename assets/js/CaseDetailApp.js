@@ -25,7 +25,7 @@ const CaseDetailApp = (props) => {
     const [reportLoading, setReportLoading] = useState(true);
     const [report, setReport] = useState(null);
     const [showAlert, setShowAlert] = useState(false);
-    
+
     useEffect(() => {
 	if (!(['coordinator', 'owner'].includes(props.user.role))) {
 	    if (props.caseInfo.status === "Pending") {
@@ -75,19 +75,19 @@ const CaseDetailApp = (props) => {
 	    setActiveTab("addcasedetails")
 	    return;
 	}
-	    
+
         threadapi.addCaseReport(caseInfo, formDataObj).then((response) => {
 	    let f = <Alert variant="success">Got it! Your report has been saved.</Alert>
 	    setFeedback(f);
 	    props.updateStatus();
-	    
+
 	}).catch(err => {
 	    console.log(err);
 	    let f = <Alert variant="danger">An error occurred: {err.response.data.message}</Alert>
 	    setFeedback(f);
 	});
     }
-    
+
     const fetchInitialData = async () => {
 
         try {
@@ -139,7 +139,7 @@ const CaseDetailApp = (props) => {
 	setFeedback(null);
 	setActiveTab(props);
     }
-    
+
     return (
 	caseInfo && owner ?
 	    <div className="nav-align-top mb-4">
@@ -212,9 +212,10 @@ const CaseDetailApp = (props) => {
 		    <Tab.Content>
 			{caseInfo.report ?
 			 <Tab.Pane eventKey="report">
-
 			     <ViewReport
 				 report={caseInfo.report}
+				 owner={true}
+				 caseid = {caseInfo.case_id}
 			     />
 			 </Tab.Pane>
 			 :
@@ -228,7 +229,7 @@ const CaseDetailApp = (props) => {
 				   <form onSubmit={(e)=>handleSubmit(e)}>
 				       {feedback &&
 					feedback
-				       }    
+				       }
 				       <div dangerouslySetInnerHTML={{__html: report}} />
 				       <div className="d-flex justify-content-end gap-2">
 					   <Button variant="outline-secondary" type="cancel" onClick={(e)=>(e.preventDefault(), setAddReport(false), setActiveTab("addcasedetails"))}>Cancel</Button>
@@ -247,7 +248,7 @@ const CaseDetailApp = (props) => {
 			     :
 			     <>
 				 {showAlert ?
-				  
+
 				  <Alert variant="warning" dismissible onClose={()=>setShowAlert(false)}>
 				      <Alert.Heading>No Case Report</Alert.Heading>
 				      This case was created manually and does not have a report associated with it.  Do you want to add one? You will have the option to add one later.
@@ -261,7 +262,7 @@ const CaseDetailApp = (props) => {
 					  <Dropdown.Item eventKey="addreport" onClick={()=>(setAddReport(true), setActiveTab("report"))}>Add Report</Dropdown.Item>
 				      </DropdownButton>
 				  </div>
-				  
+
 				 }
 			     </>
 			    }
@@ -321,9 +322,9 @@ const CaseDetailApp = (props) => {
 	 />
 
 	 :
-	 <div className="text-center">                                                              
-             <div className="lds-spinner"><div></div><div></div><div></div></div>                   
-         </div>    
+	 <div className="text-center">
+             <div className="lds-spinner"><div></div><div></div><div></div></div>
+         </div>
 	}
 	</>
     )

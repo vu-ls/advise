@@ -106,6 +106,11 @@ export default class CaseThreadAPI{
         return axios.get(url);
     }
 
+    getOriginalReport(c) {
+        const url = `${API_URL}/case/${c}/report/original/`;
+        return axios.get(url);
+    }
+    
     addCaseReport(c, data) {
 	console.log(c);
 	console.log(data);

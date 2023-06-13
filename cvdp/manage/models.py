@@ -118,6 +118,7 @@ class AbstractReportingForm(models.Model):
 
         return GenReportingForm(*args, extra=fields, **kwargs)
 
+    
     def get_pretty_answers(self, data):
         answers = []
         fields = self.fields.all().order_by('order')
@@ -130,11 +131,62 @@ class AbstractReportingForm(models.Model):
                 selected = []
                 for y in v:
                     selected.append(choices.get(int(y)))
-                answers.append({'question': fields[i].question, 'answer':selected})
+                answers.append({'question': fields[i].question, 'answer':selected, 'priv':fields[i].private})
             else:
-                answers.append({'question': fields[i].question, 'answer':v})
+                answers.append({'question': fields[i].question, 'answer':v, 'priv': fields[i].private})
         return answers
 
+    def get_current_form_and_initial(self, data, *args, **kwargs):
+        fields = []
+        for q in self.fields.all().order_by('order'):
+            x = [elem for elem in data if elem['question'] == q.question]
+            klass = q._get_formfield_class()
+            label = q.question
+            widget = FIELD_WIDGETS.get(q.question_type)
+            field_args = q._get_field_args()
+            if x:
+                if field_args.get('choices'):
+                    ans = []
+                    choices = list(field_args['choices'])
+                    for t, v in choices:
+                        if v in x[0]['answer']:
+                            ans.append(t)
+                    #restart generator
+                    field_args = q._get_field_args()
+                    field_args['initial'] = ans
+                else:
+                    field_args['initial'] = x[0]['answer']
+            fields.append((label, klass, widget, field_args))
+
+        return GenReportingForm(*args, extra=fields, **kwargs)
+
+
+    def get_form_and_initial(self, data, *args, **kwargs):
+        fields = []
+        initial = {}
+        for q in self.fields.all().order_by('order'):
+            x = [elem for elem in data if elem['question'] == q.question]
+            if x:
+                klass = q._get_formfield_class()
+                label = q.question
+                widget = FIELD_WIDGETS.get(q.question_type)
+                field_args = q._get_field_args()
+                if field_args.get('choices'):
+                    ans = []
+                    choices = list(field_args['choices'])
+                    for t, v in choices:
+                        if v in x[0]['answer']:
+                            ans.append(t)
+                    #restart generator
+                    field_args = q._get_field_args()
+                    field_args['initial'] = ans
+
+                else:
+                    field_args['initial'] = x[0]['answer']
+                fields.append((label, klass, widget, field_args))
+
+        return GenReportingForm(*args, extra=fields, **kwargs)
+    
     def num_questions(self):
         return self.fields.count()
 

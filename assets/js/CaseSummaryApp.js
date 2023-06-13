@@ -84,6 +84,7 @@ const CaseSummaryApp = (props) => {
 			<Tab.Pane eventKey="report">
 			     <ViewReport
 				 report={caseInfo.report}
+				 owner={false}
 			     />
 			</Tab.Pane>
 			}
