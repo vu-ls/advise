@@ -55,7 +55,16 @@ class GroupDetailView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailVie
     template_name = "cvdp/group.html"
 
     def test_func(self):
+        if not self.request.user.is_coordinator:
+            if self.request.user.groups.filter(id=self.kwargs['pk']).exists():
+                return True
         return self.request.user.is_coordinator
+
+    def dispatch(self, request, *args, **kwargs):
+        if not self.request.user.is_coordinator:
+            if self.request.user.groups.filter(id=self.kwargs['pk']).exists():
+                return redirect("cvdp:groupadmin")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(GroupDetailView, self).get_context_data(**kwargs)
@@ -621,12 +630,16 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
                 contact.save()
                 group.user_set.add(user)
                 action = create_contact_action(f"added user {contact.email} to group {group.name}", self.request.user, contact)
+                action.group = group
+                action.save()
                 if group_admin:
                     send_template_email("group_admin_added", [contact.email], ctx)
 
 
             else:
                 action = create_contact_action(f"added email {contact.email} to group {group.name}", self.request.user, contact)
+                action.group = group
+                action.save()
                 if group_admin:
                     send_template_email("group_admin_invite", [contact.email], ctx)
             ca = ContactAssociation.objects.update_or_create(contact=contact, group=group)
@@ -650,14 +663,24 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
         #ONCE VERIFIED, we should check if the user exists and add them to the group
         serializer = self.serializer_class(instance=instance, data=data, partial=True)
         if serializer.is_valid():
-            action = create_contact_action(f"modified contact association details for contact {instance.contact.email} in group {instance.group.name}", request.user, instance.contact)
-            action.group=instance.group
-            action.save()
+
             for field, val in data.items():
                 if (val != getattr(instance, field, None)):
-                    create_contact_change(action, field, getattr(instance, field), val)
                     if (field == "verified"):
                         _verify_contact(instance)
+                        action = create_contact_action(f"verified contact {instance.contact.email} for group {instance.group.name}", request.user, instance.contact)
+                        action.group=instance.group
+                        action.save()
+                    elif (field == "group_admin"):
+                        if val:
+                            action = create_contact_action(f"made user {instance.contact.user.screen_name} group admin", request.user, instance.contact)
+                            action.group=instance.group
+                            action.save()
+                        else:
+                            action = create_contact_action(f"removed {instance.contact.user.screen_name}'s group admin status", request.user, instance.contact)
+                            action.group=instance.group
+                            action.save()
+
             serializer.save()
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:

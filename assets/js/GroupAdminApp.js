@@ -163,10 +163,11 @@ const GroupAdminApp = (props) => {
     const generateNewColor = async () => {
 	var randomColor = Math.floor(Math.random()*16777215).toString(16);
 	let data = {'logocolor': '#'+randomColor};
-	await contactapi.updateMyGroup(selectedGroup.id, data).then(response => {
+	contactapi.updateMyGroup(selectedGroup.id, data).then(response => {
 	    /* todo - just modify group in place */
 
 	    fetchInitialData();
+	    fetchActivity();
 	}). catch(err => {
 	    setApiError(`Error generating new color: ${err.message}`);
 	});
@@ -174,9 +175,10 @@ const GroupAdminApp = (props) => {
 
     const verifyUser = async (contact) => {
 	let data = {'verified': true};
-	await contactapi.updateGroupContact(contact.row.original.id, data).then(response=> {
+	contactapi.updateGroupContact(contact.row.original.id, data).then(response=> {
             setUnverifiedUpdate(true);
 	    setUpdate(true);
+	    fetchActivity();
         }).catch(err => {
             setApiError(`Error verifying user: ${err.response.data.detail}`);
         });
@@ -199,8 +201,9 @@ const GroupAdminApp = (props) => {
 	} else {
 	    data = {'group_admin': true}
 	}
-	await contactapi.updateGroupContact(contact.row.original.id, data).then(response=> {
+	contactapi.updateGroupContact(contact.row.original.id, data).then(response=> {
 	    setUpdate(true);
+	    fetchActivity();
 	}).catch(err => {
 	    setApiError(`Error changing user permissions: ${err.response.data.detail}`);
 	});
@@ -208,10 +211,11 @@ const GroupAdminApp = (props) => {
 
     const resetImage = async () => {
         let data = {'logo': 'reset'};
-        await contactapi.updateMyGroup(selectedGroup.id, data).then(response => {
+        contactapi.updateMyGroup(selectedGroup.id, data).then(response => {
             /* todo - just modify group in place */
 
             fetchInitialData();
+	    fetchActivity();
         }). catch(err => {
             setApiError(`Error removing logo: ${err.message}`);
         });
@@ -220,9 +224,10 @@ const GroupAdminApp = (props) => {
     const addLogo = async(e) => {
 	let formData = new FormData();
 	formData.append('logo', e.target.files[0]);
-        await contactapi.updateMyGroup(selectedGroup.id, formData).then(response => {
+        contactapi.updateMyGroup(selectedGroup.id, formData).then(response => {
             /* todo - just modify group in place */
             fetchInitialData();
+	    fetchActivity();
         }). catch(err => {
             setApiError(`Error adding logo: ${err.message}`);
         });
@@ -318,6 +323,7 @@ const GroupAdminApp = (props) => {
 	await contactapi.createAPIKey(selectedGroup.id).then((response) => {
 	    setApiKey(response.data.key)
 	    fetchAPIKeys();
+	    fetchActivity();
 	})
 	    .catch(err=> {
 		setApiError(`Error creating API key: ${err.message}`);

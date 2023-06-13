@@ -759,7 +759,7 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
         case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         self.check_object_permissions(request, case)
         names = self.request.POST.getlist('names[]', [])
-        role = self.request.POST.get('role', 'vendor')
+        role = self.request.POST.get('role', 'supplier')
         role = role.lower()
         if not(any(role in i for i in CaseParticipant.CASE_ROLES)):
             return Response({'error': 'Invalid Role'},

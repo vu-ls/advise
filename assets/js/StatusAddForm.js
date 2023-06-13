@@ -337,7 +337,7 @@ const StatusAddForm = (props) => {
         setVuls(props.vuls)
 	getSelectedComponents();
 	setReqUser(props.user);
-	if (['owner', 'vendor'].includes(props.user.role)) {
+	if (['owner', 'supplier'].includes(props.user.role)) {
 	    setAllowAddStatus(true);
 	}
     }, [props])

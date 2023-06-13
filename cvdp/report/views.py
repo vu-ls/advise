@@ -17,7 +17,7 @@ from cvdp.manage.forms import *
 from rest_framework import exceptions, generics, status, authentication, viewsets, mixins, filters
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from cvdp.permissions import CoordinatorPermission, PendingUserPermission, is_case_owner
+from cvdp.permissions import CoordinatorPermission, PendingUserPermission, is_case_owner, is_case_owner_or_staff
 from cvdp.manage.serializers import *
 from cvdp.cases.serializers import ReportSerializer, CoordReportSerializer
 from cvdp.manage.models import ReportingForm

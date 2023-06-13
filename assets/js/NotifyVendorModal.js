@@ -99,7 +99,7 @@ const NotifyVendorModal = (props) => {
 		     </Form.Group>
 		 </>
 		 :
-		 <Alert variant="warning">Oops! You forgot to select a vendor.</Alert>
+		 <Alert variant="warning">Oops! You forgot to select a participant to notify.</Alert>
 		}
 	    </Modal.Body>
         <Modal.Footer className="border-top">

@@ -118,8 +118,8 @@ def my_case_role(user, case):
         #length is greater than 1, which means we need to return most permissive
         if 'owner' in cp:
             return 'owner'
-        elif 'vendor' in cp:
-            return 'vendor'
+        elif 'supplier' in cp:
+            return 'supplier'
         elif 'participant' in cp:
             return 'participant'
         elif 'reporter' in cp:

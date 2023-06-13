@@ -12,7 +12,7 @@ const ParticipantModal = (props) => {
     const [selected, setSelected] = useState([]);
     const [btnDisabled, setBtnDisabled] = useState("disabled");
     const [error, setError] = useState(null);
-    const [role, setRole] = useState("vendor");
+    const [role, setRole] = useState("supplier");
     const [selectRole, setSelectRole] = useState(false);
     const [caseInfo, setCaseInfo] = useState(null);
     
@@ -65,7 +65,7 @@ const ParticipantModal = (props) => {
 	/* get initial suggestions */
 	handleSearch();
 	if (props.allowSelectRole) {
-	    setRole("vendor");
+	    setRole("supplier");
 	} else {
 	    /* leave this blank and the app will use the case role to decide thread permissions*/
 	    setRole("");
@@ -121,8 +121,8 @@ const ParticipantModal = (props) => {
 			<FloatingLabel controlId="floatingSelect" label="Select Participant Role">
 
 			    <Form.Select value={role} aria-label="Select Participant Role" onChange={(e)=>changeRole(e)}>
-				<option value="Vendor">
-				    Vendor
+				<option value="Supplier">
+				    Supplier
 				</option>
 				<option value="Owner">Owner</option>
 				<option value="Participant">Participant</option>

@@ -544,7 +544,7 @@ class CaseParticipant(models.Model):
 
     CASE_ROLES = (('owner', 'owner'),
                   ('reporter', 'reporter'),
-                  ('vendor', 'vendor'),
+                  ('supplier', 'supplier'),
                   ('participant', 'participant'),
                   ('observer', 'observer'))
 
@@ -583,7 +583,7 @@ class CaseParticipant(models.Model):
     role = models.CharField(
         max_length=30,
         choices = CASE_ROLES,
-        default = 'vendor')
+        default = 'supplier')
 
     def __str__(self):
         if self.group:

@@ -306,9 +306,9 @@ class CaseParticipantSerializer(serializers.ModelSerializer):
         if obj.contact:
             if obj.contact.user:
                 if obj.contact.user.is_coordinator:
-                    return ["owner", "vendor", "reporter", "observer", "participant"]
+                    return ["owner", "supplier", "reporter", "observer", "participant"]
 
-        return ["vendor", "reporter", "observer", "participant"]
+        return ["supplier", "reporter", "observer", "participant"]
 
     def get_uuid(self, obj):
         if obj.group:

@@ -331,7 +331,7 @@ class PostTests(APITestCase):
         self.api_client.force_authenticate(user=self.coord_user)
         contact = Contact.objects.get(user=self.coord_user)
         CaseParticipant.objects.create(case=self.case, contact=contact, role="owner")
-        cp = CaseParticipant.objects.filter(case=self.case, role="vendor").first()
+        cp = CaseParticipant.objects.filter(case=self.case, role="supplier").first()
         cp.notified = timezone.now()
         cp.save()
 
@@ -373,7 +373,7 @@ class CaseParticipantTest(APITestCase):
         self.api_client.force_authenticate(user=self.coord_user)
         contact = Contact.objects.get(user=self.coord_user)
         CaseParticipant.objects.create(case=self.case, contact=contact, role="owner", user=self.coord_user)
-        cp = CaseParticipant.objects.create(case=self.case, group=self.group, role="vendor", user=self.coord_user)
+        cp = CaseParticipant.objects.create(case=self.case, group=self.group, role="supplier", user=self.coord_user)
 
         response = self.api_client.get(
             reverse('cvdp:case_participant_api_list', args=['111111']))
@@ -387,7 +387,7 @@ class CaseParticipantTest(APITestCase):
         self.api_client.force_authenticate(user=self.reporter_user)
         contact = Contact.objects.get(user=self.coord_user)
         CaseParticipant.objects.create(case=self.case, contact=contact, role="owner", user=self.coord_user)
-        cp = CaseParticipant.objects.create(case=self.case, group=self.group,role="vendor", user=self.coord_user)
+        cp = CaseParticipant.objects.create(case=self.case, group=self.group,role="supplier", user=self.coord_user)
 
         response = self.api_client.get(
             reverse('cvdp:case_participant_api_list', args=['111111']))
@@ -398,7 +398,7 @@ class CaseParticipantTest(APITestCase):
         self.api_client.force_authenticate(user=self.vendor_user)
         contact = Contact.objects.get(user=self.coord_user)
         CaseParticipant.objects.create(case=self.case, contact=contact, role="owner", user=self.coord_user)
-        cp = CaseParticipant.objects.create(case=self.case, group=self.group,role="vendor", user=self.coord_user)
+        cp = CaseParticipant.objects.create(case=self.case, group=self.group,role="supplier", user=self.coord_user)
         response = self.api_client.get(
             reverse('cvdp:case_participant_api_list', args=['111111']))
 
@@ -425,7 +425,7 @@ class CaseParticipantTest(APITestCase):
         CaseParticipant.objects.create(case=self.case, contact=contact, role="owner")
         response = self.api_client.post(
             reverse('cvdp:case_participant_api_list', args=['111111']),
-            data=json.dumps({'names':[str(self.group.groupprofile.uuid)], 'role': 'vendor'}),
+            data=json.dumps({'names':[str(self.group.groupprofile.uuid)], 'role': 'supplier'}),
             content_type='application/json'
         )
 
@@ -435,7 +435,7 @@ class CaseParticipantTest(APITestCase):
         self.api_client.force_authenticate(user=self.coord_user)
         contact = Contact.objects.get(user=self.coord_user)
         CaseParticipant.objects.create(case=self.case, contact=contact, role="owner")
-        cp = CaseParticipant.objects.create(case=self.case, group=self.group, role="vendor", user=self.coord_user)
+        cp = CaseParticipant.objects.create(case=self.case, group=self.group, role="supplier", user=self.coord_user)
 
         response = self.api_client.patch(
             reverse('cvdp:case_participant_api', args=[cp.id]),
@@ -449,7 +449,7 @@ class CaseParticipantTest(APITestCase):
         self.api_client.force_authenticate(user=self.coord_user)
         contact = Contact.objects.get(user=self.coord_user)
         CaseParticipant.objects.create(case=self.case, contact=contact, role="owner")
-        cp = CaseParticipant.objects.create(case=self.case, group=self.group, role="vendor", user=self.coord_user)
+        cp = CaseParticipant.objects.create(case=self.case, group=self.group, role="supplier", user=self.coord_user)
 
         response = self.api_client.patch(
             reverse('cvdp:case_participant_api', args=[cp.id]),
@@ -465,7 +465,7 @@ class CaseParticipantTest(APITestCase):
         self.api_client.force_authenticate(user=self.vendor_user)
         contact = Contact.objects.get(user=self.coord_user)
         CaseParticipant.objects.create(case=self.case, contact=contact, role="owner")
-        cp = CaseParticipant.objects.create(case=self.case, group=self.group,role="vendor", user=self.coord_user)
+        cp = CaseParticipant.objects.create(case=self.case, group=self.group,role="supplier", user=self.coord_user)
 
         response = self.api_client.patch(
             reverse('cvdp:case_participant_api', args=[cp.id]),
@@ -479,7 +479,7 @@ class CaseParticipantTest(APITestCase):
         self.api_client.force_authenticate(user=self.coord_user)
         response = self.api_client.post(
             reverse('cvdp:case_participant_api_list', args=['111111']),
-            data=json.dumps({'names':[str(self.group.groupprofile.uuid)], 'role': 'vendor'}),
+            data=json.dumps({'names':[str(self.group.groupprofile.uuid)], 'role': 'supplier'}),
             content_type='application/json'
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -488,7 +488,7 @@ class CaseParticipantTest(APITestCase):
         self.api_client.force_authenticate(user=self.vendor_user)
         response = self.api_client.post(
             reverse('cvdp:case_participant_api_list', args=['111111']),
-            data=json.dumps({'names':[str(self.group.groupprofile.uuid)], 'role': 'vendor'}),
+            data=json.dumps({'names':[str(self.group.groupprofile.uuid)], 'role': 'supplier'}),
             content_type='application/json'
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

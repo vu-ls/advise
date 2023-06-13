@@ -9,6 +9,9 @@ All notable changes to AdVISE will be documented in this file.
 - Prompt user to notify case participants when case status changes to "Active"
 - Allow case owners to update case report and view original report
 
+### Changed
+
+- Participant role from "vendor" to "supplier"
 
 ## [1.2.0] - 2023-06-06
 

@@ -75,7 +75,6 @@ class GetAllCasesTest(TestCase):
         # get data from db
         cases = Case.objects.get(case_id='123456')
         serializer = CaseCoordinatorSerializer(cases)
-        #use results due to pagination
         self.assertEqual(response.data, serializer.data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -1138,11 +1137,13 @@ class TestFormSubmissions(APITestCase):
                                     question_type=0)
         FormQuestion.objects.create(form=self.report, question='How old are you??',
                                     question_type=1)
-
+        FormQuestion.objects.create(form=self.report, question="Provide hidden response",
+                                    question_type=0, private=True)
         fe = FormEntry.objects.create(form=self.report, created_by=self.reporter_user)
 
-        self.form = {'How are you?': 'Good',
-                     'How old are you?': '10'}
+        self.form = [{"question": 'How are you?', "answer": 'Good'},
+                     {"question": 'How old are you?', "ansewr": '10'},
+                     {"question": "Provide hidden response", "answer": "this is private", "priv": True}]
         self.cr = CaseReport.objects.create(entry=fe, report=self.form)
 
 
@@ -1157,7 +1158,22 @@ class TestFormSubmissions(APITestCase):
 
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(serializer.data[0]['report']), 2)
 
+    def test_get_case_report(self):
+        self.api_client.force_authenticate(user=self.coord_user)
+
+        Case.objects.create(case_id = '123456', status=Case.ACTIVE_STATUS, title='Test Case', summary="This is a summary of test case", report=self.cr)
+
+        response = self.api_client.get(reverse('cvdp:caseapi-detail', args=['123456']))
+
+        cases = Case.objects.get(case_id='123456')
+        serializer = CaseCoordinatorSerializer(cases)
+        #use results due to pagination
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        #make sure private responses are included
+        self.assertEqual(len(serializer.data['report']['report']), 3)
+        
     def test_coord_get_form_submissions(self):
         #should be empty since it's user specific
         self.api_client.force_authenticate(user=self.coord_user)

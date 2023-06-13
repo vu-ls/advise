@@ -392,7 +392,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
         if serializer.is_valid():
 
             #get component
-            if my_role == 'vendor':
+            if my_role == 'supplier':
                 component = _my_case_components(self.request.user, case).filter(name=request.data['component']).first()
             else:
                 #this really needs to be more specific
@@ -400,7 +400,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
 
 
             if component == None:
-                if my_role == 'vendor':
+                if my_role == 'supplier':
                     my_vendors = my_case_vendors(self.request.user, case)
                     if len(my_vendors) > 1:
                         errors = {'type': 'invalid vendor', 'status': status.HTTP_400_BAD_REQUEST, 'component':'Component does not exist and user belongs to more than 1 vendor. Add component to desired vendor before continuing'}
@@ -488,7 +488,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                         change = True
                     elif (cs.current_revision.statement != data["statement"]):
                         change = True
-                    elif (cs.current_revision.justification != data["justification"]):
+                    elif (data.get('justification') and cs.current_revision.justification != data["justification"]):
                         change = True
                     elif (cs.current_revision.version_name != data["version_end_range"]):
                         change = True
@@ -496,7 +496,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                     if cs.share != share:
                         cs.share = share
                         cs.save()
-                        action = create_component_action(f"modify share status for {vul.vul}", self.request.user, component, 6)
+                        action = create_component_action(f"modify share status for {vul.vul}", self.request.user, component.component, 6)
 
                     if not change:
                         return Response({}, status=status.HTTP_202_ACCEPTED)

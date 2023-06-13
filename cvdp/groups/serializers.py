@@ -114,7 +114,7 @@ class ContactAssociationSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactAssociation
         fields = ['id', 'group', 'contact', 'verified', 'url', 'group_admin']
-        read_only_fields = ('id', )
+        read_only_fields = ('id', 'url', 'group', 'contact',)
         
     def get_url(self, obj):
         return reverse("cvdp:contact", args=[obj.contact.uuid])

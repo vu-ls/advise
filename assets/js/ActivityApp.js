@@ -36,7 +36,7 @@ const ActivityApp = (props) => {
              })}
          </div>
 	}                                                              
-            <div className="small mt-1"><i className="fas fa-clock" />	{' '}{format(created, 'yyyy-MM-dd H:mm:ss ')} ({timeago})</div>
+            <div className="small  mt-1"><i className="fas fa-clock" />	{' '}{format(created, 'yyyy-MM-dd H:mm:ss ')} ({timeago})</div>
 	</>
     )
 }

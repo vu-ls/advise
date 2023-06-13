@@ -139,9 +139,9 @@ const ParticipantTable = (caseid) => {
 	});
 	if (rmnames.length > 0) {
             setRemoveID(rmids);
-            setDeleteMessage(`Are you sure you want to remove these vendors: ${rmnames}`);
+            setDeleteMessage(`Are you sure you want to remove these participants: ${rmnames}`);
 	} else {
-	    setDeleteMessage("Plase select a vendor(s) to remove them from this case.");
+	    setDeleteMessage("Please select a participant(s) to remove them from this case.");
 	}
         setDisplayConfirmationModal(true);
     };
@@ -398,7 +398,7 @@ const ParticipantTable = (caseid) => {
 	<Card>
 	    <Card.Header>
                 {caseInfo && caseInfo.status === "Active" && summary && summary.notified < summary.count &&
-		 <Alert variant="warning">This case has {summary.count-summary.notified} vendors that have not been notified.</Alert>
+		 <Alert variant="warning">This case has {summary.count-summary.notified} participants that have not been notified.</Alert>
 		}
 		{caseInfo && caseInfo.status === "Pending" &&
 		 <Alert variant="warning">This case is currently in <b>Pending</b> state. Users can not be notified until case state has been changed to <b>Active</b>.</Alert>
