@@ -106,6 +106,7 @@ class ArtifactView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
                 #url = attachment.file.storage.url(str(attachment.file.name), parameters={'Content-Disposition': f'attachment; filename="{attachment}"'})
                 #logger.debug(f"in ArtifactView: built url {url}")
                 #response = HttpResponseRedirect(url)
+                logger.debug(attachment.file.size)
                 with attachment.file.storage.open(str(attachment.file.name)) as fh:
                     response = HttpResponse(fh.read(), content_type = mime_type)
                     response['Content-Disposition'] = f"attachment; filename=\"{attachment}\""

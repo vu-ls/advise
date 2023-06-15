@@ -15,12 +15,32 @@ const AddCVEUserModal = ({ showModal, hideModal, confirmModal, editUser }) => {
     const [emailWarning, setEmailWarning] = useState(false);
     
     useEffect(() => {
-	if (editUser) {
-	    setFirst(editUser.name.first);
-	    setLast(editUser.name.last);
-	    setEmail(editUser.username);
-	}
-    }, [editUser]);
+	console.log(showModal);
+	if (showModal) {
+	    if (editUser) {
+		setFirst(editUser.name.first);
+		setLast(editUser.name.last);
+		setEmail(editUser.username);
+		console.log(editUser);
+		console.log(editUser.authority.active_roles.length)
+		if (editUser.authority.active_roles.length > 0) {
+		    console.log("SETTING ROLE");
+		    setRole("Administrator");
+		} else {
+		    setRole("User");
+		}
+	    }
+	} else {
+	    setRole("User");
+	    setFirst("");
+	    setLast("");
+	    setEmail("");
+	    setEmailWarning(false);
+	    setInvalidEmail(false);
+	    setInvalidFirst(false);
+	    setInvalidLast(false);
+	}	    
+    }, [showModal]);
 
     useEffect(()=> {
 	if (editUser) {
@@ -49,7 +69,14 @@ const AddCVEUserModal = ({ showModal, hideModal, confirmModal, editUser }) => {
         confirmModal(email, first, last, role)
     };
 
+    const handleRoleSelect = (e) => {
+	const { value, checked } = e.target;
 
+	if (checked) {
+	    setRole(value);
+	}
+    }
+    
     return (
         <Modal show={showModal} onHide={hideModal}>
         <Modal.Header closeButton>
@@ -104,7 +131,7 @@ const AddCVEUserModal = ({ showModal, hideModal, confirmModal, editUser }) => {
 		<Form.Label>
 		    Choose role
 		</Form.Label><br/>
-		{['User', 'Administer'].map((r, index) => {
+		{['User', 'Administrator'].map((r, index) => {
 		    return (
 			    <Form.Check
 				key={`role-${r}`}
@@ -113,8 +140,9 @@ const AddCVEUserModal = ({ showModal, hideModal, confirmModal, editUser }) => {
 				name="role"
                                 id={`role-${r}`}
                                 label={r}
-				defaultChecked={role === r ? true : false}
-                                onChange={setRole}
+				value={r}
+				checked={role === r ? true : false}
+                                onChange={handleRoleSelect}
                             />
 		    )
 		})

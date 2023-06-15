@@ -158,8 +158,10 @@ REQUIRE_ACCOUNT_APPROVAL = os.environ.get("REQUIRE_ACCOUNT_APPROVAL", False)
 SOCIALACCOUNT_ADAPTER = "authapp.oauth2.adapters.AdViseSocialAccountAdapter"
 
 MIDDLEWARE = [
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -167,11 +169,11 @@ MIDDLEWARE = [
     'authapp.middleware.Require2FAMiddleware', #<--- if you want to require 2fa for local users, otherwise comment out
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+
 ]
 
 CORS_ALLOW_ALL_ORIGINS = False
-
+CORS_ALLOW_CREDENTIALS = True
 try:
     CORS_ALLOWED_ORIGINS = json.loads(os.environ.get('CORS_ALLOWED_ORIGINS'))
 except (json.JSONDecodeError, TypeError):

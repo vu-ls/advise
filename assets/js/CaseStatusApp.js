@@ -10,6 +10,7 @@ import DisplayLogo from './DisplayLogo';
 import {Typeahead} from 'react-bootstrap-typeahead';
 import AutoAssignModule from './AutoAssignModule';
 import NotifyVendorModal from "./NotifyVendorModal";
+import TransferCaseModal from "./TransferCaseModal";
 
 const threadapi = new CaseThreadAPI();
 
@@ -28,6 +29,13 @@ const CaseStatusApp = (props) => {
     const [newStatus, setNewStatus] = useState(null);
     const [displayVNModal, setDisplayVNModal] = useState(false);
     const [notifyVendorCount, setNotifyVendorCount] = useState(0);
+    const [displayTransferModal, setDisplayTransferModal] = useState(false);
+
+    const hideTransferModal = () => {
+	setDisplayTransferModal(false);
+	/*if transfer was successful, case status should have changed */
+	props.updateStatus();
+    }
     
     const hideAutoAssign = () => {
         setShowAutoAssign(false);
@@ -38,7 +46,6 @@ const CaseStatusApp = (props) => {
 	/* if we get here, that means user decided not to notify vendors
 	   at the email prompt, so we need to update status */
 	props.updateStatus();
-  
     }
     
     const hideNotifyPrompt = () => {
@@ -308,6 +315,10 @@ const CaseStatusApp = (props) => {
 
     const AssignmentDropdownButton = (props) => {
 
+	const popperConfig = {
+	    strategy: "fixed"
+	};
+	
 	let title = (
 	    <div className="d-flex align-items-center gap-2 mt-2 mb-2">
 		<DisplayLogo
@@ -337,11 +348,11 @@ const CaseStatusApp = (props) => {
 	return (
 	    <>
 		{['coordinator', 'owner'].includes(props.role) ?
-		 <Dropdown onSelect={assignUser}>
+		 <Dropdown onSelect={assignUser} className="assignment_dropdown">
 		     <Dropdown.Toggle className="p-0" variant="light">
 			 {title}
 		     </Dropdown.Toggle>
-		     <Dropdown.Menu as={CustomMenu}>
+		     <Dropdown.Menu style={{ margin:0}} as={CustomMenu} popperConfig={popperConfig} renderOnMount>
 
 		    {props.options ?
 		     props.options.map((u, index) => {
@@ -438,10 +449,11 @@ const CaseStatusApp = (props) => {
 			 :
 			 <Dropdown.Item eventKey='share' onClick={(e)=>shareAdvisory()}>Share Latest Advisory</Dropdown.Item>
 			}
+			<Dropdown.Item eventKey='transfer' onClick={(e)=>setDisplayTransferModal(true)}>Transfer Case</Dropdown.Item>
                     </DropdownButton>
 		    }
 		</Card.Header>
-		<Card.Body>
+		<Card.Body className="overflow-hidden">
 		    <Row className="mb-2">
 			<Col sm={4}>
 			    <Form.Label>Status</Form.Label>
@@ -459,6 +471,16 @@ const CaseStatusApp = (props) => {
 			    }
 			</Col>
 		    </Row>
+		    {props.user.role ==="owner" && caseInfo.resolution && 
+		     <Row className="mb-2 align-items-center">
+			 <Col sm={4}>
+			     <Form.Label>Resolution</Form.Label>
+			 </Col>
+			 <Col sm={8}>
+			     {caseInfo.resolution}
+			 </Col>
+		     </Row>
+		    }
                     <Row className="mb-2 align-items-center">
                         <Col sm={4}>
                             <Form.Label>Assigned To</Form.Label>
@@ -555,7 +577,12 @@ const CaseStatusApp = (props) => {
 			 hideModal = {hideVNModal}
 			 confirmModal = {submitNotifyVendors}
 			 count={notifyVendorCount}
-		     />  
+		     />
+		     <TransferCaseModal
+			 showModal = {displayTransferModal}
+			 hideModal = {hideTransferModal}
+			 caseInfo = {caseInfo}
+		     />
 		 </>
 		}
 	    </Card>

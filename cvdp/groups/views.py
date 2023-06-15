@@ -440,7 +440,7 @@ class GroupDetailAPIView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
@@ -463,7 +463,7 @@ class GroupDetailAPIView(viewsets.ModelViewSet):
             action = create_group_action(f"added new group {group.group.name}", request.user, group.group)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         logger.debug(serializer.errors)
-        return Response(serializer.error_messages,
+        return Response(serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)
 
 class ContactAPIView(viewsets.ModelViewSet):
@@ -509,7 +509,7 @@ class ContactAPIView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
 class GetContactAPIView(generics.RetrieveAPIView):
@@ -646,7 +646,7 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(seralizer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -685,7 +685,7 @@ class ContactAssociationAPIView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
 

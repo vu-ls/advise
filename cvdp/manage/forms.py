@@ -41,4 +41,4 @@ class CVEAccountForm(forms.ModelForm):
 
     class Meta:
         model = CVEServicesAccount
-        fields = ('org_name', 'api_key', 'email', 'server_type', 'group', 'active')
+        fields = ('org_name', 'api_key', 'email', 'server_type', 'active')

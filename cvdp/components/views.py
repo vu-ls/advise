@@ -123,7 +123,7 @@ class ComponentAPIView(viewsets.ModelViewSet):
             create_component_action("created component", self.request.user, component, 1)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
@@ -161,7 +161,7 @@ class ComponentAPIView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -254,7 +254,7 @@ class GroupComponentsAPIView(viewsets.ModelViewSet):
             p.save()
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
@@ -436,7 +436,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             return Response({}, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -514,7 +514,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             return Response({}, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
 

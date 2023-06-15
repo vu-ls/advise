@@ -4,9 +4,8 @@ from rest_framework import serializers
 from django.contrib.auth.models import Group
 from django.urls import reverse
 from authapp.models import User
-from cvdp.serializers import ChoiceField
-
-
+from cvdp.serializers import ChoiceField, UserSerializer
+from cvdp.groups.serializers import GroupSerializer
 
 class QuestionSerializer(serializers.ModelSerializer):
 
@@ -75,4 +74,23 @@ class CVEAccountSerializer(serializers.ModelSerializer):
         else:
             return "https://cveawg-test.mitre.org/api/"
     
+        
+class ConnectionSerializer(serializers.ModelSerializer):
+
+    incoming_api_key = serializers.SerializerMethodField()
+    created_by = UserSerializer()
+    group = GroupSerializer()
+    
+    class Meta:
+        model = AdVISEConnection
+        fields = ("id", "group", "url", "external_key", "incoming_api_key", "created", "created_by", "last_used", "disabled")
+        read_only_fields = ("id", "created", "created_by", "last_used")
+
+        
+    def get_incoming_api_key(self, obj):
+        if obj.incoming_key:
+            return obj.incoming_key.last_four
+        else:
+            return ""
+
         

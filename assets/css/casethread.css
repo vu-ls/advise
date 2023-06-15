@@ -6,6 +6,13 @@
     height: 1000px;
 }
 
+.assignment_dropdown > button > div > span {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow:hidden;
+
+}
+
 .dashboard-activity-scroll {
     /*max-height: 900px;*/
 }

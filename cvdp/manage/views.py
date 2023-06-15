@@ -169,7 +169,7 @@ class QuestionAPIView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
         
                 
@@ -227,6 +227,19 @@ class UserAdminView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateVie
         context = super(UserAdminView, self).get_context_data(**kwargs)
         context['useradminpage'] = 1
         return context
+
+class SystemAdminView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+    template_name = 'cvdp/sys_admin.html'
+    login_url="authapp:login"
+
+    def test_func(self):
+        return self.request.user.is_coordinator
+
+    def get_context_data(self, **kwargs):
+        context = super(SystemAdminView, self).get_context_data(**kwargs)
+        context['sysadminpage'] = 1
+        return context
+
     
 class PendingUsersAPI(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
@@ -284,8 +297,8 @@ class AutoAssignmentAPIView(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
-            logger.debug(serializer.error_messages)
-            return Response(serializer.error_messages,
+            logger.debug(serializer.errors)
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, **kwargs):
@@ -335,9 +348,7 @@ class CVEServicesAccountManagement(LoginRequiredMixin, UserPassesTestMixin, Form
         else:
             context['title'] = 'Add new account'
             initial = {}
-            groups = self.request.user.groups.all()
             form = CVEAccountForm()
-            form.fields['group'].choices = [(g.id, g.name) for g in groups]
             context['form'] = form
             context['action'] = reverse("cvdp:add_cve_account")
         return context
@@ -379,3 +390,74 @@ class EmailTemplateAPI(viewsets.ModelViewSet):
         
         return EmailTemplate.objects.all()
     
+
+class ConnectionAPI(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, StaffPermission)
+    serializer_class = ConnectionSerializer
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return AdVISEConnection.objects.none()
+        if self.request.GET.get('all'):
+            return AdVISEConnection.objects.all().order_by('disabled')
+        else:
+            return AdVISEConnection.objects.filter(disabled=False)
+
+    def get_object(self):
+        return get_object_or_404(AdVISEConnection, id=self.kwargs['pk'])
+        
+    def create(self, request, *args, **kwargs):
+        logger.debug(request.data)
+
+        g = get_object_or_404(Group, groupprofile__uuid=request.data['group'])
+        
+        connection = AdVISEConnection(
+            group = g,
+            url = request.data['url'],
+            external_key= request.data['external_key'],
+            created_by = self.request.user)
+        
+        if request.data.get('incoming_api_key'):
+            #lookup
+            tokens = APIToken.objects.filter(last_four = request.data['incoming_api_key'])
+            token = tokens.filter(user__groups__id=g.id)
+            if len(token) != 1:
+                return Response({'detail': f'API Token lookup returned {len(token)} results.'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                token = token[0]
+                connection.incoming_key = token;
+        connection.save()
+        return Response({}, status=status.HTTP_202_ACCEPTED)
+    
+    def update(self, request, *args, **kwargs):
+        logger.debug(request.data)
+        connection = self.get_object()
+
+        if request.data.get('disabled'):
+            connection.disabled=False
+            connection.save()
+            return Response({}, status=status.HTTP_202_ACCEPTED)
+        
+        g = get_object_or_404(Group, groupprofile__uuid=request.data['group'])
+        connection.group = g
+        connection.url = request.data['url']
+        connection.external_key= request.data['external_key']
+
+        if request.data.get('incoming_api_key'):
+            #lookup 
+            tokens = APIToken.objects.filter(last_four = request.data['incoming_api_key'])
+            token = tokens.filter(user__groups__id=g.id)
+            if len(token) != 1:
+                return Response({'detail': f'API Token lookup returned {len(token)} results.'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                token = token[0]
+                connection.incoming_key = token;
+        connection.save()
+        return Response({}, status=status.HTTP_202_ACCEPTED)
+
+    
+    def destroy(self, request, *args, **kwargs):
+        connection = get_object_or_404(AdVISEConnection, id=self.kwargs['pk'])
+        connection.disabled = True
+        connection.save()
+        return Response({}, status=status.HTTP_202_ACCEPTED)

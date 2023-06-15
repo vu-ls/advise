@@ -220,7 +220,7 @@ class CaseWriteTest(TestCase):
         }
 
     def test_create_valid_case(self):
-        #Trick Question! You can't actually create a case from the API
+        #Trick Question! The only way to create a case from the API is through a transfer
         client = APIClient()
         client.force_authenticate(user=self.coord_user)
         response = client.post(

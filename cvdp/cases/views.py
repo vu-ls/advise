@@ -1,6 +1,7 @@
 from django.shortcuts import render
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.encoding import smart_str
 from django.contrib import messages
 from django.urls import reverse, reverse_lazy
 from django.views import generic, View
@@ -343,7 +344,7 @@ class AdvisoryAPIView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -480,7 +481,7 @@ class CaseAPIView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
@@ -560,7 +561,7 @@ class PostAPIView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
@@ -576,8 +577,13 @@ class PostAPIView(viewsets.ModelViewSet):
         groups = my_case_vendors(self.request.user, thread.case)
         post = Post(thread = thread,
                     author = contact)
+        author_text = f"{self.request.user.screen_name}"
         if groups:
             post.group = groups[0]
+            author_text = f"{author_text} from {groups[0].name}"
+        #add some info about author in case user/group is ever removed - we can still
+        # create a transcript of what happened/ who said what
+        post.author_text = author_text
         post.save()
         post.add_revision(PostRevision(content=request.data['content']), save=True)
         if request.data.get('reply'):
@@ -645,7 +651,10 @@ class CaseThreadAPIView(viewsets.ModelViewSet):
             #todo only allow threads user has access to
             logger.debug("IN CASETHREADAPIVIEW")
             my_threads = _my_case_threads(self.request.user, case)
-            return my_threads.filter(case=case, archived=False)
+            if self.request.GET.get('official'):
+                return my_threads.filter(case=case, archived=False, official=True)
+            else:
+                return my_threads.filter(case=case, archived=False)
 
     def destroy(self, request, *args, **kwargs):
         thread = get_object_or_404(CaseThread, id=self.kwargs['pk'])
@@ -1058,7 +1067,7 @@ class VulAPIView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
 	                    status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
@@ -1142,8 +1151,9 @@ class CaseArtifactAPIView(viewsets.ModelViewSet):
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
     def get_object(self):
-        logger.debug("IN CASE ARTIFACT!!!")
         ca = get_object_or_404(CaseArtifact, file__uuid=self.kwargs['uuid'])
+        logger.debug(f"IN CASE ARTIFACT!!! {ca.file.file.size}")
+                
         self.check_object_permissions(self.request, ca.case)
         return ca
 
@@ -1164,28 +1174,29 @@ class CaseArtifactAPIView(viewsets.ModelViewSet):
         logger.debug(request.FILES)
         case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         self.check_object_permissions(request, case)
-        action = Action(title=f"User {self.request.user.screen_name} uploaded document",
-                        user=self.request.user)
-
-        action.save()
 
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             logger.debug("SERIALIZER WOOOOOOT");
             artifact = add_artifact(request.data['file'])
-
-            ca = CaseArtifact(action=action,
+            action = create_case_action(f"uploaded document", self.request.user, case)
+            b_action = Action.objects.get(id=action.action_ptr_id)
+            ca = CaseArtifact(action=b_action,
                          file=artifact,
                          case=case)
             #by default any file shared by a non-coordinator is shared with the group
             if not(self.request.user.is_coordinator):
                 ca.shared=True
+                #also share activity
+                action.action_type=1
+                action.save()
+
             ca.save()
 
             serializer = ArtifactSerializer(ca, context={'user': request.user})
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
-            return Response(serializer.error_messages,
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
@@ -1209,6 +1220,194 @@ class CaseArtifactAPIView(viewsets.ModelViewSet):
         raise PermissionDenied()
 
 
+class ArtifactTransferAPIView(viewsets.ModelViewSet):
+    serializer_class = ArtifactSerializer
+    permission_classes = (IsAuthenticated, CaseTransferAccessPermission)
+
+    def create(self, request, *args, **kwargs):
+        logger.debug(f"{self.__class__.__name__} post: {self.request.data}")
+        logger.debug("IN ARTIFACT Transfer VIEW")
+        logger.debug(request.FILES)
+        case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
+
+        #get connection
+        connection = AdVISEConnection.objects.filter(incoming_key=request.user.auth_token).first()
+
+        if not request.FILES:
+            return Response({'detail': 'No files present'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            logger.debug(request.data['file'])
+            fname = smart_str(request.data['file'].name)
+            logger.debug(f"size {request.data['file'].size}")
+            logger.debug(fname)
+            if CaseArtifact.objects.filter(file__filename=fname, case=case).exists():
+                return Response({'detail': f'File {fname} already transferred'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            if connection:
+                action = create_case_action(f"transferred document: {fname} from {connection.group.name}",
+                                            self.request.user, case)
+
+            else:
+                #TODO: REMOVE THIS
+                action = create_case_action(f"Group transferred document {fname}",
+                                            self.request.user, case)
+
+                """action = Action(title=f"Group transferred document: {fname}",
+                                user=self.request.user)
+                
+                action.save()"""
+
+            file = request.data['file']
+            artifact = add_artifact(file)
+
+            b_action = Action.objects.get(id=action.action_ptr_id)
+            
+            ca = CaseArtifact(action=b_action,
+                              file=artifact,
+                              case=case)
+            ca.save()
+            logger.debug("ADDED ARTIFACT")
+            
+            return Response({}, status=status.HTTP_202_ACCEPTED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ThreadTransferAPIView(viewsets.ModelViewSet):
+    serializer_class = PostTransferSerializer
+    permission_classes = (IsAuthenticated, CaseTransferAccessPermission)
+
+    def create(self, request, *args, **kwargs):
+        logger.debug("IN THREAD TRANSFER VIEW")
+        logger.debug(request.data)
+
+        case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
+        if not(request.data.get('posts')):
+            return Response({'detail': 'posts are required'}, status=status.HTTP_400_BAD_REQUEST)
+        #confirm thread hasn't already been transferred
+        prev = CaseThread.objects.filter(case=case, subject="Transferred Case Thread").first()
+        if prev:
+            return Response({'detail': 'Thread has already been transferred'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            serializer = self.serializer_class(data=request.data['posts'], many=True)
+            if serializer.is_valid():
+                #create the case thread
+                ct = CaseThread(case=case,
+                                created_by=self.request.user,
+                                subject="Transferred Case Thread",
+                                archived=True)
+                ct.save()
+                for p in request.data['posts']:
+                    post = Post(thread=ct,
+                                author_text=p['author'],
+                                created=p['created'])
+                    post.save()
+                    post.add_revision(PostRevision(content=p['content']), save=True)
+                    if p.get('replies'):
+                        for r in p['replies']:
+                            s = self.serializer_class(data=r)
+                            if s.is_valid():
+                                pr = Post(thread=ct,
+                                          author_text=r['author'],
+                                          created=r['created'])
+                                pr.save()
+                                pr.add_revision(PostRevision(content=r['content']), save=True)
+                                pt, created = PostThread.objects.update_or_create(parent=post)
+                                pr = PostReply(reply=pt, post=pr)
+                                pr.save()
+                            else:
+                                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+                create_case_action(f"transferred case thread with {len(request.data['posts'])} posts", request.user, case)
+                return Response({}, status=status.HTTP_202_ACCEPTED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            logger.debug(traceback.format_exc())
+            return Response({'detail': 'An error occurred during transfer.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+                        
+        
+class VulTransferAPIView(viewsets.ModelViewSet):
+    serializer_class = VulSerializer
+    permission_classes = (IsAuthenticated, CaseTransferAccessPermission)
+
+    def create(self, request, *args, **kwargs):
+        logger.debug("IN VUL TRANSFER VIEW")
+        logger.debug(request.data)
+        case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
+        try:
+            #make sure description exists, before saving anything
+            for vul in request.data:
+                if not vul.get('description'):
+                    return Response({'description': 'This field is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            for vul in request.data:
+                cve = None
+                if vul.get('cve'):
+                    if vul['cve'].lower().startswith('cve-'):
+                        cve = vul['cve'][4:]
+                    else:
+                        cve = vul['cve']
+                vul = Vulnerability(case=case,
+                                    cve=cve,
+                                    user=self.request.user,
+                                    description=vul.get('description'))
+                vul.save()
+                action = create_case_action("transferred new vulnerability", request.user, case, True)
+                action.vulnerability = vul
+                action.save()
+                serializer = self.serializer_class(vul)
+
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+        except:
+            logger.debug(traceback.format_exc())
+            return Response({'detail': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class AdvisoryTransferAPIView(viewsets.ModelViewSet):
+    serializer_class = AdvisorySerializer
+    permission_clases = (IsAuthenticated, CaseTransferAccessPermission)
+
+    def create(self, request, *args, **kwargs):
+        logger.debug("IN ADVISORY TRANSFER VIEW")
+        logger.debug(request.data)
+        case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                advisory, created = CaseAdvisory.objects.update_or_create(case=case)
+
+                advisory.add_revision(AdvisoryRevision(user=self.request.user,
+                                                       title=request.data['title'],
+                                                       content=request.data['content'],
+                                                       references=request.data.get('references'),
+                                                       user_message=request.data.get('user_message', '')),
+                                  save=True)
+
+                if created:
+                    action = Action(title="transferred initial Advisory draft",
+                                    user=self.request.user)
+                else:
+                    action = Action(title="transferred new version of Advisory",
+                                    user=self.request.user)
+                    
+                action.save()
+                serializer = self.serializer_class(instance=advisory.current_revision)
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            else:
+                logger.debug(serializer.errors)
+                return Response(serializer.errors,
+                                status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response({'detail': 'error occurred during transfer'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
 class ScoreVulCVSSView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     form_class = CVSSForm
     login_url = "authapp:login"
@@ -1263,7 +1462,7 @@ class CVSSVulView(viewsets.ModelViewSet):
 
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         logger.debug(serializer.errors)
-        return Response(serializer.error_messages,
+        return Response(serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
@@ -1300,7 +1499,7 @@ class CVSSVulView(viewsets.ModelViewSet):
                 create_case_change(action, "vector", oldvector, x.vector)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         logger.debug(serializer.errors)
-        return Response(serializer.error_messages,
+        return Response(serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)
 
 class SSVCVulView(viewsets.ModelViewSet):
@@ -1337,7 +1536,7 @@ class SSVCVulView(viewsets.ModelViewSet):
             action.save()
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         logger.debug(serializer.errors)
-        return Response(serializer.error_messages,
+        return Response(serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
@@ -1375,7 +1574,7 @@ class SSVCVulView(viewsets.ModelViewSet):
             x.save()
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         logger.debug(serializer.errors)
-        return Response(serializer.error_messages,
+        return Response(serializer.errors,
 			status=status.HTTP_400_BAD_REQUEST)
 
 class NotifyVendorsView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
@@ -1393,8 +1592,8 @@ class NotifyVendorsView(LoginRequiredMixin, UserPassesTestMixin, generic.Templat
         case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
         participants = self.request.POST.getlist('participants[]', None)
 
-        subject = self.request.POST.get('subject', None);
-        content = self.request.POST.get('content', None);
+        subject = self.request.POST.get('subject', None)
+        content = self.request.POST.get('content', None)
 
         if not participants and "all" in request.path:
             #get all participants that haven't been notified
@@ -1411,8 +1610,7 @@ class NotifyVendorsView(LoginRequiredMixin, UserPassesTestMixin, generic.Templat
 
         action = create_case_action(f"notified participants: {', '.join(part_list)}", self.request.user, case)
 
-        return JsonResponse({'message': 'success'}, status=200);
-
+        return JsonResponse({'message': 'success'}, status=200)
 
 class CaseActivityAPIView(APIView):
     serializer_class = CaseActionSerializer
@@ -1539,5 +1737,55 @@ class ContactActivityAPIView(viewsets.ModelViewSet):
         
         cp = CaseParticipant.objects.filter(contact=contact)
         return CaseAction.objects.filter(participant__in=cp).order_by('-created')
+
+    
+class CaseTransferAPIView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, CoordinatorPermission)
+    serializer_class = CaseTransferSerializer
+    pagination_class = StandardResultsPagination
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return CaseTransfer.objects.none()
+        if self.kwargs.get('caseid'):
+            return CaseTransfer.objects.filter(action__case__case_id=self.kwargs['caseid'])
+        return CaseTransfer.objects.all()
+
+    def get_object(self):
+        ct = get_object_or_404(CaseTransfer, id=self.kwargs['pk'])
+        return ct
+
+    def create(self, request, *args, **kwargs):
+        logger.debug(request.data)
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            case = get_object_or_404(Case, case_id=request.data['case'])
+            connection = get_object_or_404(AdVISEConnection, id=request.data['connection'])
+            dt = request.data.get('data_transferred')
+            if dt:
+                dt = json.loads(dt)
+            else:
+                dt = ["case"]
+            action = create_case_action(f"transferred {', '.join(dt)} to {connection.group.name}", request.user, case, True)
+            action.save()
+
+            ct = CaseTransfer(connection=connection,
+                              action=action,
+                              data_transferred = dt,
+                              transfer_reason=request.data['transfer_reason'],
+                              remote_case_id=request.data['remote_case_id'])
+            ct.save()
+
+            case.status=Case.INACTIVE_STATUS
+            case.resolution = f'Transferred to {connection.group.name}'
+            case.save()
+            
+            serializer = self.serializer_class(ct)
+            
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        
+        else:
+            logger.debug(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     

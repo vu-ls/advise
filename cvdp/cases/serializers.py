@@ -1,7 +1,7 @@
 from cvdp.models import *
 from cvdp.components.models import ComponentStatus, Product
 from django.core.exceptions import ObjectDoesNotExist
-from cvdp.permissions import my_case_role, is_my_case, my_case_vendors
+from cvdp.permissions import my_case_role, is_my_case, my_case_vendors, is_case_owner
 from cvdp.serializers import ChoiceField, UserSerializer
 from cvdp.groups.serializers import GroupSerializer
 from rest_framework import serializers
@@ -21,18 +21,40 @@ class CWESerializer(serializers.ModelSerializer):
         fields = ('cwe', )
 
 
+class CaseReportSerializer(serializers.Field):
+
+    def to_representation(self, obj):
+        user = self.context.get('user')
+        if user and user.is_coordinator:
+            return obj
+        else:
+            #remove private fields
+            redacted_report = []
+            for x in obj:
+                if x.get('priv', False):
+                    continue
+                redacted_report.append(x)
+            return redacted_report
+    
+    def to_internal_value(self, data):
+        return data
+        
 class ReportSerializer(serializers.ModelSerializer):
 
     submitter = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
     case_url = serializers.SerializerMethodField()
-    report = serializers.SerializerMethodField()
+    transfer_reason = serializers.CharField(required=False)
+    report = CaseReportSerializer()
+    transfer = serializers.SerializerMethodField()
     
     class Meta:
         model = CaseReport
-        fields = ('received', 'title', 'case_url', 'source', 'submitter', "report", "status", "copy", )
+        fields = ('received', 'title', 'case_url', 'source', 'submitter', "report", "status", "copy", "transfer_reason", "transfer" )
+        read_only_fields = ('received', 'title', 'case_url', 'submitter', 'status', 'copy', "transfer")
 
+    """
     def get_report(self, obj):
         user = self.context.get('user')
         if user and user.is_coordinator:
@@ -45,12 +67,19 @@ class ReportSerializer(serializers.ModelSerializer):
                     continue
                 redacted_report.append(x)
             return redacted_report
-                    
-        
+    """
+
+    def get_transfer(self, obj):
+        if obj.connection:
+            return True
+        return False
+    
     def get_submitter(self, obj):
         if obj.entry:
             if obj.entry.created_by:
                 return obj.entry.created_by.screen_name
+        elif obj.connection:
+            return obj.connection.group.name
         else:
             return "Anonymous"
 
@@ -81,15 +110,23 @@ class CoordReportSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
     case_url = serializers.SerializerMethodField()
+    transfer = serializers.SerializerMethodField()
 
     class Meta:
         model = CaseReport
-        fields = ('received', 'title', 'case_url', 'source', 'submitter', "report", "status", "copy", )
+        fields = ('received', 'title', 'case_url', 'source', 'submitter', "report", "status", "copy", "transfer", )
 
+    def get_transfer(self, obj):
+        if obj.connection:
+            return True
+        return False
+        
     def get_submitter(self, obj):
         if obj.entry:
             if obj.entry.created_by:
                 return obj.entry.created_by.screen_name
+        elif obj.connection:
+            return obj.connection.group.name
         else:
             return "Anonymous"
 
@@ -127,9 +164,9 @@ class CaseCoordinatorSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Case
-        fields = ('case_id', 'case_identifier', 'owners', 'created_by', 'created', 'modified', 'status', 'title', 'summary', 'report', 'public_date', 'due_date', 'advisory_status', )
+        fields = ('case_id', 'case_identifier', 'owners', 'created_by', 'created', 'modified', 'status', 'title', 'summary', 'report', 'public_date', 'due_date', 'advisory_status', 'resolution', )
         lookup_field = "case_id"
-        read_only_fields =("case_id", "case_identifier", "created_by", "created", "modified", "report",)
+        read_only_fields =("case_id", "case_identifier", "created_by", "created", "modified", "report", )
 
     def get_created_by(self, obj):
         if obj.created_by:
@@ -137,6 +174,7 @@ class CaseCoordinatorSerializer(serializers.ModelSerializer):
         else:
             return "Anonymous"
 
+        
     def get_owners(self, obj):
         owners = CaseParticipant.objects.filter(case=obj, role="owner").values_list('contact__user__id', flat=True)
         users = User.objects.filter(id__in=owners)
@@ -420,6 +458,13 @@ class PostReplySerializer(serializers.ModelSerializer):
         else:
             return "Participant"
 
+
+class PostTransferSerializer(serializers.Serializer):
+    content = serializers.CharField()
+    author = serializers.CharField()
+    created = serializers.DateTimeField()
+
+
         
 class PostSerializer(serializers.ModelSerializer):
     content = ContentSerializerField(source='current_revision.content') 
@@ -603,12 +648,17 @@ class VulSerializer(serializers.ModelSerializer):
         #get all *Affected* status related to this vul
         user = self.context.get('user')
         if user:
-            my_groups = my_case_vendors(user, obj.case)
-            components = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
-            case_components = components.values_list('component__id', flat=True)
-            products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
-            #get all my components/or component status set to Share
-            status = components.filter(component__id__in=products)
+            if user.is_coordinator:
+                #if case owner, get all affected components
+                status = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
+            else:
+                my_groups = my_case_vendors(user, obj.case)
+                components = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
+                case_components = components.values_list('component__id', flat=True)
+                products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
+                #get all my components/or component status set to Share
+                status = components.filter(component__id__in=products)
+            
         else:
             #if user isn't present, we could possibly leak info that we shouldn't
             #status = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
@@ -677,7 +727,7 @@ class SSVCSerializer(serializers.ModelSerializer):
         fields = ('decision_tree', 'tree_type', 'final_decision', 'vector', 'user', 'last_edit')
 
 class AdvisorySerializer(serializers.ModelSerializer):
-    references = serializers.CharField(required=False)
+    references = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     revision_number = serializers.IntegerField(read_only=True)
     revision_id = serializers.CharField(read_only=True)
     author = serializers.SerializerMethodField()
@@ -933,7 +983,8 @@ class CaseActionSerializer(serializers.ModelSerializer):
 
 
 class PostActionSerializer(serializers.ModelSerializer):
-    user = UserSerializer(source='post.author.user')
+    #user = UserSerializer(source='post.author.user')
+    user = serializers.SerializerMethodField()
     url = serializers.SerializerMethodField()
     change = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
@@ -942,6 +993,14 @@ class PostActionSerializer(serializers.ModelSerializer):
         model = PostRevision
         fields = ['user', 'title', 'created', 'url', 'change',]
 
+    def get_user(self, obj):
+        if obj.post.author:
+            user_serializer = UserSerializer(obj.post.author.user)
+            return user_serializer.data
+        #return obj.post.author.user
+        else:
+            return {"name": obj.post.author_text}
+        
     def get_url(self, obj):
         return reverse("cvdp:case", args=[obj.post.thread.case.case_id])
 
@@ -979,3 +1038,14 @@ class AdvisoryActionSerializer(serializers.ModelSerializer):
             return "created case advisory"
 
     
+class CaseTransferSerializer(serializers.ModelSerializer):
+
+    action = CaseActionSerializer(read_only=True)
+    group = serializers.CharField(source='connection.group.name', read_only=True)
+    case = serializers.CharField(source='action.case.case_id')
+    
+    class Meta:
+        model = CaseTransfer
+        fields = ['id', 'connection', 'case', 'group', 'transfer_reason', 'remote_case_id', 'accepted', 'action', 'data_transferred']
+
+        

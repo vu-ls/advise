@@ -99,11 +99,17 @@ const ViewReport = ({report, owner, caseid}) => {
         <div>
 	    <div className="d-flex justify-content-between">
 		<p className="lead">
-                    Report submitted
-		    {orig_report.submitter ?
-		     <> by <b>{orig_report.submitter}</b> </>
+		    {report.transfer ?
+		     <>Report transferred from <b>{orig_report.submitter}</b> </>
 		     :
-		     <> anonymously </>
+		     <>
+			 Report submitted
+			 {orig_report.submitter ?
+			  <> by <b>{orig_report.submitter}</b> </>
+			  :
+			  <> anonymously </>
+			 }
+		     </>
 		    }
 		    on {format(date, 'yyyy-MM-dd')}
 		</p>

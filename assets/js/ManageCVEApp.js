@@ -98,30 +98,44 @@ const ManageCVEApp = () => {
 
     
     function submitAddUser(email, first, last, role) {
-        let formField = {username: "", name: {first:"",last: ""},
-			 active: true,authority: {active_roles: []} };
-        formField['username'] = email;
-	formField['name']={'first': first, 'last': last}
-	if (role == "Administrator") {
-	    formField['authority']["active_roles"] = ["ADMIN"];
-	}
 	if (editUser) {
+	    console.log(editUser);
+	    let formField = {};
+	    if (editUser.username != email) {
+		formField['new_username'] = email;
+	    }
+	    formField['name.first']= first;
+	    formField['name.last']= last;
+	    if (role === "Administrator" && (editUser.authority.active_roles.length == 0)) {
+		formField["active_roles.add"] = "ADMIN";
+	    } else if (editUser.authority.active_roles.length > 0) {
+		formField["active_roles.remove"] = "ADMIN";
+	    }
 	    console.log("EDITING USER");
 	    try {
-		cveAPI.editUser(formField).then((response) => {
+		cveAPI.editUser(editUser.username, formField).then((response) => {
 		    console.log(response);
 		    setFeedback(response.message);
 		    hideUser();
 		    fetchAccountInfo();
 		});
 	    } catch (err) {
+		console.log(err);
 		setFeedback("Errr " + err.message);
 	    }
 	} else {
+	    /* slightly different format for add vs updates */
+            let formField = {'username': email, 'name': {'first':first,'last': last},
+			     'active': true, 'authority': {'active_roles': []}}
+	    if (role == "Administrator") {
+		formField['authority']["active_roles"] = ["ADMIN"];
+	    }
+	    console.log(formField)
+
 	    try {
 		cveAPI.addUser(formField).then((response) => {
 		    console.log(response);
-		    setFeedback("Got it! User Added! Secret is " + response.secret);
+		    setFeedback(`Got it! ${response.message}. Secret is ${response.created.secret}`);
 		    hideUser();
 		    fetchAccountInfo();
 		});
@@ -241,6 +255,10 @@ const ManageCVEApp = () => {
             let account = await cveAPI.getUser(selectedAccount.email);
 	    console.log(account);
 	    setActiveAccount(account.data);
+
+	    /*let org = await cveAPI.getORG();*/
+	    
+	    
         } catch (err) {
             setApiError(err.message);
 	    setActiveTab("account");
@@ -668,7 +686,7 @@ const ManageCVEApp = () => {
 					      </Col>
 					      <Col lg={6}>
 						  <Form.Label>Server</Form.Label>
-						  <Form.Select name="server_type" value={testServer}onChange={setTestServer}>
+						  <Form.Select name="server_type" value={testServer} onChange={(e)=>setTestServer(e.target.value)}>
 						      {['Production', 'Test', 'Development'].map((item, index) => {
 							  return (
 							      <option key={item} value={item}>{item}</option>

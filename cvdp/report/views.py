@@ -17,7 +17,7 @@ from cvdp.manage.forms import *
 from rest_framework import exceptions, generics, status, authentication, viewsets, mixins, filters
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from cvdp.permissions import CoordinatorPermission, PendingUserPermission, is_case_owner, is_case_owner_or_staff
+from cvdp.permissions import CoordinatorPermission, PendingUserPermission, is_case_owner, is_case_owner_or_staff, TransferAccessPermission
 from cvdp.manage.serializers import *
 from cvdp.cases.serializers import ReportSerializer, CoordReportSerializer
 from cvdp.manage.models import ReportingForm
@@ -54,17 +54,66 @@ class ReportsAPIView(viewsets.ModelViewSet):
     def get_queryset(self):
         return CaseReport.objects.filter(entry__created_by=self.request.user).order_by('-entry__created')
 
+
+class ReportTransferAPIView(viewsets.ModelViewSet):
+    serializer_class = ReportSerializer
+    permission_classes = (IsAuthenticated, PendingUserPermission, TransferAccessPermission)
+    
+    def create(self, request, *args, **kwargs):
+        logger.debug(f"{self.__class__.__name__} post: {self.request.data}")
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            #get connection
+            connection = AdVISEConnection.objects.filter(incoming_key=self.request.user.auth_token).first()
+            report = request.data['report']
+            if type(report) is str:
+                try:
+                    report = json.loads(report)
+                except (ValueError, TypeError) as e:
+                    return Response({'detail': 'report is invalid. Expected JSON array.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not(type(report) is list):
+                return Response({'detail': 'report is invalid. Should be an array of question and answer objects.'}, status=status.HTTP_400_BAD_REQUEST)
+            for x in report:
+                if not(x.get('question') and x.get('answer')):
+                    return Response({'detail': 'invalid format for report. Should be an array of question and answer objects.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not(request.data.get('transfer_reason')):
+                return Response({'detail': 'Invalid report. Required field, transfer_reason, is missing.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            cr = CaseReport(report=report,
+                            connection=connection,
+                            source=request.data['source'])
+            cr.save()
+            
+            new_case_id = generate_case_id()
+            #now create the case
+            case = Case(report = cr,
+                        case_id = new_case_id,
+                        summary=f"Case Transfer Reason: {request.data['transfer_reason']}",
+                        title=f"Transfer request") #from {connection.group.name}")
+            
+            case.save()
+
+            create_case_action(f"case transferred with reason {request.data['transfer_reason']}", self.request.user, case)
+            return Response({'case_id': new_case_id, 'status': 'Pending'}, status=status.HTTP_202_ACCEPTED)
+        else:
+            logger.debug(serializer.errors)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
 class OrigReportAPIView(viewsets.ModelViewSet):
     serializer_class = CoordReportSerializer
     permission_classes = (IsAuthenticated, CoordinatorPermission)
 
     def get_view_name(self):
         return f"Original Case Report"
-    
+
     def get_object(self):
         orig = get_object_or_404(CaseReportOriginal, case__case_id=self.kwargs['caseid'])
         return orig.report
-        
+
 
 class AddReportView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
     template_name = 'cvdp/add_report.html'
@@ -155,10 +204,18 @@ class EditReportView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateVi
         case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
         context['case'] = case
         if case.report:
-            if self.request.GET.get('add'):
-                context['form'] = case.report.entry.form.get_current_form_and_initial(case.report.report)
-            else:
+            if not case.report.entry:
+                #this was probably a transfer
+                context['transfer'] = True
+                case.report.entry = FormEntry(form=cform)
+                case.report.entry.save()
                 context['form'] = case.report.entry.form.get_form_and_initial(case.report.report)
+            else:
+                if self.request.GET.get('add'):
+                    context['form'] = case.report.entry.form.get_current_form_and_initial(case.report.report)
+                else:
+                    context['form'] = case.report.entry.form.get_form_and_initial(case.report.report)
+
 
         return context
 
@@ -192,14 +249,14 @@ class EditReportView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateVi
 
                     case.report = cr
                     case.save()
-                    
+
                 create_case_action("edited report copy", self.request.user, case)
 
                 messages.success(
                     self.request,
                     "Got it! A copy of the report will now be available to case recipients."
                 )
-                
+
                 return redirect("cvdp:case", case.case_id)
             else:
                 logger.debug(f"{self.__class__.__name__} {form.errors}")

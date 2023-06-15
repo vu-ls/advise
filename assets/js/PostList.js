@@ -149,6 +149,7 @@ export default function PostList(props) {
 	    console.log("POSTS", response.results);
 	    setTotalPosts(response.count);
 	    setIsLoading(false);
+	    setReplyPost(null);
 
 	});
     }

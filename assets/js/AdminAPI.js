@@ -31,7 +31,6 @@ export default class AdminAPI{
     }
 
     addAssignment(role, data) {
-	console.log(role);
 	const url = `${API_URL}/api/manage/autoassignment/${role}/`;
 	return axios.patch(url, data).then(response => response.data);
     }
@@ -82,6 +81,129 @@ export default class AdminAPI{
     getCaseEmailTemplates() {
 	const url = `${API_URL}/api/manage/email/templates/?template_type=0`;
 	return axios.get(url).then(response => response.data);
+    }
+
+    getConnections() {
+	const url = `${API_URL}/api/manage/connections/`;
+        return axios.get(url).then(response => response.data);
+    }
+
+    getAllConnections() {
+	const url = `${API_URL}/api/manage/connections/?all=1`;
+        return axios.get(url).then(response => response.data);
+    }
+
+    addConnection(data) {
+        const url = `${API_URL}/api/manage/connections/`;
+	return axios.post(url, data).then(response => response.data);
+    }
+
+    updateConnection(c, data) {
+	const url = `${API_URL}/api/manage/connection/${c}/`;
+        return axios.patch(url, data).then(response => response.data);
+    }
+
+    deleteConnection(c) {
+	const url = `${API_URL}/api/manage/connection/${c}/`;
+	return axios.delete(url).then(response => response.data);
+    }
+
+    transferReport(d, key, form) {
+	const url = `${d}/advise/api/transfers/report/`;
+	console.log(url);
+	console.log(key);
+	return axios.post(url, form, {
+	    headers: {                                                                                               
+                'content-type': 'application/json',                                                                   
+                'Authorization': `Token ${key}`,
+	    }}).then(response=>response.data);
+    }
+
+    transferThread(c, d, key, form) {
+	const url = `${d}/advise/api/transfers/case/${c}/thread/`;
+	let posts = [];
+	for (let i=0; i < form.length; i++) {
+	    let replies = [];
+	    if (form[i]['replies']) {
+		let reply_arr = form[i]['replies'];
+		console.log(`reply_arr ${reply_arr}`);
+		for (let r=0; r<reply_arr.length; r++) {
+		    if (reply_arr[r]["group"]) {
+			replies.push({'content': reply_arr[r]['content'], 'author': `${reply_arr[r]["author_role"]} from group ${reply_arr[r]["group"]["name"]}`, 'created': reply_arr[r]['created']})
+		    } else {
+			replies.push({'content': reply_arr[r]['content'], 'author': `${reply_arr[r]["author_role"]}`, 'created': reply_arr[r]['created']})
+		    }
+		}
+	    }
+	    let author = `${form[i]["author_role"]}`
+	    if (form[i].group) {
+		author = `${author} from group ${form[i].group.name}`;
+	    }
+		
+	    posts.push({'content': form[i]['content'], 'author': author, 'created': form[i]['created'], 'replies': replies})
+	}
+	console.log(posts);
+	let data = {'posts': posts};
+	return axios.post(url, data, {
+	    headers: {
+		'content-type': 'application/json',
+		'Authorization': `Token ${key}`,
+	    }}).then(response=>response.data);
+    }
+		    
+
+    transferVuls(c, d, key, form) {
+	const url = `${d}/advise/api/transfers/case/${c}/vuls/`;
+        console.log(url);
+        console.log(key);
+        return axios.post(url, form, {
+            headers: {
+		'content-type': 'application/json',
+                'Authorization': `Token ${key}`,
+            }}).then(response=>response.data);
+    }
+
+    transferAdvisory(c, d, key, form) {
+	const url = `${d}/advise/api/transfers/case/${c}/advisory/`;
+        return axios.post(url, form, {
+            headers: {
+                'content-type': 'application/json',
+                'Authorization': `Token ${key}`,
+            }}).then(response=>response.data);
+    }
+    
+    async transferArtifact(c, d, key, filename, mime_type, get_url) {
+
+	/* first get url */
+	const {data: blob} = await axios.get(get_url, {responseType: 'arraybuffer'});
+	const url = `${d}/advise/api/transfers/case/${c}/artifacts/`;
+	console.log(url);
+	console.log(key);
+	//console.log(data.length);
+	let formData = new FormData();
+	let file = new File([blob], filename);
+	//let file = new Blob([blob]);
+	console.log(file.size);
+	formData.append('file', file, filename);
+	return axios.post(url, formData, {
+	    headers: {
+		'content-type': 'multipart/form-data',
+		'Authorization': `Token ${key}`,
+	    }}).then(response=>response.data);
+    }
+
+    transferAllArtifacts(array) {
+	return axios.all(array);
+    }
+    
+    transferCase(form) {
+	const url = `${API_URL}/api/case/transfers/`;
+	return axios.post(url, form).then(response=>response.data);
+    }
+
+    getTransfers(c, page) {
+	const url = `${API_URL}/api/case/${c}/transfers/?page=${page}`;
+        return axios.get(url).then(response=>response.data);
     }
     
 }

@@ -30,6 +30,7 @@ module.exports = {
 	groupadmin: './assets/js/groupadmin',
 	myreports: './assets/js/myreports',
 	contactapp: './assets/js/contact',
+	sysadmin: './assets/js/sysadmin',
     },
 
     output: {

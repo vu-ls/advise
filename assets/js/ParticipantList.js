@@ -148,7 +148,7 @@ export default function ParticipantList(props) {
 		 (
 		     participants.map((post,index) => {
 			 return (
-			     <div className="d-flex justify-content-between" key={index}>
+			     <div className="d-flex justify-content-between" key={`post-${index}`}>
 
 				 <div className="d-flex align-items-center gap-2 mt-2 mb-2">
 				     <DisplayLogo
@@ -158,7 +158,7 @@ export default function ParticipantList(props) {
 				     />
 				     <OverlayTrigger
                                          placement="bottom"
-                                         overlay={<Popover><Popover.Header className="text-center border-bottom pb-2">{post.participant.name}</Popover.Header><Popover.Body className="text-center m-2">{post.participant.users.length > 0 ? <>Group<br/>({post.participant.role})<br/>Members:<br/>{post.participant.users.map(u=><>{u}<br/></>)}</> : <>{post.participant.participant_type} <br/>({post.participant.role})</>}</Popover.Body></Popover>}
+                                         overlay={<Popover><Popover.Header className="text-center border-bottom pb-2">{post.participant.name}</Popover.Header><Popover.Body className="text-center m-2">{post.participant.users.length > 0 ? <>Group<br/>({post.participant.role})<br/>Members:<br/>{post.participant.users.map(u=><span key={`part-${u.id}`}>{u}<br/></span>)}</> : <>{post.participant.participant_type} <br/>({post.participant.role})</>}</Popover.Body></Popover>}
 				     >
 					 <a href="#" onClick={(e)=>e.preventDefault()}>
 					     { post.participant.name } ({post.participant.role})

@@ -1,11 +1,12 @@
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, BasePermission, SAFE_METHODS
 from django.shortcuts import get_object_or_404
 from cvdp.models import Case, CaseParticipant, Contact, CaseThreadParticipant, ContactAssociation, GlobalSettings, MessageThread, UserThread, GroupThread
+from cvdp.manage.models import  AdVISEConnection
 from cvdp.components.models import Component, Product
 from django.db.models import Q
 from django.contrib.auth.models import Group
 import logging
-
+import traceback
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -215,6 +216,41 @@ class CaseObjectAccessWritePermission(BasePermission):
     #more permissive than the following class, allows write
     def has_object_permission(self, request, view, obj):
         return is_my_case(request.user, obj.id)
+
+class TransferAccessPermission(BasePermission):
+    message="Forbidden"
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        else:
+            #check permissions for transfer access
+            try:
+                #return True
+                #logger.debug(request.user.auth_token.last_four)
+                return AdVISEConnection.objects.filter(incoming_key = request.user.auth_token, disabled=False).exists()
+            except:
+                logger.debug(traceback.format_exc())
+                return False
+
+class CaseTransferAccessPermission(BasePermission):
+    message="Forbidden"
+
+    def has_permission(self, request, view):
+        case = get_object_or_404(Case, case_id=view.kwargs.get('caseid'))
+        ## did this case originate from the API token that is requesting it
+        #return True
+        try:
+            connection = AdVISEConnection.objects.filter(incoming_key = request.user.auth_token, disabled=False).first()
+            if not connection:
+                return False
+            if (case.report.connection == connection):
+                #ENFORCE A TIME LIMIT?
+                return True
+        except:
+            #user may not have auth_token
+            logger.debug(traceback.format_exc())
+            return False
     
 class CaseObjectAccessPermission(BasePermission):
     message = "Forbidden"
@@ -226,7 +262,7 @@ class CaseObjectAccessPermission(BasePermission):
         else:
             # Check permissions for write request
             return is_case_owner(request.user, obj.id)
-
+        
 class CaseThreadObjectAccessPermission(BasePermission):
     message = "Forbidden"
 

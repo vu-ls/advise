@@ -28,11 +28,15 @@ export default function CaseList(props) {
 			 <h6 className="mt-2 text-light fw-semibold">
 			     {c.report ?
 			      <>
-				  Submitted
-				  {c.report.submitter ?
-				   <> by {c.report.submitter} </>
+				  {c.report.submitter && c.report.transfer ?
+				   <> Transferred from {c.report.submitter} </>
 				   :
-				   " anonymously "
+				   <>{c.report.submitter ?
+				      <> Submitted by {c.report.submitter} </>
+				      :
+				      "Submitted anonymously "
+				     }
+				   </>
 				  }
 			      </>
 			      :

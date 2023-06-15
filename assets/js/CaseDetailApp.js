@@ -45,17 +45,27 @@ const CaseDetailApp = (props) => {
 	    setCaseInfo(props.caseInfo);
 	    setCaseTitle(props.caseInfo.title);
 	    setCaseSummary(props.caseInfo.summary);
+	    if (addReport) {
+		retrieveReport();
+	    }
 	}
     }, [props.caseInfo, props.user]);
 
+
+    const retrieveReport = () => {
+	setReportLoading(true);
+	threadapi.getCaseReport(caseInfo).then((response) => {
+            console.log(response);
+            setReport(response.data);
+        }).catch(err => {
+            setReport(<Alert variant="danger">Error loading report.</Alert>)
+        });
+    };
+	
     useEffect(() => {
+	
 	if (addReport) {
-	    threadapi.getCaseReport(caseInfo).then((response) => {
-		console.log(response);
-		setReport(response.data);
-	    }).catch(err => {
-		setReport(<Alert variant="danger">Error loading report.</Alert>)
-	    });
+	    retrieveReport();
 	}
 
     }, [addReport])

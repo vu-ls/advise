@@ -189,7 +189,12 @@
                     <div data-i18n="Blank">User Admin</div>
                   </a>
                 </li>
-
+		
+                <li class="menu-item {% if sysadminpage %}active{% endif %}">
+                  <a href="{% url 'cvdp:system_admin' %}" class="menu-link">
+                    <div data-i18n="Blank">System Settings</div>
+                  </a>
+                </li>
               </ul>
             </li>
 	    {% endif %}

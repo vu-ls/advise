@@ -16,6 +16,11 @@ export default class CVEAPI{
 		       }
     }
 
+    getORG() {
+	let url = `${this.url}org/${this.org_name}`;
+	return axios.get(url, this.headers);
+    }
+    
     getUser(username) {
 	let url = this.user_path;
 	if (username) {
@@ -61,12 +66,13 @@ export default class CVEAPI{
 	return axios.post(url, data, this.headers).then(response=>response.data);
     }
 
-    editUser(data) {
-	const params = new URLSearchParams({
-            'name.first': data.name.first,
-	    'name.last': data.name.last
-        }).toString();
-	let url = `${this.url}org/${this.org_name}/user/${data.username}?` + params;
+    editUser(username, data) {
+	let params = new URLSearchParams();
+	Object.keys(data).forEach(function(v) {
+	    params.append(v, data[v]);
+	});
+	params = params.toString();
+	let url = `${this.url}org/${this.org_name}/user/${username}?` + params;
 	return axios.put(url, null, this.headers).then(response=>response.data);
     }
 

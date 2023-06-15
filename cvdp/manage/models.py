@@ -8,6 +8,7 @@ from django.conf import settings
 from django.forms import SelectDateWidget
 import logging
 from cvdp.forms import GenReportingForm
+from authapp.models import APIToken
 
 from django import forms
 
@@ -387,3 +388,47 @@ class CVEServicesAccount(models.Model):
         return f"{self.get_server_type_display()} {self.org_name}: {self.email}"
 
 
+class AdVISEConnection(models.Model):
+
+    group = models.ForeignKey(
+        Group,
+        on_delete = models.CASCADE,
+        help_text=_('The owner of the external AdVISE instance.'),
+    )
+
+    url = models.URLField(
+        help_text=_('The URL or domain name of the external AdVISE instance'),
+	blank=True,
+        null=True)
+
+    external_key = models.CharField(
+        _("API Key for external instance"),
+        max_length=250,
+        blank=True,
+        null=True)
+
+    incoming_key = models.ForeignKey(
+        APIToken,
+        blank=True,
+        null=True,
+        on_delete = models.CASCADE)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True)
+    
+    created = models.DateTimeField(
+        _("Created"),
+        auto_now_add=True)
+
+    last_used = models.DateTimeField(
+        blank=True,
+        null=True)
+
+    disabled = models.BooleanField(
+        default=False)
+    
+        
+        

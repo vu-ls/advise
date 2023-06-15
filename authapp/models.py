@@ -77,7 +77,7 @@ class APIToken(models.Model):
     last_used = models.DateTimeField(
         blank=True,
         null=True)
-    
+
     class Meta:
         verbose_name = _("Token")
         verbose_name_plural = _("Tokens")

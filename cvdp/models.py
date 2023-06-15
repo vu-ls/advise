@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.urls import reverse
 from django.conf import settings
 from .utils import cached_attribute
-from cvdp.manage.models import FormEntry, CVEServicesAccount
+from cvdp.manage.models import FormEntry, CVEServicesAccount, AdVISEConnection
 from django.utils.functional import cached_property
 from django.dispatch import Signal
 from django.core.exceptions import ValidationError
@@ -359,6 +359,12 @@ class CaseReport(models.Model):
         blank=True,
         null=True)
 
+    connection = models.ForeignKey(
+        AdVISEConnection,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True)
+    
     report = models.JSONField(
         help_text=_('JSON dictionary with report')
     )
@@ -442,6 +448,13 @@ class Case(models.Model):
         default=PENDING_STATUS,
     )
 
+    resolution = models.TextField(
+        _('Resolution'),
+        blank=True,
+        null=True,
+        help_text=_('The case resolution')
+    )
+    
     title = models.CharField(
         max_length=500,
         help_text=_('A title for this case.'))
@@ -1110,7 +1123,7 @@ class Post(models.Model):
     )
 
     created = models.DateTimeField(
-        auto_now_add=True
+        default=timezone.now
     )
 
     modified = models.DateTimeField(
@@ -1130,6 +1143,12 @@ class Post(models.Model):
 	on_delete=models.SET_NULL
     )
 
+    author_text = models.CharField(
+        help_text=_('Info about author/membership if contact or group are nonexistent/removed'),
+        max_length=500,
+        blank=True,
+        null=True)
+    
     pinned = models.BooleanField(
         default=False,
 	help_text=_('A pinned post is pinned to the top of the page.'),
@@ -2012,3 +2031,40 @@ class ContactChange(models.Model):
 		'new_value': self.new_value
             }
         return out
+
+# These are to keep track of EXTERNAL transfers 
+# Incoming transfers are found in the CaseReport
+
+class CaseTransfer(models.Model):
+
+    connection = models.ForeignKey(
+        AdVISEConnection,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True)
+
+    action = models.ForeignKey(
+        CaseAction,
+        on_delete=models.CASCADE)
+
+    transfer_reason = models.TextField(
+        blank=True,
+        null=True,
+        help_text=_('Th reason for the transfer')
+    )
+
+    remote_case_id = models.CharField(
+        blank=True,
+        null=True)
+
+    accepted = models.BooleanField(
+        default=False)
+
+    data_transferred = models.JSONField(
+        _('Data Types Transferred'),
+        blank=True,
+	null=True)
+    
+
+
+    

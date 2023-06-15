@@ -40,10 +40,12 @@ map $http_x_forwarded_proto $real_scheme {
 server {
     listen ${PROXY_PORT};
     server_name ${APP_SERVER_FQDN}
-    client_max_body_size 1G;
     keepalive_timeout 5;
 
     location / {
+        # client_max_body_size moved here because it was ignored under server
+        # section [JDW]
+        client_max_body_size 4G; 
         proxy_pass http://advise_app/;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $real_scheme;

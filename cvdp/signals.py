@@ -3,9 +3,22 @@ from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from cvdp.models import UserProfile, Case, CaseThread, Contact, message_sent, PostRevision
 from django.conf import settings
+from cvdp.manage.models import AdVISEConnection
 from cvdp.appcomms.appcommunicator import cvdp_send_email
 from cvdp.lib import setup_new_case, get_casethread_user_participants, get_post_mentions
+from corsheaders.signals import check_request_enabled
+import logging
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+def cors_allow_mysites(sender, request, **kwargs):
+    logger.debug(f"check if origin is allowed {request.headers['origin']}")
+    test = AdVISEConnection.objects.filter(url=request.headers["origin"], disabled=False).exists()
+    logger.debug(test)
+    return test
+
+check_request_enabled.connect(cors_allow_mysites)
 
 @receiver(pre_save, sender=settings.AUTH_USER_MODEL)
 def update_username_from_email(sender, instance, **kwargs):
@@ -73,7 +86,11 @@ def send_post_notification(sender, instance, created, **kwargs):
             email_context = {'url': f'{settings.SERVER_NAME}{instance.post.thread.case.get_absolute_url()}', 'prepend': instance.post.thread.case.caseid}
             try:
                 #remove author from list
-                participants.remove(instance.post.author.email)
+                if instance.post.author:
+                    participants.remove(instance.post.author.email)
+                else:
+                    if instance.post.thread.subject == "Transferred Case Thread":
+                        return
             except:
                 print(f"Author not in list {instance.post.author.email}")
                 pass

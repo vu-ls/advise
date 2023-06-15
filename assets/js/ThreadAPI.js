@@ -70,6 +70,12 @@ export default class CaseThreadAPI{
         const url = `${API_URL}/api/case/${c.case}/threads`;
         return axios.get(url).then(response => response.data);
     }
+
+    getOfficialThread(c) {
+	const url = `${API_URL}/api/case/${c.case}/threads/?official=1`;
+        return axios.get(url).then(response => response.data);
+    }
+    
     getThread(c) {
         const url = `${API_URL}/api/case/thread/${c.id}`;
         return axios.get(url).then(response => response.data);
@@ -82,6 +88,12 @@ export default class CaseThreadAPI{
         const url = `${API_URL}/api/case/thread/${c.id}/posts/`;
 	return axios.get(url).then(response => response.data);
     }
+
+    getPostsMax(c) {
+	const url = `${API_URL}/api/case/thread/${c}/posts/?page_size=100`;
+	return axios.get(url).then(response => response.data);
+    }
+    
     getPost(c) {
 	const url = `${API_URL}/api/case/thread/post/${c.id}/`;
         return axios.get(url).then(response => response.data);

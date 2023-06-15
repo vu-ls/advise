@@ -7,7 +7,11 @@
   {% include 'cvdp/include/top_panel.html' with title="Edit Report" secondcrumbs=case.case_for_url breadcrumbs="Cases" bread_url=bread_url %}
   <div class="card">
     <div class="card-header">
-      <div class="alert alert-warning">By editing this report, a copy of the original report will remain in tact and will be available to case coordinators. All other case participants will only see the edited copy.</div> 
+      {% if transfer %}
+      <div class="alert alert-danger">The original version of this report was transferred from another AdVISE instance. Some information may be missing. You may submit this report and a copy of the transferred original will be saved.</div>
+      {% else %}
+      <div class="alert alert-warning">By editing this report, a copy of the original report will remain in tact and will be available to case coordinators. All other case participants will only see the edited copy.</div>
+      {% endif %}
     </div>
     <div class="card-body">
       {% if current_form.fields|length > form.fields|length %}
