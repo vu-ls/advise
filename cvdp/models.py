@@ -1166,8 +1166,8 @@ class Post(models.Model):
         revision.
         """
         assert self.id or save, (
-            'Article.add_revision: Sorry, you cannot add a'
-            'revision to an article that has not been saved '
+            'Post.add_revision: Sorry, you cannot add a'
+            'revision to a post that has not been saved '
             'without using save=True')
         if not self.id:
             self.save()

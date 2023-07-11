@@ -431,6 +431,11 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                 logger.debug(sr)
                 sr.set_from_request(self.request)
                 cs.add_revision(sr, save=True)
+
+                #update case modified
+                cs.vul.case.modified = timezone.now()
+                cs.vul.case.save()
+                
                 action = create_component_action(f"add component status for {vul.vul}", self.request.user, component, 6)
 
             return Response({}, status=status.HTTP_202_ACCEPTED)

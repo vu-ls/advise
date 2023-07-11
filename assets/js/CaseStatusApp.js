@@ -11,6 +11,7 @@ import {Typeahead} from 'react-bootstrap-typeahead';
 import AutoAssignModule from './AutoAssignModule';
 import NotifyVendorModal from "./NotifyVendorModal";
 import TransferCaseModal from "./TransferCaseModal";
+import ErrorModal from "./ErrorModal";
 
 const threadapi = new CaseThreadAPI();
 
@@ -30,7 +31,13 @@ const CaseStatusApp = (props) => {
     const [displayVNModal, setDisplayVNModal] = useState(false);
     const [notifyVendorCount, setNotifyVendorCount] = useState(0);
     const [displayTransferModal, setDisplayTransferModal] = useState(false);
+    const [displayErrorModal, setDisplayErrorModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
 
+    const hideErrorModal = () => {
+	setDisplayErrorModal(false);
+    }
+    
     const hideTransferModal = () => {
 	setDisplayTransferModal(false);
 	/*if transfer was successful, case status should have changed */
@@ -94,7 +101,11 @@ const CaseStatusApp = (props) => {
 	const data = {'status': status};
         threadapi.updateCase(caseInfo, data).then((response) => {
 	    props.updateStatus();
-        });	
+        }).catch(err => {
+	    setErrorMessage(`Error updating status: ${err.message}. Is this case assigned?`);
+	    setDisplayErrorModal(true);
+	    console.log(err);
+	});
 
     }
     
@@ -583,6 +594,12 @@ const CaseStatusApp = (props) => {
 			 hideModal = {hideTransferModal}
 			 caseInfo = {caseInfo}
 		     />
+		     <ErrorModal
+			 showModal = {displayErrorModal}
+			 hideModal = {hideErrorModal}
+			 message = {errorMessage}
+		     />
+		     
 		 </>
 		}
 	    </Card>

@@ -34,21 +34,20 @@ const AdvisoryApp = (caseid) => {
 
     // Async Fetch
     const fetchInitialData = async () => {
-	try {
-            await threadapi.getCurrentAdvisory(caseid).then((response) => {
-                console.log(response);
-                setAdvisory(response);
-		setTitle(response.title);
-		setContent(response.content);
-            });
+        await threadapi.getCurrentAdvisory(caseid).then((response) => {
+            console.log(response);
+            setAdvisory(response);
+	    setTitle(response.title);
+	    setContent(response.content);
+        }).catch(err => {
+	    console.log(err);
+	});
 
-	    await threadapi.getAdvisoryRevisions(caseid).then((response)=> {
-		setRevisions(response);
-	    });
-
-	} catch (err) {
-	    console.log('Error: ', err)
-	}
+	await threadapi.getAdvisoryRevisions(caseid).then((response)=> {
+	    setRevisions(response);
+	}).catch(err => {
+	    console.log(err);
+	});
     };
 
 
@@ -66,15 +65,13 @@ const AdvisoryApp = (caseid) => {
 	formData['content'] = content
 	formData['user_message'] = log
 
-	try {
-	    threadapi.saveAdvisory(caseid, formData).then((response) => {
-		setSuccess("Got it! Advisory saved!");
-		fetchInitialData();
-		console.log(response);
-	    });
-	} catch (err) {
-	    setError(`Error saving advisory ${err.message}`);
-	}
+	threadapi.saveAdvisory(caseid, formData).then((response) => {
+	    setSuccess("Got it! Advisory saved!");
+	    fetchInitialData();
+	    console.log(response);
+	}).catch(err => {
+	    setError(`Error saving advisory: ${err.message}`);
+	});
     }
 
     useEffect(() => {

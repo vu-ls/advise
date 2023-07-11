@@ -308,8 +308,11 @@ class AdvisoryAPIView(viewsets.ModelViewSet):
         if revision.date_shared:
             revision.date_shared = None
             #unshare?
+            action = create_case_action("unshared Advisory draft", self.request.user, ca.case)
         else:
             revision.date_shared = timezone.now()
+            action = create_case_action("shared Advisory draft", self.request.user, ca.case, True)
+            
         revision.save()
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
@@ -332,13 +335,9 @@ class AdvisoryAPIView(viewsets.ModelViewSet):
                                   save=True)
 
             if created:
-                action = Action(title="created initial Advisory draft",
-                                user=self.request.user)
+                action = create_case_action("created initial case advisory draft", self.request.user, case)
             else:
-                action = Action(title="edited Advisory",
-                                user=self.request.user)
-
-            action.save()
+                action = create_case_action("modified case advisory", self.request.user, case)
 
             serializer = self.serializer_class(instance=advisory.current_revision)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -1649,9 +1648,10 @@ class CaseActivityAPIView(APIView):
             post_serializer = PostActionSerializer(posts, many=True)
             post_actions = post_serializer.data
 
-            advisory = AdvisoryRevision.objects.filter(advisory__case__in=cases)
-            advisory_serializer = AdvisoryActionSerializer(advisory, many=True)
-            advisory_actions = advisory_serializer.data
+            #this is now done through caes actions
+            #advisory = AdvisoryRevision.objects.filter(advisory__case__in=cases)
+            #advisory_serializer = AdvisoryActionSerializer(advisory, many=True)
+            #advisory_actions = advisory_serializer.data
 
             status = StatusRevision.objects.filter(component_status__vul__case__in=cases)
             status_serializer = StatusActionSerializer(status, many=True)
@@ -1669,16 +1669,17 @@ class CaseActivityAPIView(APIView):
             post_actions = post_serializer.data
 
             #only get advisory if shared
-            advisory = AdvisoryRevision.objects.filter(advisory__case__in=cases).exclude(date_shared__isnull=True)
-            advisory_serializer = AdvisoryActionSerializer(advisory, many=True)
-            advisory_actions = advisory_serializer.data
+            #advisory = AdvisoryRevision.objects.filter(advisory__case__in=cases).exclude(date_shared__isnull=True)
+            #advisory_serializer = AdvisoryActionSerializer(advisory, many=True)
+            #advisory_actions = advisory_serializer.data
 
             status = StatusRevision.objects.filter(component_status__vul__case__in=cases, component_status__share=True)
             status_serializer =	StatusActionSerializer(status, many=True)
             status_actions = status_serializer.data
 
 
-        results = case_actions + post_actions + advisory_actions + status_actions
+        #results = case_actions + post_actions + advisory_actions + status_actions
+        results = case_actions + post_actions + status_actions
         qs = sorted(results,
                     key=lambda instance: instance['created'],
                     reverse=True)

@@ -360,6 +360,11 @@ def create_case_action(title, user, case, share=False):
     if share:
         action.action_type=1
     action.save()
+
+    #this is easier than trying to do it on every model change
+    case.modified = timezone.now()
+    case.save()
+    
     return action
 
 

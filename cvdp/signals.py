@@ -7,6 +7,7 @@ from cvdp.manage.models import AdVISEConnection
 from cvdp.appcomms.appcommunicator import cvdp_send_email
 from cvdp.lib import setup_new_case, get_casethread_user_participants, get_post_mentions
 from corsheaders.signals import check_request_enabled
+from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,10 @@ def send_message_notification(sender, message, thread, reply, from_group, **kwar
 def send_post_notification(sender, instance, created, **kwargs):
 
     if created:
+        #update case last_modified
+        instance.post.thread.case.modified = timezone.now()
+        instance.post.thread.case.save()
+        
         if instance.revision_number == 0:
             # we only want to send emails on first post,
             #edits are ignored
