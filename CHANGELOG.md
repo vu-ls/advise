@@ -8,11 +8,21 @@ All notable changes to AdVISE will be documented in this file.
 
 - Prompt user to notify case participants when case status changes to "Active"
 - Allow case owners to update case report and view original report
+- Improved error reporting
+- Add case transfer API to allow instances to transfer cases
 
 ### Changed
 
 - Participant role from "vendor" to "supplier"
+- Update case modified time on case related object additions, changes
+- Removed CVE services option for group usage
+	
+### Fixed
 
+- Changing role through CVE Services API
+- Changing username through CVE Services API
+
+	
 ## [1.2.0] - 2023-06-06
 
 ### Added

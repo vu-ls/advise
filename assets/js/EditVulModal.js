@@ -24,13 +24,15 @@ const EditVulModal = (props) => {
     const [cweSelected, setCWESelected] = useState([]);
     const [references, setReferences] = useState([]);
     const [tags, setTags] = useState([]);
-    const [datePublic, setDatePublic] = useState(null);
+    const [datePublic, setDatePublic] = useState("");
 
     useEffect(() => {
 	if (props.vul) {
+	    /* check to make sure these things aren't null, otherwise react complains */
 	    if (props.vul.cve) {
 		setVulCVE(props.vul.vul);
 	    }
+
 	    setVulDescription(props.vul.description);
 	    if (props.vul.problem_types) {
 		let x = props.vul.problem_types.map((c) => ({'cwe': c}))
@@ -39,9 +41,13 @@ const EditVulModal = (props) => {
 	    if (props.vul.references) {
 		setReferences(props.vul.references);
 	    }
-	    setTags(props.vul.tags);
-	    setDatePublic(props.vul.date_public);
-	    
+	    if (props.vul.tags) {
+		setTags(props.vul.tags);
+	    }
+	    if (props.vul.date_public) {
+		setDatePublic(props.vul.date_public);
+	    }
+
 	}
     }, [props]);
 
@@ -58,13 +64,13 @@ const EditVulModal = (props) => {
 	setDatePublic(value);
     };
 
-    
+
     const submitVul = (event) => {
         event.preventDefault();
         const error = false;
         const formData = new FormData(event.target),
               formDataObj = Object.fromEntries(formData.entries());
-		
+
 	formDataObj['problem_types'] = cweSelected.map((item)=> item.cwe);
 	formDataObj['references'] = references.map((item) => {
 	    if (item.label) {
@@ -120,7 +126,19 @@ const EditVulModal = (props) => {
 		    <Row>
 			<Col lg={6}>
 			    <Form.Group className="mb-3" controlId="_type">
-                                <Form.Label>CVE</Form.Label>
+				<div className="d-flex justify-content-between">
+                                    <Form.Label>CVE 
+				    </Form.Label>
+				    {vulCVE &&
+				     <Button
+					 size="sm"
+					 className="mb-2"
+					 onClick={(e)=>props.syncCVE()}
+					 variant="outline-secondary">
+					 Sync CVE
+				     </Button>
+				    }
+				</div>
                                 <Form.Control name="cve" isInvalid={invalidCVE} value={vulCVE} onChange={(e)=>setVulCVE(e.target.value)}/>
                                 {invalidCVE &&
                                  <Form.Text className="error">
@@ -157,7 +175,7 @@ const EditVulModal = (props) => {
 			<Col lg={6}>
 			    <Form.Group className="mb-3">
 				<Form.Label>Problem Types</Form.Label>
-				
+
 				<Typeahead
 				    id="cwe"
 				    multiple
@@ -178,7 +196,7 @@ const EditVulModal = (props) => {
 				    onChange={setReferences}
 				    selected={references}
 				    placeholder="Add references"
-				/> 
+				/>
 			    </Form.Group>
 			</Col>
 		    </Row>

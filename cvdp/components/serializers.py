@@ -89,6 +89,7 @@ class StatusRevisionSerializer(serializers.ModelSerializer):
         else:
             return "Unknown"
     
+        
     def get_diff(self, obj):
         all_diffs = {}
         other_revision = obj.previous_revision
@@ -110,9 +111,34 @@ class StatusRevisionSerializer(serializers.ModelSerializer):
                 all_diffs['justification'] = f"Justification changed from {other_revision.justification} to {obj.justification}"
             
         return all_diffs
+
+class StatusChoiceField(serializers.ChoiceField):
+
+    def to_representation(self, obj):
+        if obj == '' and self.allow_blank:
+            return obj
+        return self._choices[obj]
+
+    def to_internal_value(self, data):
+        # To support inserts with the value                                                           
+        if data == '' and self.allow_blank:
+            return ''
+        #this is annoying, but since the Base field-level validation is
+        #applied before any additional serializer-level methods are called, this is the way it has to be done
+        if data == "unaffected":
+            data = "Not Affected"
+        elif data == "affected":
+            data = "Affected"
+            
+        for key, val in self._choices.items():
+            if val == data:
+                return key
+        self.fail('invalid_choice', input=data)
+
+
         
 class StatusSerializer(serializers.ModelSerializer):
-    status = ChoiceField(VUL_STATUS_CHOICES)
+    status = StatusChoiceField(VUL_STATUS_CHOICES)
     version = serializers.CharField(source='version_value')
     version_end_range = serializers.CharField(source='version_name', required=False, allow_blank=True)
     version_affected = serializers.ChoiceField(VERSION_RANGE_CHOICES, required=False, allow_blank=True)
@@ -123,6 +149,7 @@ class StatusSerializer(serializers.ModelSerializer):
         model = StatusRevision
         fields = ('status', 'version', 'version_affected', 'version_end_range', 'statement', 'justification')
 
+        
 class VulStatusSerializer(serializers.ModelSerializer):
 
     status = ChoiceField(source='current_revision.status', choices=VUL_STATUS_CHOICES)

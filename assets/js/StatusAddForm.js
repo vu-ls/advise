@@ -221,7 +221,9 @@ const StatusAddForm = (props) => {
 	console.log(status);
 	if (status && status === "Not Affected") {
 	    setShowJustification(true);
-	};
+	} else if (status) {
+	    setShowJustification(false);
+	}
     }, [status]);
 
     function viewStatusDetails(comp, vul) {
@@ -316,6 +318,17 @@ const StatusAddForm = (props) => {
 	    setCheckedVuls((checked) => checked.filter((select) => select != value))
 	}
     };
+
+    
+    const setSelectedComponent = (e) => {
+	console.log(e);
+	setSelComponent(e);
+	if (e[0].version) {
+	    setVersion(e[0].version)
+	}
+    }
+
+
     /*
     useEffect(() => {
 	console.log("SOMETHING CHANGED");
@@ -446,7 +459,7 @@ const StatusAddForm = (props) => {
 			<Accordion.Item className="card mt-2" eventKey={index} key={index}>
                             <Accordion.Header>
 				<div className="d-flex gap-5 justify-content-between">
-				    <span>{c.component.name} {c.component.version_range ? c.component.version_range : ""} {c.component.version_end_range ? c.component.version_end_range : "" }</span>
+				    <span>{c.component.name} {c.component.version && c.component.version}</span>
 				    <DisplayVulStatusSummary
 					status = {c.summary}
 				    />
@@ -599,7 +612,7 @@ const StatusAddForm = (props) => {
 				 paginate
 				 isLoading={isSearchLoading}
 				 labelKey="name"
-                                 onChange={setSelComponent}
+                                 onChange={setSelectedComponent}
                                  selected={selComponent}
 				 useCache={false}
                                  placeholder="Start typing for components"

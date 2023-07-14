@@ -640,7 +640,9 @@ class VulSerializer(serializers.ModelSerializer):
     def get_ssvc_decision_tree(self, obj):
         try:
             if obj.vulssvc:
-                return obj.vulssvc.decision_tree
+                dec_tree = obj.vulssvc.decision_tree
+                dec_tree.append({'label': 'date_scored', 'value': obj.vulssvc.last_edit})
+                return dec_tree
         except VulSSVC.DoesNotExist:
             return None
 

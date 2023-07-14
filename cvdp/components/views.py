@@ -44,6 +44,24 @@ def _my_case_components(user, case):
     products = Product.objects.filter(supplier__in=my_part_groups).values_list('component__id', flat=True)
     return Component.objects.filter(id__in=products)
 
+#components is a queryset of components this user has access to
+# that have the component name specified, but we need to get a little more specific
+
+def _find_component(components, data):
+
+    if components:
+        c = components.filter(version=data['version'])
+        if c:
+            return c.first()
+        else:
+            c = components.filter(version__isnull=True).first()
+            if c:
+                c.version = data['version']
+                c.save()
+                return c
+    return None
+
+
 def _is_my_component(user, component):
     if user.is_coordinator:
         return True
@@ -352,7 +370,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
         if not(is_my_case(self.request.user, case.id)):
             raise PermissionDenied()
         #which components should we return here? if coordinator, return all
-        components = ComponentStatus.objects.filter(vul__case=case).distinct('component__name').order_by('component__name')
+        components = ComponentStatus.objects.filter(vul__case=case).distinct('component__name', 'component__version').order_by('component__name', 'component__version')
         if self.request.user.is_coordinator:
             return components
         else:
@@ -393,11 +411,13 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
 
             #get component
             if my_role == 'supplier':
-                component = _my_case_components(self.request.user, case).filter(name=request.data['component']).first()
+                components = _my_case_components(self.request.user, case).filter(name=request.data['component'])
+                component = _find_component(components, request.data)
+                    
             else:
                 #this really needs to be more specific
-                component = Component.objects.filter(name=request.data['component']).first()
-
+                components = Component.objects.filter(name=request.data['component'])
+                component = _find_component(components, request.data)
 
             if component == None:
                 if my_role == 'supplier':
@@ -408,7 +428,10 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
 
                 #create the component
                 component = Component(name=request.data['component'],
+                                      version = request.data['version'],
                                       added_by=self.request.user)
+                if request.data.get('supplier'):
+                    component.supplier = request.data.get('supplier')
                 component.save()
                 action = create_component_action(f"created component", self.request.user, component, 1)
                 #who is adding this component?
@@ -478,7 +501,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
              #get vuls
             for v in request.data['vuls']:
                 vul = get_object_or_404(Vulnerability, id=v)
-
+                logger.debug(f"VUL IS {vul}")
                 cs = ComponentStatus.objects.filter(component=component.component, vul=vul).first()
                 if cs:
                     data = request.data
@@ -504,7 +527,8 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                         action = create_component_action(f"modify share status for {vul.vul}", self.request.user, component.component, 6)
 
                     if not change:
-                        return Response({}, status=status.HTTP_202_ACCEPTED)
+                        continue
+                    #return Response({}, status=status.HTTP_202_ACCEPTED)
                 else:
                     cs = ComponentStatus(component=component.component,
                                          vul=vul,

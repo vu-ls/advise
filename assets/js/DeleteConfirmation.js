@@ -24,7 +24,7 @@ const DeleteConfirmation = ({ showModal, hideModal, confirmModal, id, message, b
     }, [id])
     
     return (
-        <Modal show={showModal} onHide={hideModal}>
+        <Modal show={showModal} onHide={hideModal} centered>
         <Modal.Header closeButton>
           <Modal.Title>Confirm this action</Modal.Title>
         </Modal.Header>

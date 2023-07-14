@@ -20,6 +20,7 @@ export default class CVEAPI{
 	let url = `${this.url}org/${this.org_name}`;
 	return axios.get(url, this.headers);
     }
+
     
     getUser(username) {
 	let url = this.user_path;
@@ -46,6 +47,8 @@ export default class CVEAPI{
 	return axios.put(url, null, this.headers).then(response=>response.data);
     }
 
+
+    
 
     getCVEMeta(id) {
 	let url = `${this.url}cve-id/${id}`;
@@ -121,8 +124,16 @@ export default class CVEAPI{
 	let url = `${this.url}cve/${cve}/cna`;
 	return axios.post(url, data, this.headers)
     }
-	
+
+    putCVE(cve, data) {
+	let url = `${this.url}cve/${cve}/cna`;
+        return axios.put(url, data, this.headers)
+    }
     
+    putADP(cve, data) {
+	let url = `${this.url}cve/${cve}/adp`;
+	return axios.put(url, data, this.headers)
+    }
     
 }
 

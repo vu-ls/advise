@@ -1018,25 +1018,35 @@ class VulAPIView(viewsets.ModelViewSet):
 
         case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         self.check_object_permissions(request, case)
-        cve = None
         if request.data.get('cve'):
             if request.data['cve'].lower().startswith('cve-'):
                 cve = request.data['cve'][4:]
             else:
                 cve = request.data['cve']
-        if (request.data.get('description')):
+
+            if Vulnerability.objects.filter(case=case, cve=cve).exists():
+                return Response({'detail':'CVE already exists for this case.'}, status=status.HTTP_400_BAD_REQUEST)
+        data = request.data
+        data['case'] = self.kwargs['caseid']
+        serializer = self.serializer_class(data=data)
+        if serializer.is_valid():
+            vul = serializer.save(case=case)
+            vul.user=self.request.user
+            vul.save()
+            """
             vul = Vulnerability(case=case,
                                 cve=cve,
                                 user=self.request.user,
                                 description=request.data.get('description'))
             vul.save()
+            """
             action = create_case_action("added new vulnerability", request.user, case, True)
             action.vulnerability = vul
             action.save()
-            serializer = self.serializer_class(vul)
+            #serializer = self.serializer_class(vul)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
-            return Response({'description': 'This field is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, **kwargs):
         logger.debug("IN VUL UPDATE VIEW")

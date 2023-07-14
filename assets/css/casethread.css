@@ -1,4 +1,16 @@
+.border-danger {
+    border-style: dashed !important;
+}
 
+.dropdown-toggle-after .dropdown-toggle::after{
+    display: inline-block;
+}
+
+.card-grid-wrapper .col {
+    display: flex;
+    justify-content:space-between;
+    align-items: stretch;
+}
 
 .card-wrapper {
     display: flex;

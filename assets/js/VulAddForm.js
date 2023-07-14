@@ -9,6 +9,8 @@ import AdminAPI from './AdminAPI'
 import CVEAPI from './CVEAPI';
 import ScoreModal from './ScoreModal';
 import PublishCVEApp from './PublishCVEApp';
+import PopulateCVEModal from './PopulateCVEModal';
+import PublishVulModal from './PublishVulModal';
 
 import '../css/casethread.css';
 
@@ -39,10 +41,18 @@ const VulAddForm = (props) => {
     const [publishCVE, setPublishCVE] = useState(false);
     const [buttonDisabled, setButtonDisabled] = useState(false);
     const [accounts, setAccounts] = useState([]);
-
+    const [cveAccount, setCVEAccount] = useState(null);
+    const [showPopulateModal, setShowPopulateModal] = useState(false);
+    const [showPublishModal, setShowPublishModal] = useState(false);
+    const [publishVul, setPublishVul] = useState(null);
+    
     const formRef = useRef(null);
     const navRef = useRef(null);
 
+    const hidePublishModal = () => {
+        setShowPublishModal(false);
+    }
+    
     const submitVul = async (event) => {
 	if (event) {
 	    event.preventDefault();
@@ -65,7 +75,7 @@ const VulAddForm = (props) => {
 		}).catch(function (error) {
 		    setReserveMessage(<Alert variant="danger">Error submitting vulnerability data: {error.message}</Alert>);
 		});
-		
+
 	    } else {
 		let res = threadapi.addVul(caseInfo, formData).then(function(response) {
 		    addVul();
@@ -103,8 +113,8 @@ const VulAddForm = (props) => {
 	} else {
 	    setVulCVE("");
 	}
-	setFormTitle(`Edit vulnerability ${q.vul}`)
-	setShowForm(true);
+	/*setFormTitle(`Edit vulnerability ${q.vul}`)
+	setShowForm(true);*/
     }
 
     function removeVul(id) {
@@ -128,6 +138,10 @@ const VulAddForm = (props) => {
 	setShowCVEModal(false);
     }
 
+    const hidePopulateModal = () => {
+	setShowPopulateModal(false);
+    }
+    
     const hideScoreModal = () => {
 	setViewScoreModal(false);
 	props.updateVuls();
@@ -139,6 +153,7 @@ const VulAddForm = (props) => {
 
     const hideVulModal = () => {
 	setShowEditVulModal(false);
+	setShowForm(false);
     }
 
     const fetchCVEAccounts = async () => {
@@ -151,6 +166,25 @@ const VulAddForm = (props) => {
         }
     }
 
+    const pullCVENow = async (account) => {
+	setCVEAccount(account);
+	setShowPopulateModal(true);
+	
+	console.log("DO IT!", account);
+        let cveAPI = new CVEAPI(account.org_name, account.email, account.api_key, account.server);
+        try {
+            let newcve = await cveAPI.getCVE(vulCVE);
+            console.log(newcve);
+            let newcveid = await newcve.data;
+            console.log(newcveid);
+	    
+            hideCVEModal();
+        } catch (err) {
+            setReserveMessage(<Alert variant="danger">Error retrieving CVE {err.message}</Alert>)
+            console.log(err);
+        }
+    }
+    
     const reserveCVENow = async (account) => {
 	console.log("DO IT!", account);
 	let cveAPI = new CVEAPI(account.org_name, account.email, account.api_key, account.server);
@@ -169,9 +203,10 @@ const VulAddForm = (props) => {
 	}
     }
 
+
     const ReserveCVEButton = () => {
 
-	const [buttonText, setButtonText] =	useState("Reserve CVE");
+	const [buttonText, setButtonText] = useState("Reserve CVE");
 
 	const reserveCVE = async (e) => {
 	    /*get user CVE account */
@@ -204,6 +239,38 @@ const VulAddForm = (props) => {
 	)
     }
 
+    const pullCVEInfo = async (e) => {
+	/*get user CVE account */
+	setShowEditVulModal(false);
+        let accs = await fetchCVEAccounts();
+        let rj = await accs.data;
+	console.log(rj);
+        if (rj.length > 1) {
+            setModalMessage(rj);
+            setShowCVEModal(true);
+        } else if (rj.length == 1) {
+            pullCVENow(rj[0]);
+        } else {
+            setModalMessage([])
+            setShowCVEModal(true);
+        }
+    }
+    
+    const FillCVEButton = () => {
+	const [buttonText, setButtonText] = useState("Auto-populate CVE");
+
+        return (
+	    
+            <Button
+                size="sm"
+                className="mb-2"
+                onClick={(e)=>pullCVEInfo(e)}
+                variant="outline-secondary">
+		{buttonText}
+            </Button>
+        )
+    }
+    
     function addVul() {
 	setEditVul(null);
 	setVulDescription("");
@@ -214,9 +281,11 @@ const VulAddForm = (props) => {
     const hidePublishApp = () => {
 	setPublishCVE(false);
     }
-    
+
     useEffect(() => {
 	setIsLoading(false);
+	setShowForm(false);
+	setVulCVE("");
     }, [vuls]);
 
     useEffect(() => {
@@ -250,9 +319,8 @@ const VulAddForm = (props) => {
 			 {vuls.length > 0 ?
 			  <DropdownButton variant="btn p-0"
 					  title={<i className="bx bx-dots-vertical-rounded"></i>}
-			  >                                                                            
+			  >
                               <Dropdown.Item eventKey='add' onClick={()=>(addVul(), setShowForm(true))} >Add Vulnerability</Dropdown.Item>
-			      <Dropdown.Item eventKey='publish' onClick={()=>(setPublishCVE(true))} >Publish CVE</Dropdown.Item> 
 			  </DropdownButton>
 			  :
 			  <Button type="button" className="btn btn-primary" onClick={()=>(addVul(), setShowForm(true))}>
@@ -260,18 +328,11 @@ const VulAddForm = (props) => {
 			  </Button>
 			 }
 		     </>
-		     
+
 		    }
 		</div>
-		{publishCVE ?
-		 <PublishCVEApp
-		     vuls = {vuls}
-		     cancel = {hidePublishApp}
-		 />
-		 :
-		 <>
-		 <Accordion>
-
+		<Accordion>
+		    
 		    { vuls.map((vul, index) => {
 			return (
 			    <Accordion.Item className={vul.id == editVul ? "card active mt-2" : "card mt-2"} eventKey={index} key={vul.id}>
@@ -297,7 +358,7 @@ const VulAddForm = (props) => {
 				    {vul.date_public &&
 				     <p><b>Date Public:</b> {vul.date_public} </p>
                                     }
-				    
+
 				    {vul.problem_types && vul.problem_types.length > 0 &&
 				     <div>
 				     <b>Problem Types:</b><br/>
@@ -347,28 +408,29 @@ const VulAddForm = (props) => {
 				     </>
 				    }
 				    {props.updateVuls &&
-				    <div className="d-flex justify-content-between mt-3">
-					<Button
-					    size="sm"
+				    <div className="d-flex justify-content-end mt-3">
+					<DropdownButton
 					    variant="outline-secondary"
-					    onClick={(e)=>(setScoreVul(vul), setViewScoreModal(true))}
-					    >
-					    Score Vul
-					</Button>
-
-					<div className="actions text-end">
-					    <Button variant="icon" className="p-0" onClick={(e)=>editVulNow(vul)}><i className="fas fa-edit"></i></Button><Button variant="icon" className="p=0" onClick={(e)=>removeVul(vul.id)}><i className="fas fa-trash"></i></Button>
-					</div>
+					    title="Options"
+					    className="dropdown-toggle-after"
+					>
+					    <Dropdown.Item eventKey="edit" onClick={(e)=>(editVulNow(vul), setShowEditVulModal(true))}>Edit</Dropdown.Item>
+					    <Dropdown.Item eventKey="score" onClick={(e)=>(setScoreVul(vul), setViewScoreModal(true))}>Score</Dropdown.Item>
+					    <Dropdown.Item eventKey="delete" onClick={(e)=>removeVul(vul.id)}>Delete</Dropdown.Item>
+					    {vul.cve &&
+					     <Dropdown.Item eventkey="publish" onClick={(e)=>(setPublishVul(vul), setShowPublishModal(true))}>Publish</Dropdown.Item>
+					    }
+					</DropdownButton>
 				    </div>
 				    }
 				</Accordion.Body>
 			    </Accordion.Item>
 			)}
 			      )}
-		 </Accordion>
-		     {vuls.length == 0 &&
-		      <p>Vulnerabilities coming soon...</p>
-		     }
+		</Accordion>
+		{vuls.length == 0 &&
+		 <p>Vulnerabilities coming soon...</p>
+		}
 
 		<div id="testref" ref={formRef}>&nbsp; </div>
 		{showForm &&
@@ -387,7 +449,9 @@ const VulAddForm = (props) => {
 			     <Form.Group className="mb-3" controlId="_type">
 				 <div className="d-flex align-items-start gap-4">
 				     <Form.Label>CVE</Form.Label>
-				     {vulCVE ? "" :
+				     {vulCVE ?
+				      <FillCVEButton />
+				      :
 				     <ReserveCVEButton
 				     />
 				     }
@@ -430,35 +494,49 @@ const VulAddForm = (props) => {
 		     </Card.Body>
 		 </Card>
 		}
-		 </>
-		}
 		{props.updateVuls &&
 		 <>
-		<EditVulModal
-		    showModal={showEditVulModal}
-		    hideModal={hideVulModal}
-		    vul={editVul}
-		    updateVul={doneEdit}
-		/>
+		     <EditVulModal
+			 showModal={showEditVulModal}
+			 hideModal={hideVulModal}
+			 vul={editVul}
+			 updateVul={doneEdit}
+			 syncCVE={pullCVEInfo}
+		     />
+		     
+		     <PickCVEModalAccount
+			 showModal = {showCVEModal}
+			 hideModal = {hideCVEModal}
+			 message = {modalMessage}
+			 confirmModal = {reserveCVENow}
+		     />
+		     <PopulateCVEModal
+			 showModal = {showPopulateModal}
+			 hideModal = {hidePopulateModal}
+			 cveAccount = {cveAccount}
+			 vul = {vulCVE}
+			 caseInfo = {caseInfo}
+			 edit={editVul}
+			 updateVuls = {props.updateVuls}
+		     />
+		     <ScoreModal
+			 showModal = {viewScoreModal}
+			 hideModal = {hideScoreModal}
+			 vul = {scoreVul}
+		     />
 
-		<PickCVEModalAccount
-		    showModal = {showCVEModal}
-		    hideModal = {hideCVEModal}
-		    message = {modalMessage}
-		    confirmModal = {reserveCVENow}
-		/>
-		<ScoreModal
-		    showModal = {viewScoreModal}
-		    hideModal = {hideScoreModal}
-		    vul = {scoreVul}
-		/>
-
-		<DeleteConfirmation
-                    showModal={displayConfirmationModal}
-                    confirmModal={submitRemoveQuestion}
-                    hideModal={hideConfirmationModal}
-                    id={removeID}
-                    message={deleteMessage} />
+		     <PublishVulModal
+			 showModal={showPublishModal}
+			 hideModal={hidePublishModal}
+			 vul={publishVul}
+			 updateVul={doneEdit}
+		     /> 
+		     <DeleteConfirmation
+			 showModal={displayConfirmationModal}
+			 confirmModal={submitRemoveQuestion}
+			 hideModal={hideConfirmationModal}
+			 id={removeID}
+			 message={deleteMessage} />
 		 </>
 		 
 		}
