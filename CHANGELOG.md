@@ -10,19 +10,26 @@ All notable changes to AdVISE will be documented in this file.
 - Allow case owners to update case report and view original report
 - Improved error reporting
 - Add case transfer API to allow instances to transfer cases
+- Populate vulnerability information and status from CVE Entry
+- Publish CVE ADP Container if ADP Role is available
+- Add date scored to SSVC information
+- New unit tests for testing case transfers
 
 ### Changed
 
 - Participant role from "vendor" to "supplier"
 - Update case modified time on case related object additions, changes
 - Removed CVE services option for group usage
-	
+- Vulnerability UI Form - consolidate options into one dropdown button
+- Upgrade dependencies: semver, django, cryptography
+
 ### Fixed
 
 - Changing role through CVE Services API
 - Changing username through CVE Services API
+- Updating CVE Entry through CVE Services API
+- Date Public format when submitting CVE Entry
 
-	
 ## [1.2.0] - 2023-06-06
 
 ### Added
