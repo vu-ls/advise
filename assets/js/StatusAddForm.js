@@ -3,8 +3,10 @@ import CaseThreadAPI from './ThreadAPI';
 import ComponentAPI from './ComponentAPI';
 import DeleteConfirmation from "./DeleteConfirmation";
 import StatusModal from "./StatusModal";
-import {Card, ButtonGroup, ToggleButton, DropdownButton, Dropdown, Table, Accordion, Row, Col, Button, Form} from 'react-bootstrap';
+import {Card, Alert, OverlayTrigger, Tooltip, ButtonGroup, ToggleButton, DropdownButton, Dropdown, Table, Accordion, Row, Col, Button, Form} from 'react-bootstrap';
 import DisplayVulStatus from './DisplayVulStatus';
+import StatusTransferModal from './StatusTransferModal';
+import ErrorModal from "./ErrorModal";
 import {AsyncTypeahead} from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.bs5.css';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
@@ -86,6 +88,10 @@ const DisplayVulStatusSummary = (props) => {
 const StatusAddForm = (props) => {
 
     const caseInfo = props.caseInfo;
+    const [error, setError] = useState(null);
+    const [displayErrorModal, setDisplayErrorModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+    const [transfers, setTransfers] = useState([]);
     const [reqUser, setReqUser] = useState(null);
     const [questions, setQuestions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -115,7 +121,7 @@ const StatusAddForm = (props) => {
     const [removeID, setRemoveID] = useState(null);
     const [allowAddStatus, setAllowAddStatus] = useState(false);
     const [showStatusModal, setShowStatusModal] = useState(false);
-    
+    const [showTransferModal, setShowTransferModal] = useState(false);
     /* typeahead vars */
     const [suggested, setSuggested] = useState([]);
     const [isSearchLoading, setIsSearchLoading] = useState(false);
@@ -125,6 +131,10 @@ const StatusAddForm = (props) => {
     const formRef = useRef(null);
     const navRef = useRef(null);
 
+    const hideErrorModal = () => {
+        setDisplayErrorModal(false);
+    }
+    
     const radios = [
 	{ name: 'Share', value: true },
 	{ name: "Don't Share", value: false },
@@ -132,6 +142,15 @@ const StatusAddForm = (props) => {
 
     const hideStatusModal = () => {
 	setShowStatusModal(false);
+    }
+
+    const hideTransferModal = (transfers) => {
+	console.log(`HIDE TRANSFERS ${transfers}`);
+	setShowTransferModal(false);
+	getSelectedComponents();
+	if (transfers == 0) {
+	    setTransfers([]);
+	}
     }
     
     function removeStatus(id) {
@@ -193,7 +212,11 @@ const StatusAddForm = (props) => {
         console.log("HEREEEE");
         componentapi.removeStatus(id).then((response) => {
 	    getSelectedComponents();
-        })
+        }).catch(err => {
+	    setErrorMessage(`Error removing component status: ${err.message}. Is this case assigned?`);
+            setDisplayErrorModal(true);
+            console.log(err);
+	});
         setDisplayConfirmationModal(false);
     }
 
@@ -288,13 +311,22 @@ const StatusAddForm = (props) => {
 			addStatus();
 			getSelectedComponents();
 			setShowForm(false);
-		    })
+		    }).catch(err => {
+			setErrorMessage(`Error editing status: ${err.message}: ${err.response.data.detail}`);
+			setDisplayErrorModal(true);
+			console.log(err);
+		    });
 		} else {
 		    componentapi.addStatus(caseInfo, formDataObj).then((response) => {
 			addStatus();
 			getSelectedComponents();
 			setShowForm(false);
-		    })
+		    }).catch(err => {
+                        setErrorMessage(`Error adding status: ${err.message}: ${err.response.data.detail}`);
+                        setDisplayErrorModal(true);
+                        console.log(err);
+                    });
+
 		}
 	    } catch (err) {
 		console.log(err);
@@ -350,23 +382,27 @@ const StatusAddForm = (props) => {
         setVuls(props.vuls)
 	getSelectedComponents();
 	setReqUser(props.user);
+	if (['owner', 'coordinator'].includes(props.user.role)) {
+	    setTransfers(props.transfers)
+	}
+
 	if (['owner', 'supplier'].includes(props.user.role)) {
 	    setAllowAddStatus(true);
+
 	}
     }, [props])
 
 
     const getSelectedComponents = async () => {
         console.log("fetching case components");
-        try {
-            await componentapi.getComponentStatus(caseInfo).then((response) => {
-
-		console.log("COMP STATUS", response);
-		setCaseComponents(response);
-	    })
-	} catch (err) {
+        await componentapi.getComponentStatus(caseInfo).then((response) => {
+	    
+	    console.log("COMP STATUS", response);
+	    setCaseComponents(response);
+	}).catch(err => {
 	    console.log('Error:', err)
-	}
+	    setError(`Error retrieving component status: ${err.message}`);
+	})
     }
 
     function addStatus() {
@@ -443,6 +479,20 @@ const StatusAddForm = (props) => {
 		 </>
 		}
             </div>
+	    {transfers.length > 0 &&
+	     <>
+		 <Alert variant="warning" className="mt-2">This case has status transfers waiting to be approved. <a href="#" onClick={(e)=>setShowTransferModal(true)}>View transfer requests</a></Alert>
+
+		 <StatusTransferModal
+		     showModal = {showTransferModal}
+		     hideModal = {hideTransferModal}
+		     transfers = {transfers}
+		 />
+	     </>
+	     
+	    }
+		 
+
 	    {vuls.length == 0 &&
 	     <>
 		 {reqUser.role === "owner" ?
@@ -459,7 +509,12 @@ const StatusAddForm = (props) => {
 			<Accordion.Item className="card mt-2" eventKey={index} key={index}>
                             <Accordion.Header>
 				<div className="d-flex gap-5 justify-content-between">
-				    <span>{c.component.name} {c.component.version && c.component.version}</span>
+				    <span>{c.component.owner ? "" :
+					   <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>
+					       <i className="fas fa-exclamation-triangle warningtext"></i>
+					   </OverlayTrigger>}
+					{c.component.name} {c.component.version && c.component.version}
+				    </span>
 				    <DisplayVulStatusSummary
 					status = {c.summary}
 				    />
@@ -504,9 +559,14 @@ const StatusAddForm = (props) => {
 						    </td>
 						    <td>{v.version} {v.version_range ? v.version_range : ""} {v.version_end_range ? v.version_end_range : "" }
 						    </td>
-						    <td>{c.component.owner &&
+						    <td>{c.component.owner ?
 							 `${c.component.owner.name}`
-							}</td>
+							 :
+							 <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>
+							     <i className="fas fa-exclamation-triangle warningtext"></i>             
+							 </OverlayTrigger>
+							}
+						    </td>
 						    <td>{v.statement}</td>
 						     <ActionColumn
 							 component = {c}
@@ -526,8 +586,13 @@ const StatusAddForm = (props) => {
                                                     </td>
                                                     <td>{v.version} {v.version_range ? v.version_range : ""} {v.version_end_range ? v.version_end_range : "" }
                                                     </td>
-						    <td>{c.component.owner &&
+						    <td>{c.component.owner ?
 							 `${c.component.owner.name}`
+							 :
+                                                         <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>                                          
+                                                             <i className="fas fa-exclamation-triangle warningtext">
+							     </i>
+                                                         </OverlayTrigger>
 							}</td>
                                                     <td>{v.statement}</td>
 						    <ActionColumn
@@ -548,8 +613,12 @@ const StatusAddForm = (props) => {
                                                          </td>
                                                     <td>{v.version} {v.version_range ? v.version_range : ""} {v.version_end_range ? v.version_end_range : "" }
                                                     </td>
-						    <td>{c.component.owner &&
+						    <td>{c.component.owner ?
 							 `${c.component.owner.name}`
+							 :							 
+                                                         <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>
+                                                         <i className="fas fa-exclamation-triangle warningtext"></i>
+                                                         </OverlayTrigger>
 							}</td>
                                                     <td>{v.statement}</td>
 						    <ActionColumn
@@ -570,8 +639,12 @@ const StatusAddForm = (props) => {
                                                     </td>
                                                     <td>{v.version} {v.version_range ? v.version_range : ""} {v.version_end_range ? v.version_end_range : "" }
                                                     </td>
-						    <td>{c.component.owner &&
+						    <td>{c.component.owner ?
 							 `${c.component.owner.name}`
+							 :
+                                                         <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>
+                                                             <i className="fas fa-exclamation-triangle warningtext"></i>
+                                                         </OverlayTrigger>
 							}
 						    </td>
                                                     <td>{v.statement}</td>
@@ -780,6 +853,11 @@ const StatusAddForm = (props) => {
 		status = {editStatus}
 		
 	    />
+	    <ErrorModal
+                showModal = {displayErrorModal}
+                hideModal = {hideErrorModal}
+                message = {errorMessage}
+            />  
 	</>
     :
 	<p className="lead">Once vulnerabilites have been added, we will request that you update your status.</p>

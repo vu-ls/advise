@@ -230,14 +230,19 @@ const StatusModal = ({showModal, hideModal, component, status}) => {
 			     <pre>
 				 {JSON.stringify(vex, null, 2)}
 			     </pre>
-			     <div className="text-end">
-				 <Button variant="outline-primary" href={`data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(vex, null, 2))}`} download={`vex_${component.component.name.replace(/ /g, "_")}.json`}><i className="fas fa-download"></i> Download</Button>
-			     </div>
 			 </>
 			}
 		    </Tab>
 		</Tabs>
 	    </Modal.Body>
+	    <Modal.Footer>
+		{activeTab == "vex" ?
+		 <Button variant="outline-primary" href={`data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(vex, null, 2))}`} download={`vex_${component.component.name.replace(/ /g, "_")}.json`}><i className="fas fa-download"></i> Download</Button>
+		 :
+		 <Button variant="primary" onClick={hideModal}>Close</Button>
+		}
+	    </Modal.Footer>
+	    
 	</Modal>
     )
 

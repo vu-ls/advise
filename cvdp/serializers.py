@@ -2,6 +2,29 @@ from rest_framework import serializers
 from authapp.models import User
 from django.core.exceptions import ObjectDoesNotExist
 
+
+class DynamicFieldsModelSerializer(serializers.ModelSerializer):
+    """
+    A ModelSerializer that takes an additional `fields` argument that
+    controls which fields should be displayed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        # Don't pass the 'fields' arg up to the superclass
+        fields = kwargs.pop('fields', None)
+
+        # Instantiate the superclass normally
+        super().__init__(*args, **kwargs)
+
+        if fields is not None:
+            #remove any fields provided
+            not_allowed = set(fields)
+            existing = set(self.fields)
+            for field_name in not_allowed:
+                self.fields.pop(field_name)
+
+
+
 class ChoiceField(serializers.ChoiceField):
 
     def to_representation(self, obj):

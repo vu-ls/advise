@@ -226,7 +226,6 @@ class TransferAccessPermission(BasePermission):
         else:
             #check permissions for transfer access
             try:
-                #return True
                 #logger.debug(request.user.auth_token.last_four)
                 return AdVISEConnection.objects.filter(incoming_key = request.user.auth_token, disabled=False).exists()
             except:
@@ -239,7 +238,6 @@ class CaseTransferAccessPermission(BasePermission):
     def has_permission(self, request, view):
         case = get_object_or_404(Case, case_id=view.kwargs.get('caseid'))
         ## did this case originate from the API token that is requesting it
-        #return True
         try:
             connection = AdVISEConnection.objects.filter(incoming_key = request.user.auth_token, disabled=False).first()
             if not connection:

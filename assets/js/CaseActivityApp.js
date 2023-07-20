@@ -66,8 +66,8 @@ const CaseActivityApp = (props) => {
 			<PerfectScrollbar className="participant-list">
 			    <ul className="list-unstyled mb-0">
 				{loading ?
-				 <div className="text-center">                                                              
-				     <div className="lds-spinner"><div></div><div></div><div></div></div>                   
+				 <div className="text-center">
+				     <div className="lds-spinner"><div></div><div></div><div></div></div>
 				 </div>    
 				 :
 				 (activity.map((a, index) => {

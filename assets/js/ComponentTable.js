@@ -333,7 +333,7 @@ const ComponentTable = (props) => {
     // Async Fetch
     const fetchInitialData = async () => {
         console.log("fetching components");
-
+	
         try {
 	    if ('group' in props) {
 		await componentapi.getGroupComponents(props.group).then((response) => {
@@ -343,6 +343,10 @@ const ComponentTable = (props) => {
 		    setCount(response.count);
 		    setNextUrl(response.next);
                     setIsLoading(false);
+		    if (searchVal) {
+			filterData(searchVal);
+		    }
+
 		})
 	    } else {
 		await componentapi.getComponents().then((response) => {
@@ -352,6 +356,9 @@ const ComponentTable = (props) => {
 		    setCount(response.count);
 		    setNextUrl(response.next);
                     setIsLoading(false);
+		    if (searchVal) {
+            		filterData(searchVal);
+                    }
 		})
 	    }
         } catch (err) {

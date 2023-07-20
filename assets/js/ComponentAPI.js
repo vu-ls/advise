@@ -106,6 +106,12 @@ export default class ComponentAPI {
         return axios.get(url).then(response => response.data);
     }
 
+    getCompStatusUploads(c) {
+	const url = `${API_URL}/api/case/${c.case_id}/status/transfers/`;
+        return axios.get(url).then(response => response.data);
+    }
+
+
     getComponentStatusActivity(c) {
 	const url = `${API_URL}/api/case/component/${c}/status/revisions/`;
         return axios.get(url).then(response => response.data);
@@ -142,5 +148,18 @@ export default class ComponentAPI {
         return axios.get(url, {responseType: 'blob'})
     }
 
+    mergeStatus(id) {
+	let formField = new FormData();
+        formField.append('merged', 1);
+	let url = `${API_URL}/api/case/status/transfer/${id}/`;
+	return axios.patch(url, formField).then(response => response.data);
+    }
+
+    rejectStatus(id) {
+	let formField = new FormData();
+	formField.append('deleted', 1);
+	let url = `${API_URL}/api/case/status/transfer/${id}/`;
+        return axios.patch(url, formField).then(response => response.data);	
+    }
 }
 

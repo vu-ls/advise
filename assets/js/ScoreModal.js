@@ -40,7 +40,7 @@ const ScoreModal = ({ showModal, hideModal, vul }) => {
     const [apiError, setApiError] = useState(false);
     const [message, setMessage ] = useState([]);
     const [formContent, setFormContent] = useState(null);
-    const [loading, setIsLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [edit, setEdit] = useState(null);
 
@@ -189,10 +189,16 @@ const ScoreModal = ({ showModal, hideModal, vul }) => {
 	    */
             await threadapi.getCVSSForm(vul).then((response) => {
                 setFormContent(response);
-                setIsLoading(false);
+                setLoading(false);
             })
         } catch (err) {
-            console.log('Error:', err)
+	    if (err.response.status == 403) {
+		setError(`You are not permitted to score this vulnerability.`);
+	    } else {
+		setError(`Error fetching CVSS form: ${err.message}`);
+	    }
+	    setLoading(false);
+	    console.log('Error:', err)
         }
     }
 
@@ -216,9 +222,9 @@ const ScoreModal = ({ showModal, hideModal, vul }) => {
 		    fill
 		>
 		    <Tab eventKey="cvss" title="CVSS">
-			{error ?
+			{error &&
 			 <div className="alert alert-danger">{error}</div>
-			 : ""}
+			}
 
 			{formContent ?
 			 <form onSubmit={(e)=>testSubmit(e)}>
@@ -245,8 +251,14 @@ const ScoreModal = ({ showModal, hideModal, vul }) => {
 				 </div>
 			     </div>
 			 </form>
-			 : <p>Loading...</p>
-
+			 :
+			 <>
+			     {loading &&
+			      <div className="text-center">
+				  <div className="lds-spinner"><div></div><div></div><div></div></div>
+                              </div>
+			     }
+			 </>
 			}
 
 

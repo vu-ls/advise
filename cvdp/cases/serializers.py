@@ -1,18 +1,23 @@
 from cvdp.models import *
 from cvdp.components.models import ComponentStatus, Product
 from django.core.exceptions import ObjectDoesNotExist
-from cvdp.permissions import my_case_role, is_my_case, my_case_vendors, is_case_owner
-from cvdp.serializers import ChoiceField, UserSerializer
+from cvdp.permissions import my_case_role, is_my_case, my_case_vendors, is_case_owner, my_components
+from cvdp.serializers import ChoiceField, UserSerializer, DynamicFieldsModelSerializer
+from django.db.models.functions import Concat
 from cvdp.groups.serializers import GroupSerializer
 from rest_framework import serializers
 from django.contrib.auth.models import Group
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.db.models import Count, Q
+from django.db.models import Count, Q, CharField, Value
 from cvdp.md_utils import markdown as md
 from authapp.models import User
 import difflib
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 class CWESerializer(serializers.ModelSerializer):
 
@@ -559,7 +564,106 @@ class AffectedProductSerializer(serializers.ModelSerializer):
         if obj.component.supplier:
             return obj.component.supplier
         return ""
+
+
+
+class VEXStatement(serializers.Serializer):
+    vulnerability = serializers.CharField()
+    products = serializers.ListField(
+        child=serializers.CharField()
+    )
+    status = serializers.ChoiceField(choices=["affected", "unaffected", "fixed", "under_investigation"])
+    
+class VEXUploadSerializer(serializers.Serializer):
+    author = serializers.CharField()
+    role = serializers.CharField()
+    timestamp = serializers.DateTimeField()
+    version = serializers.IntegerField()
+    statements = serializers.ListField(
+        child=VEXStatement()
+    )
+
+    
+class VEXSerializer(serializers.ModelSerializer):
+
+    context = serializers.ReadOnlyField(default="https://openvex.dev/ns")
+    id = serializers.SerializerMethodField()
+    author = serializers.SerializerMethodField()
+    role = serializers.ReadOnlyField(default="Document Creator")
+    timestamp = serializers.SerializerMethodField()
+    version = serializers.SerializerMethodField()
+    statements = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Vulnerability
+        fields = ('context', 'id', 'author', 'role', 'timestamp', 'version', 'statements')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["@context"] = data.pop("context", "")
+        data["@id"] = data.pop("id", "")
+        return data
+
+    def get_id(self, obj):
+        return f"{settings.SERVER_NAME}{obj.case.get_absolute_url()}"
+
+    def get_author(self, obj):
+        user = self.context.get('user')
+        if user:
+            return user.get_full_name()
+        else:
+            return obj.case.get_owners
+
+    def get_timestamp(self, obj):
+        status = ComponentStatus.objects.filter(vul=obj).order_by('-current_revision__modified').first()
+        return str(status.current_revision.modified)
+
+    def get_version(self, obj):
+        status = ComponentStatus.objects.filter(vul=obj).order_by('-current_revision__modified').first()
+        return status.current_revision.revision_number
+
+    def get_statements(self, obj):
+        user = self.context.get('user')
+        if user.is_coordinator:
+            status = ComponentStatus.objects.filter(vul=obj)
+        else:
+            comps = my_components(user)
+            status = ComponentStatus.objects.filter(vul=obj, component__in=comps)
+            
+        stmts = []
+        #get affected
+        affected = list(status.filter(current_revision__status=1).annotate(C=Concat('component__name',Value(' '), 'component__version', output_field=CharField())).values_list('C', flat=True))
+        stmts.append({'vulnerability': obj.vul,
+                      'products': affected,
+                      "status": "affected"})
+        fixed = list(status.filter(current_revision__status=2).annotate(C=Concat('component__name',Value(' '), 'component__version', output_field=CharField())).values_list('C', flat=True))
+        if fixed:
+            stmts.append({'vulnerability': obj.vul,
+                          'products': fixed,
+	                  "status": "fixed"})
+
+        investigating = list(status.filter(current_revision__status=2).annotate(C=Concat('component__name',Value(' '), 'component__version', output_field=CharField())).values_list('C', flat=True))
+        if investigating:
+            stmts.append({'vulnerability': obj.vul,
+                          'products': investigating,
+                          "status": "under_investigation"})
+        not_affected = list(status.filter(current_revision__status=0).annotate(C=Concat('component__name',Value(' '), 'component__version', output_field=CharField())).values_list('C', 'current_revision__justification'))
+        if not_affected:
+            #multiple justifications means multiple statements
+            na = {}
+            for x in not_affected:
+                if x[1] in na:
+                    na[x[1]].append(x[0])
+                else:
+                    na[x[1]] = [x[0]]
+            for key, val in na.items():
+                stmts.append({'vulnerability': obj.vul,
+	                      'products': val,
+                              "status": "not_affected",
+                              "justification": key })
         
+        return stmts
+                     
         
 class VulSerializer(serializers.ModelSerializer):
 
@@ -800,7 +904,7 @@ class CSAFTrackingSerializer(serializers.ModelSerializer):
         return {'engine': engine}
     
 class CSAFDocumentSerializer(serializers.ModelSerializer):
-    category = serializers.ReadOnlyField(default='csaf_security_advisory')
+    category = serializers.ReadOnlyField(default='csaf_vex')
     csaf_version = serializers.ReadOnlyField(default='2.0')
     publisher = serializers.SerializerMethodField()
     #references = CSAFReferenceSerializer()
@@ -898,20 +1002,29 @@ class CSAFVulnerabilitySerializer(serializers.ModelSerializer):
     notes = serializers.SerializerMethodField()
     title = serializers.CharField(source='description')
     product_status = serializers.SerializerMethodField()
-
+    flags = serializers.SerializerMethodField()
+    
     class Meta:
         model = Vulnerability
-        fields = ('cve', 'cwe', 'notes', 'title', 'product_status', )
+        fields = ('cve', 'cwe', 'notes', 'title', 'product_status', 'flags', )
 
+    def get_fields(self):
+        #pop flags field if vul doesn't have any not affected components
+        fields = super().get_fields()
+        if not ComponentStatus.objects.filter(vul=self.instance, current_revision__status=0).exclude(component__product_info__isnull=True).exists():
+            fields.pop('flags')
+        return fields
+        
     def get_cwe(self, obj):
         #CSAF only allows 1 for some reason
         if obj.problem_types:
             for cwe in obj.problem_types:
                 item = cwe.split(" ", 1)
-                return {'id': item[0],
-                        'name': item[1]}
-        else:
-            return {}
+                if len(item) > 1:
+                    return {'id': item[0],
+                            'name': item[1]}
+                
+        return {}
 
     def get_notes(self, obj):
         notes = []
@@ -920,12 +1033,48 @@ class CSAFVulnerabilitySerializer(serializers.ModelSerializer):
 
     def get_product_status(self, obj):
         affected = []
+        fixed = []
+        investigating = []
+        not_affected = []
+        ret = {}
         status = ComponentStatus.objects.filter(vul=obj).exclude(component__product_info__isnull=True).values_list('component__id', flat=True)
-        for s in status:
+        for s in status.filter(current_revision__status = 1):
             affected.append(f"CSAFPID-{s:04}")
-        #TODO: Add other statuses!
-        return {'known_affected': affected}
-    
+        for s in status.filter(current_revision__status = 2):
+            fixed.append(f"CSAFPID-{s:04}")
+        for s in status.filter(current_revision__status = 3):
+            investigating.append(f"CSAFPID-{s:04}")
+        for s in status.filter(current_revision__status = 0):
+            not_affected.append(f"CSAFPID-{s:04}")
+            
+        if affected:
+            ret['known_affected'] = affected
+        if fixed:
+            ret['fixed'] = fixed
+        if investigating:
+            ret['under_investigation'] = investigating
+        if not_affected:
+            ret['known_not_affected'] = not_affected
+
+        return ret
+
+    def get_flags(self, obj):
+        #get unaffected products
+        ret = {}
+        status = ComponentStatus.objects.filter(vul=obj, current_revision__status=0).exclude(component__product_info__isnull=True).values_list('component__id', 'current_revision__justification')
+        for x in status:
+            if x[1] in ret:
+                ret[x[1]].append(f"CSAFPID-{x[0]:04}")
+            else:
+                ret[x[1]] = [f"CSAFPID-{x[0]:04}"]
+        flags = []
+        if len(ret) == 0:
+            self.fields.pop("flags")
+            return
+        
+        for x,y in ret.items():
+            flags.append({'label': x, 'product_ids': y})
+        return flags
     
 class CSAFAdvisorySerializer(serializers.ModelSerializer):
     document = serializers.SerializerMethodField()
@@ -943,9 +1092,9 @@ class CSAFAdvisorySerializer(serializers.ModelSerializer):
 
     def get_product_tree(self, obj):
         vuls = Vulnerability.objects.filter(case=obj, cve__isnull=False).values_list('id', flat=True)
-
+        logger.debug(f"vuls is {vuls}")
         status = ComponentStatus.objects.filter(vul__in=vuls).exclude(component__product_info__isnull=True).values('component__product_info__supplier__id', 'component__product_info__supplier__name').order_by('component__product_info__supplier__id').annotate(num_components=Count("id"))
-        logger.debug(status)
+        logger.debug(f"status is {status}")
 
         #sort by vendor
         
@@ -954,8 +1103,13 @@ class CSAFAdvisorySerializer(serializers.ModelSerializer):
 
     def get_vulnerabilities(self, obj):
         vuls = Vulnerability.objects.filter(case=obj, cve__isnull=False)
-        data = CSAFVulnerabilitySerializer(vuls, many=True)
-        return data.data
+        data = []
+        # can't use many here because we need to pop the "flags" field on an individual basis
+        for v in vuls:
+            d = CSAFVulnerabilitySerializer(v)
+            data.append(d.data)
+            #data = CSAFVulnerabilitySerializer(vuls, many=True)
+        return data
 
 
 class CaseChangeSerializer(serializers.ModelSerializer):

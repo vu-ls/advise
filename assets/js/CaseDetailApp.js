@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import {Card, Badge, Alert, DropdownButton, Dropdown, InputGroup, FloatingLabel, Form, Container, Row, Col, Tab, Tabs, Nav, Button} from 'react-bootstrap';
 import CaseThreadAPI from './ThreadAPI';
+import ComponentAPI from './ComponentAPI';
 import '../css/casethread.css';
 import {format, formatDistance} from 'date-fns';
 import VulAddForm from './VulAddForm';
@@ -9,6 +10,7 @@ import CaseSummaryApp from './CaseSummaryApp';
 import ViewReport from './ViewReport';
 
 const threadapi = new CaseThreadAPI();
+const componentapi = new ComponentAPI();
 
 const CaseDetailApp = (props) => {
 
@@ -19,6 +21,7 @@ const CaseDetailApp = (props) => {
     const [feedback, setFeedback] = useState(null);
     const [activeTab, setActiveTab] = useState("report");
     const [vuls, setVuls] = useState([]);
+    const [transfers, setTransfers] = useState([]);
     const [owner, setOwner] = useState(false);
     const [status, setStatus] = useState(false);
     const [addReport, setAddReport] = useState(false);
@@ -100,15 +103,20 @@ const CaseDetailApp = (props) => {
 
     const fetchInitialData = async () => {
 
-        try {
-            await threadapi.getVuls(caseInfo).then((response) => {
-		console.log("VULS are ", response);
-                setVuls(response);
-            });
-
-        } catch (err) {
-            console.log('Error:', err)
-        }
+        await threadapi.getVuls(caseInfo).then((response) => {
+	    console.log("VULS are ", response);
+            setVuls(response);
+        }).catch(err => {
+	    console.log(err);
+	    setFeedback(<Alert variant="danger">An error occurred: {err.response.data.message}</Alert>);
+	});
+        if (['coordinator', 'owner'].includes(props.user.role)) {
+	    await componentapi.getCompStatusUploads(caseInfo).then((response) => {
+		setTransfers(response);
+            }).catch(err => {
+		console.log('Error:', err)
+            })
+	}
     }
 
     useEffect(() => {
@@ -206,13 +214,17 @@ const CaseDetailApp = (props) => {
 
 			<Nav.Item>
                             <Nav.Link eventKey="addstatus">
-				{status ?
-				 <>
-				     <span className="text-nowrap">Status <i className="fas fa-check text-success"></i></span>
-				 </>
+				{transfers.length > 0 ?
+				 <span className="text-nowrap">Status <Badge bg="warning" pill>{transfers.length}</Badge></span>
 				 :
 				 <>
-				     <i className="fas fa-plus"></i>  Add Status
+				     {status ?
+				      <span className="text-nowrap">Status <i className="fas fa-check text-success"></i></span>
+				      :
+				      <>
+					  <i className="fas fa-plus"></i>  Add Status
+				      </>
+				     }
 				 </>
 				}
 			    </Nav.Link>
@@ -316,6 +328,7 @@ const CaseDetailApp = (props) => {
 			    <StatusAddForm
 				caseInfo = {caseInfo}
 				vuls = {vuls}
+				transfers = {transfers}
 				user={props.user}
 			    />
 			</Tab.Pane>

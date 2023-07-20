@@ -31,7 +31,7 @@ from rest_framework.views import APIView
 from cvdp.permissions import *
 from cvdp.cases.serializers import *
 from cvdp.components.serializers import StatusActionSerializer
-from cvdp.components.models import StatusRevision
+from cvdp.components.models import StatusRevision, ComponentStatusUpload
 from cvdp.lib import *
 # Create your views here.
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -124,10 +124,10 @@ def assign_case(request, caseid):
         user = auto_assignment(role.id)
         title = f"auto assigned case to {user.screen_name}"
     else:
-        return Http404
+        raise Http404
     contact = Contact.objects.filter(user=user).first()
     if contact == None:
-        return Http404
+        raise Http404
     thread = CaseThread.objects.filter(case=case, official=True).first()
     add_new_case_participant(thread, contact.uuid, request.user, 'owner')
     action = create_case_action(title, request.user, case)
@@ -349,7 +349,7 @@ class AdvisoryAPIView(viewsets.ModelViewSet):
 
 class CSAFAdvisoryAPIView(generics.RetrieveAPIView):
     serializer_class = CSAFAdvisorySerializer
-    permission_classes = (IsAuthenticated, PendingUserPermission, CaseObjectAccessPermission)
+    permission_classes = (IsAuthenticated, PendingUserPermission, CaseAccessPermission)
 
     def get_view_name(self):
         return "Case Advisory in CSAF format"
@@ -359,6 +359,36 @@ class CSAFAdvisoryAPIView(generics.RetrieveAPIView):
         case = get_object_or_404(Case, case_id=caseid)
         return case
 
+class VulVEXAPIView(generics.RetrieveAPIView):
+    serializer_class = VEXSerializer
+    permission_classes = (IsAuthenticated, PendingUserPermission, CaseObjectAccessPermission)
+
+    def get_view_name(self):
+        return "Vulnerability Status in VEX format"
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"user": self.request.user})
+        return context
+    
+    def get_object(self):
+        vul = get_object_or_404(Vulnerability, id=self.kwargs['pk'])
+        self.check_object_permissions(self.request, vul.case)
+        #this vulnerability also has to have some status associated with it.
+        if self.request.user.is_coordinator:
+            if ComponentStatus.objects.filter(vul=vul).exists():
+                return vul
+            else:
+                raise Http404
+        else:
+            #can only get component status for this vulnerability for components this user
+            #has access to
+            my_components = my_components(self.request.user)
+            if ComponentStatus.objects.filter(vul=vul, component__in=my_components).exists():
+                return vul
+            else:
+                raise Http404
+    
 class AdviseFilterBackend(DjangoFilterBackend):
     def get_filterset_kwargs(self, request, queryset, view):
         kwargs = super().get_filterset_kwargs(request, queryset, view)
@@ -1340,6 +1370,37 @@ class ThreadTransferAPIView(viewsets.ModelViewSet):
             return Response({'detail': 'An error occurred during transfer.'},
                             status=status.HTTP_400_BAD_REQUEST)
                         
+
+class StatusTransferAPIView(viewsets.ModelViewSet):
+    serializer_class = VEXUploadSerializer
+    permission_classes = (IsAuthenticated, CaseTransferAccessPermission)
+
+    def create(self, request, *args, **kwargs):
+        print("DSIOFJLSDKFJLSKDJFLSJF")
+        logger.debug(f"{self.__class__.__name__} post: {self.request.data}")
+        logger.debug("IN STATUS TRANSFER VIEW")
+        case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
+        if not request.data.get('vex'):
+            return Response({'detail': 'vex is required field'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = self.serializer_class(data=request.data['vex'])
+        if serializer.is_valid():
+            #get connection
+            connection = AdVISEConnection.objects.filter(incoming_key=request.user.auth_token).first()
+            if connection:
+                action = create_case_action(f"transferred status from {connection.group.name}", self.request.user, case)
+            else:
+                action = create_case_action(f"uploaded status", self.request.user, case)
+            cs = ComponentStatusUpload(vex=request.data['vex'],
+                                       user=self.request.user,
+                                       case=case)
+            cs.save()
+
+            return Response({}, status=status.HTTP_202_ACCEPTED)
+        else:
+            print(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                                       
         
 class VulTransferAPIView(viewsets.ModelViewSet):
     serializer_class = VulSerializer
@@ -1362,6 +1423,10 @@ class VulTransferAPIView(viewsets.ModelViewSet):
                         cve = vul['cve'][4:]
                     else:
                         cve = vul['cve']
+                    #don't replace an already exisiting CVE
+                    old_vul = Vulnerability.objects.filter(cve=cve, case=case).first()
+                    if old_vul:
+                        return Response({'detail': 'Vul already exists.'}, status=status.HTTP_400_BAD_REQUEST)
                 vul = Vulnerability(case=case,
                                     cve=cve,
                                     user=self.request.user,
@@ -1424,7 +1489,7 @@ class ScoreVulCVSSView(LoginRequiredMixin, UserPassesTestMixin, FormView):
 
     def test_func(self):
         vul = get_object_or_404(Vulnerability, id=self.kwargs['pk'])
-        return is_case_owner(self.request.user, vul.case.id)
+        return is_case_owner_or_staff(self.request.user, vul.case.id)
 
     def get_context_data(self, **kwargs):
         context = super(ScoreVulCVSSView, self).get_context_data(**kwargs)

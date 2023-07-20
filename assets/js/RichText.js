@@ -12,7 +12,7 @@ Quill.register('modules/imageResize', ImageResize);
 const threadapi = new CaseThreadAPI();
 
 var people = [
-    {id: 1, participant: {name: 'boosh'}},
+    {id: 1, participant: {name: 'Example'}},
 ]
 
 var globalref = null;
@@ -104,6 +104,9 @@ const RichText = React.forwardRef((props, ref) => {
 	mention: mention,
 	imageResize: {
 	    parchment: Quill.import('parchment')
+	},
+	clipboard: {
+	    matchVisual: false,
 	},
     };
 

@@ -8,7 +8,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
-from cvdp.models import UserProfile, GroupProfile, Contact, CaseThreadParticipant, CaseParticipant, EmailTemplate, Case, AssignmentRole, UserAssignmentWeight, CaseReport, GlobalSettings, MessageThread, UserThread, CaseThread
+from cvdp.models import UserProfile, GroupProfile, Contact, CaseThreadParticipant, CaseParticipant, EmailTemplate, Case, AssignmentRole, UserAssignmentWeight, CaseReport, GlobalSettings, MessageThread, UserThread, CaseThread, Vulnerability
 from cvdp.manage.models import AdVISEConnection
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
@@ -19,6 +19,22 @@ class UserProfileInline(admin.StackedInline):
     verbose_name_plural = "User Profile"
     fk_name = 'user'
 
+class VulAdmin(admin.ModelAdmin):
+    list_display = ('get_vul_id', 'cve', 'case', 'description')
+    search_fields=['description', 'case__vuid', 'cve']
+    actions = ['get_vul_id']
+    title = "Deleted Vulnerabilities"
+
+
+    def get_vul_id(self, instance):
+        return instance.vul
+    get_vul_id.short_description = "Vul ID"
+
+    def has_delete_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return True
+        return False
+    
 
 class CustomUserAdmin(BaseUserAdmin):
     model = User
@@ -129,3 +145,4 @@ admin.site.register(CaseReport)
 admin.site.register(UserThread)
 admin.site.register(AdVISEConnection, ConnectionAdmin)
 admin.site.register(CaseThread)
+admin.site.register(Vulnerability, VulAdmin)

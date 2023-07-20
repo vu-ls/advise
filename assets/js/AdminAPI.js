@@ -142,7 +142,6 @@ export default class AdminAPI{
 		
 	    posts.push({'content': form[i]['content'], 'author': author, 'created': form[i]['created'], 'replies': replies})
 	}
-	console.log(posts);
 	let data = {'posts': posts};
 	return axios.post(url, data, {
 	    headers: {
@@ -195,6 +194,29 @@ export default class AdminAPI{
     transferAllArtifacts(array) {
 	return axios.all(array);
     }
+
+
+    async transferVexStatus(c, d, key, vul) {
+
+	/* first get vex */
+	let get_url = `${API_URL}/api/vul/${vul.id}/vex/`;
+	const data = await axios.get(get_url);
+	console.log(data);
+	console.log(data.data);
+	const url = `${d}/advise/api/transfers/case/${c}/status/`;
+	let formData = {'vex': data.data}
+	//formData.append('vex', JSON.stringify(data.data))
+	return axios.post(url, formData, {
+	    headers: {
+		'content-type': 'application/json',
+                'Authorization': `Token ${key}`,
+            }}).then(response=>response.data);
+    }
+	
+    
+    transferAllStatus(array) {
+	return axios.all(array);
+    }
     
     transferCase(form) {
 	const url = `${API_URL}/api/case/transfers/`;
@@ -205,5 +227,8 @@ export default class AdminAPI{
 	const url = `${API_URL}/api/case/${c}/transfers/?page=${page}`;
         return axios.get(url).then(response=>response.data);
     }
+
+
+    
     
 }

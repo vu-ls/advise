@@ -18,6 +18,7 @@ from django.http import HttpResponse, Http404, JsonResponse, HttpResponseNotAllo
 from authapp.models import User
 from django.utils.safestring import mark_safe
 import traceback
+import re
 from cvdp.manage.forms import *
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import exceptions, generics, status, authentication, viewsets, mixins, filters
@@ -36,6 +37,13 @@ logger.setLevel(logging.DEBUG)
 def _my_products(user):
     my_groups = user.groups.all()
     return Product.objects.filter(supplier__in=my_groups)
+
+def _find_version(name):
+    m = re.search("(?:(\d+)\.)?(?:(\d+)\.)?(\*|\d+)$", name)
+    if m:
+        return m.group(0)
+    else:
+        return "0.0"
 
 def _my_case_components(user, case):
     my_groups = user.groups.all()
@@ -367,7 +375,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             case = cs.vul.case
         else:
             case = get_object_or_404(Case, case_id = self.kwargs['caseid'])
-        if not(is_my_case(self.request.user, case.id)):
+        if not is_my_case(self.request.user, case.id):
             raise PermissionDenied()
         #which components should we return here? if coordinator, return all
         components = ComponentStatus.objects.filter(vul__case=case).distinct('component__name', 'component__version').order_by('component__name', 'component__version')
@@ -387,8 +395,9 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
         logger.debug("In STATUS CREATE VIEW")
         case = get_object_or_404(Case, case_id = self.kwargs['caseid'])
         logger.debug(request.data)
-        if not(is_my_case(self.request.user, case.id)):
+        if not is_my_case(self.request.user, case.id):
             raise PermissionDenied()
+        
         my_role = my_case_role(self.request.user, case)
         my_vendors = None
         if my_role in ["participant", "reporter", "observer"]:
@@ -413,7 +422,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             if my_role == 'supplier':
                 components = _my_case_components(self.request.user, case).filter(name=request.data['component'])
                 component = _find_component(components, request.data)
-                    
+
             else:
                 #this really needs to be more specific
                 components = Component.objects.filter(name=request.data['component'])
@@ -458,7 +467,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                 #update case modified
                 cs.vul.case.modified = timezone.now()
                 cs.vul.case.save()
-                
+
                 action = create_component_action(f"add component status for {vul.vul}", self.request.user, component, 6)
 
             return Response({}, status=status.HTTP_202_ACCEPTED)
@@ -469,8 +478,14 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
 
 
     def destroy(self, request, *args, **kwargs):
-        #TODO - fix permissions
         component = self.get_object()
+        #now check if this user has access to this component
+        if not is_case_owner_or_staff(self.request.user, component.vul.case.id):
+            if _is_my_component(self.request.user, component.component):
+                if self.request.user.is_coordinator:
+                    #user must be owner or staff to delete
+                    raise PermissionDenied()
+
         if component.component.get_vendor():
             action = create_case_action(f"Removed status for {component.component.get_vendor()}'s component {component.component.name} {component.component.version} for vulnerability {component.vul.vul}", request.user, component.vul.case)
         else:
@@ -482,9 +497,15 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
     def update(self, request, **kwargs):
-        #TODO - fix permissions
-        #component = get_object_or_404(ComponentStatus, id=self.kwargs['pk'])
         component = self.get_object()
+
+        #now check if this user has access to this component
+        if not is_case_owner_or_staff(self.request.user, component.vul.case.id):
+            if _is_my_component(self.request.user, component.component):
+                if self.request.user.is_coordinator:
+                    #user must be owner or staff to delete
+                    raise PermissionDenied()
+
 
         data = request.data
         share = False
@@ -545,6 +566,79 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             logger.debug(serializer.errors)
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+class StatusTransfersAPIView(viewsets.ModelViewSet):
+    serializer_class = StatusTransferSerializer
+    permission_classes = (IsAuthenticated, CoordinatorPermission)
+
+    def get_view_name(self):
+        return f"Status Transfers"
+
+    def get_queryset(self):
+        case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
+        return ComponentStatusUpload.objects.filter(case=case, merged=False, deleted=False)
+
+    def update(self, request, **kwargs):
+        logger.debug(f"{self.__class__.__name__} update: {self.request.POST}")
+        transfer = get_object_or_404(ComponentStatusUpload, id=self.kwargs['pk'])
+        data = request.data
+        case = transfer.case
+        if not is_case_owner_or_staff(self.request.user, case.id):
+            raise PermissionDenied()
+        sc = self.get_serializer_class()
+        serializer = sc(instance=transfer, data=data, partial=True)
+        if serializer.is_valid():
+            if request.data.get('deleted'):
+                action = create_case_action(f"rejected status transfer", request.user, case, False)
+            elif request.data.get('merged'):
+                #this is where we do all the status merging
+
+                for stmt in transfer.vex['statements']:
+
+                    cve = stmt['vulnerability']
+                    if cve.lower().startswith('cve-'):
+                        cve = cve[4:]
+
+                    vul = Vulnerability.objects.filter(cve=cve, case=case).first()
+                    if not vul:
+                        return Response({'detail': f'No vulnerability {cve} within this case.'}, status=status.HTTP_400_BAD_REQUEST)
+                    vstatus = stmt['status']
+                    if vstatus in ["not_affected", "unaffected"]:
+                        vstatus = 0
+                    elif vstatus == "affected":
+                        vstatus = 1
+                    elif vstatus == "fixed":
+                        vstatus = 2
+                    else:
+                        vstatus = 3
+                    if "justification" in stmt:
+                        justification = stmt["justification"]
+                    else:
+                        justification = None
+                    for p in stmt['products']:
+                        #create the component
+                        component = Component.objects.filter(name=p).first()
+                        if component == None:
+                            component = Component(name=p,
+                                                  added_by=self.request.user)
+                            component.save()
+                        #attempt to get version
+                        version = _find_version(p)
+                        cs, created = ComponentStatus.objects.update_or_create(component=component, vul=vul)
+                        sr = StatusRevision(status=vstatus, justification=justification,
+                                            version_value=version, statement=stmt.get('impact_statement', None), user=transfer.user)
+                        cs.add_revision(sr, save=True)
+
+                        action = create_case_action(f"merged status transfer from {transfer.user} for vul {vul.vul} and {component.name}",
+                                                    request.user, case, False)
+
+            serializer.save()
+            logger.debug(serializer.data)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        else:
+            logger.debug(serializer.errors)
+            return Response(serializer.errors,
+	                    status=status.HTTP_400_BAD_REQUEST)
 
 
 class ComponentStatusRevisionAPIView(viewsets.ModelViewSet):

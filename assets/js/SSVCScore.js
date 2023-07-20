@@ -88,7 +88,8 @@ const SSVCScore = (props) => {
 	if (props.vul.ssvc_decision) {
 	    /* TODO: make sure apples 2 apples with the same decision tree name */
 	    setFinalDecision(props.vul.ssvc_decision);
-	    setDecisions(props.vul.ssvc_decision_tree);
+	    let dec_tree = props.vul.ssvc_decision_tree.filter(item => item.label != "date_scored");
+	    setDecisions(dec_tree);
 	    setDecisionPoint(data.decision_points.length-1);
 	    setVector(props.vul.ssvc_vector);
 	}

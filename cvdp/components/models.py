@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.contrib.postgres.search import SearchVectorField
 from django.contrib.postgres.indexes import GinIndex
-from cvdp.models import Vulnerability, BaseRevisionMixin, Action
+from cvdp.models import Vulnerability, BaseRevisionMixin, Action, Case
 import logging
 
 
@@ -321,6 +321,33 @@ class ComponentStatus(models.Model):
         obj_name = _('Status Unknown')
         return str(obj_name)
 
+class ComponentStatusUpload(models.Model):
+
+    vex = models.JSONField(
+	help_text=_('Status in VEX JSON format')
+    )
+
+    case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE)
+    
+    received = models.DateTimeField(
+        default = timezone.now)
+
+
+    user = models.ForeignKey(
+	settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL)
+
+    merged = models.BooleanField(
+        default = False)
+
+    deleted = models.BooleanField(
+        default = False)
+
+    
 class ComponentAction(Action):
 
     ACTION_TYPE = (
@@ -391,3 +418,4 @@ class ComponentChange(models.Model):
                 'new_value': self.new_value
             }
         return out
+

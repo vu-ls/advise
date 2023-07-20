@@ -96,7 +96,7 @@ urlpatterns = [
     re_path('^api/transfers/case/(?P<caseid>[0-9]+)/artifacts/$', caseviews.ArtifactTransferAPIView.as_view({'post': 'create'}), name='transfer_artifactapi'),
     re_path('^api/transfers/case/(?P<caseid>[0-9]+)/vuls/$', caseviews.VulTransferAPIView.as_view({'post':'create'}), name='transfer_vulapi'),
     re_path('^api/transfers/case/(?P<caseid>[0-9]+)/advisory/$', caseviews.AdvisoryTransferAPIView.as_view({'post':'create'}), name='transfer_advisoryapi'),
-    #re_path('^api/transfers/case/(?P<caseid>[0-9]+)/advisory/$', caseviews.StatusTransferAPIView.as_view({'post':'create'}), name='transfer_statusapi'),
+    re_path('^api/transfers/case/(?P<caseid>[0-9]+)/status/$', caseviews.StatusTransferAPIView.as_view({'post':'create'}), name='transfer_statusapi'),
     re_path('^api/transfers/case/(?P<caseid>[0-9]+)/thread/$', caseviews.ThreadTransferAPIView.as_view({'post':'create'}), name='transfer_postapi'),
     re_path('^api/group/(?P<group>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/cases/$', caseviews.GroupCasesAPIView.as_view({'get': 'list'}), name='group_caseapi'),
     re_path('^api/contact/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/cases/$', caseviews.ContactCasesAPIView.as_view({'get': 'list'}), name='contact_caseapi'),
@@ -139,7 +139,7 @@ urlpatterns = [
     re_path('^api/case/(?P<caseid>[0-9]+)/artifacts/$', caseviews.CaseArtifactAPIView.as_view({'get': 'list', 'post':'create'}), name='artifactapi'),
     re_path('^api/case/artifact/(?P<uuid>.*)/$', caseviews.CaseArtifactAPIView.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete':'destroy'}), name='artifactapi-detail'),
     re_path('^api/vul/(?P<pk>[0-9]+)/$', caseviews.VulAPIView.as_view({'get': 'retrieve', 'delete':'destroy', 'patch': 'partial_update'}), name='vulapi-detail'),
-
+    re_path('^api/vul/(?P<pk>[0-9]+)/vex/$', caseviews.VulVEXAPIView.as_view(), name='vexapi'),
     re_path('^case/vul/(?P<pk>[0-9]+)/cvss/$', caseviews.ScoreVulCVSSView.as_view(), name='cvss'),
     re_path('^api/case/vul/(?P<pk>[0-9]+)/cvss/$', caseviews.CVSSVulView.as_view({'get':'retrieve', 'post': 'create', 'patch': 'partial_update', 'delete': 'destroy'}), name='cvssapi'),
     re_path('^api/case/vul/(?P<pk>[0-9]+)/ssvc/$', caseviews.SSVCVulView.as_view({'get': 'retrieve', 'post': 'create', 'patch': 'partial_update', 'delete': 'destroy'}), name='ssvcapi'),
@@ -195,6 +195,8 @@ urlpatterns = [
     re_path('^api/case/component/(?P<pk>[0-9]+)/status/revisions/$', componentviews.ComponentStatusRevisionAPIView.as_view({'get':'list'}), name='statusrevapi-detail'),
     re_path('^api/components/(?P<pk>\d+)/cases/$', componentviews.CaseComponentAPIView.as_view({'get':'list'}), name='casecompapi'),
     re_path('^api/component/(?P<pk>[0-9]+)/activity/$', componentviews.ComponentActionAPIView.as_view({'get':'list'}), name='compapi-activity'),
+    re_path('^api/case/(?P<caseid>\d+)/status/transfers/$', componentviews.StatusTransfersAPIView.as_view({'get': 'list'}), name='compapi-transfers'),
+    re_path('^api/case/status/transfer/(?P<pk>[0-9]+)/$', componentviews.StatusTransfersAPIView.as_view({'patch': 'update'}), name='compapi-merge'),
 ]
 
 

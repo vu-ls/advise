@@ -217,15 +217,13 @@ const PublishVulModal = (props) => {
     };
 
     useEffect(() => {
+	if (props.vul && showModal) {
 
-	console.log("PROPS CHANGED!!!")
-	fetchCVEAccount();
-	setSuccessMsg(null);
-	setQuestion(true);
-	setActiveTab("publish");
-	setCvePublishError(null);
-	if (props.vul) {
-
+	    fetchCVEAccount();
+	    setSuccessMsg(null);
+	    setQuestion(true);
+	    setActiveTab("publish");
+	    setCvePublishError(null);
 	    setAdpError(null);
 	    setPublishWarning(null);
 	    setVul(props.vul);

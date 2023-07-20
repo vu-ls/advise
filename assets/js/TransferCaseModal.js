@@ -13,8 +13,8 @@ const threadapi = new CaseThreadAPI();
 const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 
     const isInitialMount = useRef(true);
-
-    const [error, setError] = useState(null);
+    const [vuls, setVuls] = useState([]);
+    const [error, setError] = useState([]);
     const [prevTransfers, setPrevTransfers] = useState([]);
     const [viewTransfers, setViewTransfers] = useState(false);
     const [transfersCount, setTransfersCount] = useState(0);
@@ -64,14 +64,14 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 	    });
 	} catch (err) {
 	    console.log(err);
-	    setError(`Transfer successful but error occurred when updating case status: ${err.message}`);
+	    setError(error => [...error, `Transfer successful but error occurred when updating case status: ${err.message}`]);
 	}
 
     }
 
     const shareTheCase = async () => {
 	if (shareGroup == null) {
-	    setError("Please select a group from below");
+	    setError(error => [...error, "Please select a group from below"]);
 	    return;
 	}
 
@@ -103,7 +103,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 		});
 	    } catch (err) {
 		console.log(err);
-		setError(`Problem with transfer ${err.message}: ${err.response.data.detail}`);
+		setError(error => [...error, `Problem with transfer ${err.message}: ${err.response.data.detail}`]);
 		setDoneButton(true);
 	    }
 	} else {
@@ -121,13 +121,14 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 	try {
 	    await threadapi.getVuls(caseInfo).then((response) => {
 		let vul_num = response.length;
+		setVuls(response);
 		if (response.length) {
 		    adminapi.transferVuls(remoteCase, shareGroup.url, shareGroup.external_key, response).then((response) => {
 			setNotes(notes => [...notes, `${vul_num} vulnerabilities transferred`]);
 			setDoneOptions(doneOptions => [...doneOptions, "vuls"]);
 		    }).catch(err => {
 			console.log(err);
-			setError(`Problem with vuls transfer ${err.message}: ${err.response.data.detail}`);
+			setError(error => [...error,`Problem with vuls transfer ${err.message}: ${err.response.data.detail}`]);
 			setDoneOptions(doneOptions => [...doneOptions, "vuls"]);
 			setTransferErrors(transferErrors => [...transferErrors, "vuls"]);
 			setDoneButton(true);
@@ -140,11 +141,35 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 	    });
 	} catch (err) {
 	    console.log(err);
-	    setError(`Problem with transfer(${err.message}: ${err.response.data.detail}`);
+	    setError(error => [...error, `Problem with transfer(${err.message}: ${err.response.data.detail}`]);
 	    setDoneButton(true);
 	}
     }
 
+
+    const getStatusTransfer = async () => {
+	const axiosArray = [];
+	let nostatus = false;
+	vuls.map(item => {
+	    axiosArray.push(adminapi.transferVexStatus(remoteCase, shareGroup.url, shareGroup.external_key, item))});
+	return await adminapi.transferAllStatus(axiosArray).catch(err => {
+	    console.log(err);
+	    if (err.response.status == 404) {
+		setNotes(notes => [...notes, "No status to transfer"]);
+		nostatus = true;
+	    } else {
+		setError(error => [...error, `Error transferring status ${err.message}: ${err.response.data.detail}`]);
+		setTransferErrors(transferErrors => [...transferErrors, "status"]);
+	    }
+	    setDoneOptions(doneOptions => [...doneOptions, "status"]);
+	}).then((response) => {
+	    if (!nostatus) {
+		setNotes(notes => [...notes, "Status transferred"])
+		setDoneOptions(doneOptions => [...doneOptions, "status"]);
+	    }
+	});
+    }
+    
     const getAdvisoryTransfer = async () => {
 	try {
             await threadapi.getCurrentAdvisory({'case':caseInfo.case_id}).then((response) => {
@@ -154,7 +179,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
                     setDoneOptions(doneOptions => [...doneOptions, "advisory"]);
                 }).catch(err => {
                     console.log(err);
-                    setError(`Problem with advisory transfer ${err.message}: ${err.response.data.detail}`);
+                    setError(error => [...error, `Problem with advisory transfer ${err.message}: ${err.response.data.detail}`]);
                     setDoneButton(true);
 		    setDoneOptions(doneOptions => [...doneOptions, "advisory"]);
 		    setTransferErrors(transferErrors => [...transferErrors, "advisory"]);
@@ -166,7 +191,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 		setNotes(notes => [...notes, "No advisory to transfer"]);
 		setDoneOptions(doneOptions => [...doneOptions, "advisory"]);
 	    } else {
-		setError(`Problem with transferring advisory: (${err.message}: ${err.response.data.detail}`);
+		setError(error => [...error, `Problem with transferring advisory: (${err.message}: ${err.response.data.detail}`]);
 	    }
 
             setDoneButton(true);
@@ -179,27 +204,31 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 	    console.log(response);
 	    if (response.length) {
 		threadapi.getPostsMax(response[0]['id']).then((resp) => {
-		    console.log(resp);
-		    adminapi.transferThread(remoteCase, shareGroup.url, shareGroup.external_key, resp.results).then((res) => {
-			console.log(res);
-			setNotes(notes=>[...notes, `Transferred thread with ${resp.count} posts`]);
+		    if (resp.count) {
+			adminapi.transferThread(remoteCase, shareGroup.url, shareGroup.external_key, resp.results).then((res) => {
+			    console.log(res);
+			    setNotes(notes=>[...notes, `Transferred thread with ${resp.count} posts`]);
+			    setDoneOptions(doneOptions=>[...doneOptions, "thread"]);
+			}).catch(err=> {
+			    console.log(err);
+			    setError(error => [...error, `Problem with thread transfer ${err.message}: ${err.response.data.detail}`]);
+			    setDoneButton(true);
+			    setDoneOptions(doneOptions=>[...doneOptions, "thread"]);
+			    setTransferErrors(transferErrors => [...transferErrors, "thread"]);
+			});
+		    } else {
+			setNotes(notes => [...notes, 'No posts to transfer']);
 			setDoneOptions(doneOptions=>[...doneOptions, "thread"]);
-		    }).catch(err=> {
-			console.log(err);
-			setError(`Problem with thread transfer ${err.message}`);
-			setDoneButton(true);
-			setDoneOptions(doneOptions=>[...doneOptions, "thread"]);
-			setTransferErrors(transferErrors => [...transferErrors, "thread"]);
-		    });
+		    }
 		}).catch(error=> {
 		    console.log(error);
-		    setError(`Problem with retrieiving posts: ${error.message}: ${error.response.data.detail}`);
+		    setError(error => [...error,`Problem with retrieiving posts: ${error.message}: ${error.response.data.detail}`]);
 		    setDoneOptions(doneOptions=>[...doneOptions, "thread"]);
 		    setTransferErrors(transferErrors => [...transferErrors, "thread"]);
 		});
 	    }
 	}).catch(errormsg => {
-	    setError(`Problem with retrieving case thread ${errormsg.message}: ${errormsg.response}`);
+	    setErrorsetError(error => [...error,`Problem with retrieving case thread ${errormsg.message}: ${errormsg.response}`]);
 	    setDoneOptions(doneOptions=>[...doneOptions, "thread"]);
 	});
     }
@@ -217,7 +246,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 
 		return await adminapi.transferAllArtifacts(axiosArray).catch(err => {
 		    console.log(err);
-		    setError(`Problem transferring artifacts ${err.message}: ${err.response.data.detail}`);
+		    setError(error => [...error, `Problem transferring artifacts ${err.message}: ${err.response.data.detail}`]);
 		    setTransferErrors(transferErrors => [...transferErrors, "artifacts"]);
 		    setDoneOptions(doneOptions => [...doneOptions, "artifacts"]);
 		    
@@ -235,7 +264,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 	    }
         }).catch(err => {
             console.log(err);
-            setError(`Problem with transfer ${err.message}: ${err.response.data.detail}`);
+            setError(error => [...error, `Problem with transfer ${err.message}: ${err.response.data.detail}`]);
             setDoneButton(true);
 	    setDoneOptions(doneOptions => [...doneOptions, "artifacts"]);
         });
@@ -274,12 +303,10 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 		    getAdvisoryTransfer();
 		    break;
 		case 'thread':
-		    /* TODO */
 		    getThreadTransfer();
 		    break;
 		case 'status':
-		    /* TODO */
-		    setDoneOptions(doneOptions => [...doneOptions, "status"]);
+		    getStatusTransfer();
 		    break;
 		default:
 		    continue;
@@ -295,7 +322,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
             setPrevTransfers(response.results);
             setTransfersCount(response.count);
         }).catch( err => {
-            setError(err);
+            setError(error => [...error, `Problem retrieving more transfers: ${err.message}`]);
         });
     }
 
@@ -311,26 +338,35 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 
     const fetchInitialData = async () => {
 
-	try {
-            adminapi.getConnections().then((response) => {
-                setConnections(response);
-		setLoading(false);
-		console.log(response);
-            });
+        await adminapi.getConnections().then((response) => {
+            setConnections(response);
+	    setLoading(false);
+	    console.log(response);
+        }).catch(err => {
+	    setError(error => [...error, `Error retrieving external connections: ${err.message}`]);
+	    console.log(err);
+	});
 
-	    adminapi.getTransfers(caseInfo.case_id, currentPage).then((response) => {
-		setPrevTransfers(response.results);
-		setTransfersCount(response.count);
-		console.log(response);
-		/*let transfers = caseInfo.transfers.map(c => c.connection);
-		console.log(transfers);
-		setPrevTransfers(transfers);*/
-	    });
+	await adminapi.getTransfers(caseInfo.case_id, currentPage).then((response) => {
+	    setPrevTransfers(response.results);
+	    setTransfersCount(response.count);
+	    console.log(response);
+	    /*let transfers = caseInfo.transfers.map(c => c.connection);
+	      console.log(transfers);
+	      setPrevTransfers(transfers);*/
+	}).catch(err => {
+	    setError(error => [...error, `Error retrieving previous transfers: ${err.message}`]);
+	    console.log(err);
+	});
+	
 
-        } catch (err) {
-            console.log(err);
-            setError(err);
-        }
+	await threadapi.getVuls(caseInfo).then((response) => {
+	    setVuls(response);
+	}).catch(err => {
+	    setError(error => [...error, `Error retrieving vulnerabilities: ${err.message}`]);
+	    console.log(err);
+	});
+
     }
 
     const showTransfers = () => {
@@ -355,7 +391,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 	setDoneOptions([]);
 	setButtonDisabled(false);
 	setCheckedOptions(['report']);
-	setError(null);
+	setError([]);
 	setDoneButton(false);
 	hideModal();
     }
@@ -391,8 +427,14 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 			  </Col>
 		      </Row>
 
-		      {error &&
-		       <Alert variant="danger">{error}</Alert>
+		      {error.length > 0 &&
+		       <Alert variant="danger">
+			   {error.map((item, index) => {
+			       return (
+				   <div key={`err-${index}`}>{item}</div>
+			       )
+			   })}
+		       </Alert>
                       }
 		      <Row>
 			  {checkedOptions.map((c, index) => {
@@ -445,7 +487,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 		      </Row>
 		      <Row>
 			  <Col lg={12}>
-			      <ProgressBar animated now={transferStatus} variant={error ? "danger" : "primary"}/>
+			      <ProgressBar animated now={transferStatus} variant={error.length > 0 ? "danger" : "primary"}/>
 			  </Col>
 		      </Row>
 		      {remoteCase &&
@@ -525,16 +567,22 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 			    </>
 			   }
 
-			   <div className="mb-3">Select Group to transfer to.</div>
-			   {error &&
-			    <Alert variant="danger">{error}</Alert>
-			   }
-			   <ListGroup>
+				<div className="mb-3">Select Group to transfer to.</div>
+				{error.length > 0 &&
+				 <Alert variant="danger">
+				     {error.map((item, index) => {
+					 return (
+					     <div key={`err-${index}`}>{item}</div>
+					 )
+				     })}
+				 </Alert>
+				}   
+				<ListGroup>
 			       {connections.map((c, index) => {
 				   
 				   let prevt = prevTransfers.find((item) => item.connection == c.id);
 				   return (
-				       <ListGroup.Item key={`connection-${c.id}`} action onClick={(e)=>{setError(null), setShareGroup(c), setShowShareOptions(true)}}>
+				       <ListGroup.Item key={`connection-${c.id}`} action onClick={(e)=>{setError([]), setShareGroup(c), setShowShareOptions(true)}}>
 					   <div className="d-flex align-items-center gap-3">
 					       <DisplayLogo
 						   name={c.group.name}
@@ -573,6 +621,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 								key="shareoptions-artifacts"
 								checked = {checkedOptions.includes("artifacts") ? true: false}
 								onChange={handleVulSelect}
+
 							    />
 							    <Form.Check
 								label="Vulnerabilites"
@@ -582,6 +631,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 								checked = {checkedOptions.includes("vuls") ? true: false}
 								key="shareoptions-vuls"
 								onChange={handleVulSelect}
+								disabled={vuls.length == 0 ? true: false}
 							    />
 							    <Form.Check
 								label="Status"
@@ -591,6 +641,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 								checked = {checkedOptions.includes("status") ? true: false}
 								key="shareoptions-status"
 								onChange={handleVulSelect}
+								disabled={vuls.length == 0 ? true: false}
 							    />
 							    <Form.Check
 								label="Thread"
