@@ -2,7 +2,7 @@
 
 All notable changes to AdVISE will be documented in this file.
 
-## [Unreleased]
+## [1.3.0] - 2023-08-01
 
 ### Added
 
@@ -14,6 +14,8 @@ All notable changes to AdVISE will be documented in this file.
 - Publish CVE ADP Container if ADP Role is available
 - Add date scored to SSVC information
 - New unit tests for testing case transfers
+- Documentation for designing the reporting form
+- Documentation for configuring federation and case transfers
 
 ### Changed
 

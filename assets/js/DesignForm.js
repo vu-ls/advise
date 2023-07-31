@@ -255,6 +255,7 @@ const DesignForm = (form) => {
 		     {showChoices &&
 		      <Form.Group className="mb-3" controlId="QuestionChoices">
 			  <Form.Label>Choices</Form.Label>
+			  <Form.Text>One choice per line</Form.Text>
 			  <Form.Control value={choicesValue} onChange={(e)=>setChoicesValue(e.target.value)} name="question_choices" as="textarea" rows={3} />
 		      </Form.Group>
 		     }
