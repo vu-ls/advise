@@ -23,7 +23,7 @@ resource "aws_alb_target_group" "default" {
     interval            = "10"
     protocol            = "HTTP"
     matcher             = "200"
-    timeout             = "3"
+    timeout             = "5"
     path                = "/health"
     unhealthy_threshold = "2"
   }

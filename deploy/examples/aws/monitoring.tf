@@ -12,14 +12,15 @@ module "monitoring" {
   app_fqdn   = local.app_fqdn
   oauth_fqdn = local.oauth_fqdn
 
-  memory_percent_threshold = var.memory_alarm_threshold
-  cpu_percent_threshold    = var.cpu_alarm_threshold
-  db_storage_threshold     = var.db_free_storage_threshold
-  db_connections_threshold = var.db_connections_threshold
-  elb_5xx_threshold        = var.elb_5xx_alarm_threshold
-  app_elb_id               = module.app_service.elb_id
-  oauth_elb_id             = module.oauth_service.elb_id
-  app_rds_id               = module.advise_db.db_id
-  oauth_rds_id             = module.oauth_db.db_id
+  memory_percent_threshold  = var.memory_alarm_threshold
+  cpu_percent_threshold     = var.cpu_alarm_threshold
+  db_storage_threshold      = var.db_free_storage_threshold
+  db_connections_threshold  = var.db_connections_threshold
+  elb_5xx_threshold         = var.elb_5xx_alarm_threshold
+  app_elb_id                = module.app_service.elb_id
+  oauth_elb_id              = module.oauth_service.elb_id
+  app_rds_id                = module.advise_db.db_id
+  oauth_rds_id              = module.oauth_db.db_id
+  canary_duration_threshold = var.canary_duration_threshold
 
 }

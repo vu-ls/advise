@@ -82,7 +82,7 @@ resource "aws_ecs_task_definition" "default" {
     "healthCheck": {
       "command": [
         "CMD-SHELL",
-        "curl -f http://localhost:80/health || exit 1"
+        "curl -f http://localhost:80/health/app || exit 1"
       ],
       "interval": 30,
       "timeout": 5,

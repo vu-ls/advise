@@ -7,7 +7,7 @@
 
 module "advise_db" {
   source  = "terraform-aws-modules/rds/aws"
-  version = "~> 5.0"
+  version = "~> 6.0"
 
   identifier = "${var.name_prefix}-${local.unique_id}"
 
@@ -19,10 +19,10 @@ module "advise_db" {
   allocated_storage     = var.storage
   max_allocated_storage = var.max_storage
 
-  db_name                = var.db_name
-  create_random_password = false
-  username               = local.username
-  password               = local.password
+  db_name                     = var.db_name
+  manage_master_user_password = false
+  username                    = local.username
+  password                    = local.password
 
   port = var.port
 

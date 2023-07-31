@@ -217,6 +217,12 @@ variable "elb_5xx_alarm_threshold" {
   default     = 10
 }
 
+variable "canary_duration_threshold" {
+  description = "Canary duration alarm threshold (in ms)"
+  type        = number
+  default     = 1000
+}
+
 variable "multi_az" {
   type    = bool
   default = false

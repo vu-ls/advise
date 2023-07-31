@@ -26,3 +26,11 @@ output "advise_recaptcha_site_key" {
 output "advise_recaptcha_secret_key" {
   value = var.advise_recaptcha_secret_key
 }
+
+output "oauth_db_id" {
+  value = module.oauth_db.db_id
+}
+
+output "app_db_id" {
+  value = module.advise_db.db_id
+}

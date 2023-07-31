@@ -134,7 +134,7 @@ resource "aws_cloudwatch_metric_alarm" "app_canary_success" {
     StepName   = var.app_fqdn
   }
   statistic           = "Average"
-  period              = 300
+  period              = var.canary_success_period
   evaluation_periods  = 1
   datapoints_to_alarm = 1
   treat_missing_data  = "breaching"
@@ -154,7 +154,7 @@ resource "aws_cloudwatch_metric_alarm" "oauth_canary_success" {
     StepName   = var.oauth_fqdn
   }
   statistic           = "Average"
-  period              = 300
+  period              = var.canary_success_period
   evaluation_periods  = 1
   datapoints_to_alarm = 1
   treat_missing_data  = "breaching"
@@ -175,8 +175,8 @@ resource "aws_cloudwatch_metric_alarm" "app_canary_duration" {
   }
   statistic           = "Average"
   period              = var.canary_duration_period
-  evaluation_periods  = 1
-  datapoints_to_alarm = 1
+  evaluation_periods  = 3
+  datapoints_to_alarm = 3
   treat_missing_data  = "breaching"
   alarm_actions       = [aws_sns_topic.metrics.arn]
   ok_actions          = [aws_sns_topic.metrics.arn]
@@ -195,8 +195,8 @@ resource "aws_cloudwatch_metric_alarm" "oauth_canary_duration" {
   }
   statistic           = "Average"
   period              = var.canary_duration_period
-  evaluation_periods  = 1
-  datapoints_to_alarm = 1
+  evaluation_periods  = 3
+  datapoints_to_alarm = 3
   treat_missing_data  = "breaching"
   alarm_actions       = [aws_sns_topic.metrics.arn]
   ok_actions          = [aws_sns_topic.metrics.arn]

@@ -63,6 +63,16 @@ resource "aws_cloudfront_distribution" "advise_app" {
     viewer_protocol_policy = "redirect-to-https"
   }
 
+  # API behavior
+  ordered_cache_behavior {
+    path_pattern           = "/advise/api/*"
+    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "advise_app"
+    cache_policy_id        = aws_cloudfront_cache_policy.advise_app_api_endpoints.id
+    viewer_protocol_policy = "redirect-to-https"
+  }
+
   # static files behavior
   ordered_cache_behavior {
     path_pattern           = "/static/*"
@@ -195,6 +205,39 @@ resource "aws_cloudfront_cache_policy" "advise_app_endpoints" {
       headers {
         items = [
           "Authorization",
+          "Host",
+          "Referer",
+          "X-csrftoken"
+        ]
+      }
+    }
+    query_strings_config {
+      query_string_behavior = "all"
+    }
+  }
+}
+
+# cache policy for API behavior
+resource "aws_cloudfront_cache_policy" "advise_app_api_endpoints" {
+  name        = "${local.name_prefix}-advise-api-endpoints-cache-policy-${local.unique_id}"
+  default_ttl = 0
+  max_ttl     = 86400
+  min_ttl     = 0
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    cookies_config {
+      cookie_behavior = "all"
+      #cookies {
+      #  items = ["csrftoken"]
+      #}
+    }
+    headers_config {
+      header_behavior = "whitelist"
+      headers {
+        items = [
+          "Authorization",
+          "Access-Control-Request-Method",
+          "Access-Control-Request-Headers",
           "Host",
           "Referer",
           "X-csrftoken"

@@ -94,6 +94,13 @@ variable "canary_success_threshold" {
   default     = 100
 }
 
+variable "canary_success_period" {
+  description = "Success check period in s (defaults to 300)"
+  type        = number
+  default     = 300
+}
+
+
 variable "canary_duration_threshold" {
   description = "Duration threshold for canaries in ms (defaults to 1000)"
   type        = number
@@ -101,9 +108,9 @@ variable "canary_duration_threshold" {
 }
 
 variable "canary_duration_period" {
-  description = "Duration check period in s (defaults to 900)"
+  description = "Duration check period in s (defaults to 300)"
   type        = number
-  default     = 900
+  default     = 300
 }
 
 

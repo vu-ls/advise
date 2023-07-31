@@ -7,6 +7,6 @@ output "db_address" {
 }
 
 output "db_id" {
-  value = module.advise_db.db_instance_id
+  value = module.advise_db.db_instance_identifier
 }
 
