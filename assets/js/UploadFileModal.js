@@ -30,7 +30,7 @@ const UploadFileModal = ({ showModal, hideModal, confirmModal, title, subtitle})
     }, [showModal]);
     
     return (
-        <Modal show={showModal} onHide={hideModal} centered>
+        <Modal show={showModal} onHide={hideModal} centered backdrop="static">
 	    <Form onSubmit={(e) => submitForm(e) }>
 		<Modal.Header closeButton className="mb-0">
 		    <Modal.Title>{title ? `${title}` : "Upload File to Case"}</Modal.Title>

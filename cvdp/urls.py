@@ -40,8 +40,11 @@ thread_list = caseviews.CaseThreadAPIView.as_view({
 })
     
 
+
+
 urlpatterns = [
     path('api/', include(router.urls)),
+    path('403/', views.permission_denied_view, name='forbidden'),
     re_path('^$', RedirectView.as_view(pattern_name="cvdp:dashboard"), name='index'),
     path('profile/newcolor/', views.GenerateNewRandomColor.as_view(), name='newcolor'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
@@ -52,7 +55,7 @@ urlpatterns = [
     path('reports/', reportviews.ReportsView.as_view(), name='reports'),
     path('report/', reportviews.ReportView.as_view(), name='report'),
 
-    re_path('^case/(?P<caseid>\d+)/report/edit/$', reportviews.EditReportView.as_view(), name='editreport'),
+    re_path('^cases/(?P<caseid>\d+)/report/edit/$', reportviews.EditReportView.as_view(), name='editreport'),
     re_path('^report/add/case/(?P<caseid>\d+)/$', reportviews.AddReportView.as_view(), name='addreport'),
     re_path('^report/case/(?P<caseid>\d+)/add/$', reportviews.AddCaseReportView.as_view(), name='add_case_report'),
     re_path('^case/(?P<caseid>\d+)/report/original/$', reportviews.OrigReportAPIView.as_view({'get': 'retrieve'}), name='origreportsapi'),
@@ -72,14 +75,16 @@ urlpatterns = [
     re_path('^api/manage/group/(?P<pk>[0-9]+)/api/(?P<key>[0-9a-zA-Z]+)/$', groupviews.GroupAPIAccountView.as_view({'delete': 'destroy', 'patch':'partial_update'}), name='rmgroupapikey'),
     re_path('^api/manage/group/(?P<pk>[0-9]+)/admin/$', groupviews.GroupAdminAPIView.as_view({'patch': 'partial_update', 'get': 'retrieve'}), name='groupadminapi'),
     re_path('^api/manage/group/admin/(?P<pk>[0-9]+)/$', groupviews.GroupAdminAPIView.as_view({'get': 'retrieve'}), name='groupadminapi'),
-    re_path('^groups/(?P<pk>[0-9]+)/$', groupviews.GroupDetailView.as_view(), name='group'),
+    re_path('^groups/(?P<pk>[0-9]+)/$', groupviews.GroupSearchView.as_view(), name='group'),
+    
+    #re_path('^groups/(?P<pk>[0-9]+)/$', groupviews.GroupSearchView.as_view(), name='group'),
     re_path('^groups/(?P<pk>[0-9]+)/components/$', groupviews.GroupComponentsView.as_view(), name='group_components'),
-    path('groups/search/', groupviews.GroupSearchView.as_view(), name='searchgroups'),
+    path('groups/', groupviews.GroupSearchView.as_view(), name='searchgroups'),
+    re_path('^groups/(?P<pk>\d+)/?(err)?/?', groupviews.GroupSearchView.as_view(), name='searchgroups'),
     path('groups/new/', groupviews.CreateGroupView.as_view(), name='newgroup'),
     path('contact/new/', groupviews.CreateContactView.as_view(), name='newcontact'),
     re_path('^contact/new/(?P<pk>[0-9]+)/$', groupviews.CreateContactView.as_view(), name='newcontact'),
     re_path('^contact/(?P<slug>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/$', groupviews.ContactView.as_view(), name='contact'),
-    #re_path('^group/api/(?P<pk>[0-9]+)/$', groupviews.GroupAPIView.as_view(), name='groupapi'),
     path('api/groups/', groupviews.GroupAPIView.as_view(), name='groupapi'),
     re_path('^api/groups/(?P<pk>[0-9]+)/contacts/$', groupviews.ContactAssociationAPIView.as_view({'get':'list', 'post':'create'}), name='assoc_api'),
     re_path('^api/groups/contacts/(?P<pk>[0-9]+)/$', groupviews.ContactAssociationAPIView.as_view({'patch': 'partial_update', 'delete':'destroy'}), name='assoc_api_detail'),
@@ -88,11 +93,12 @@ urlpatterns = [
     re_path('^api/group/(?P<group>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/activity/$', groupviews.ContactActivityAPIView.as_view({'get': 'list'}), name='group_activityapi'),
     re_path('^api/contact/activity/$', groupviews.ContactActivityAPIView.as_view({'get': 'list'}), name='contactactivityapi'),
 
+    #external transfers
+    
+    path('api/transfers/report/', reportviews.ReportTransferAPIView.as_view({'post': 'create'}), name='transfer_reportapi'),
     path('api/case/transfers/', caseviews.CaseTransferAPIView.as_view({'get': 'list', 'post': 'create'}), name='casetransferapi'),
     re_path('^api/case/(?P<caseid>[0-9]+)/transfers/', caseviews.CaseTransferAPIView.as_view({'get': 'list', 'post': 'create'}), name='casetransferapi-casedetail'),
     re_path('^api/case/(?P<pk>[0-9]+)/transfers/$', caseviews.CaseTransferAPIView.as_view({'get': 'detail'}), name='casetransferapi-detail'),
-    #external transfers
-    path('api/transfers/report/', reportviews.ReportTransferAPIView.as_view({'post': 'create'}), name='transfer_reportapi'),
     re_path('^api/transfers/case/(?P<caseid>[0-9]+)/artifacts/$', caseviews.ArtifactTransferAPIView.as_view({'post': 'create'}), name='transfer_artifactapi'),
     re_path('^api/transfers/case/(?P<caseid>[0-9]+)/vuls/$', caseviews.VulTransferAPIView.as_view({'post':'create'}), name='transfer_vulapi'),
     re_path('^api/transfers/case/(?P<caseid>[0-9]+)/advisory/$', caseviews.AdvisoryTransferAPIView.as_view({'post':'create'}), name='transfer_advisoryapi'),
@@ -102,18 +108,20 @@ urlpatterns = [
     re_path('^api/contact/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/cases/$', caseviews.ContactCasesAPIView.as_view({'get': 'list'}), name='contact_caseapi'),
     re_path('^api/contact/(?P<contact>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/cases/activity/$', caseviews.ContactActivityAPIView.as_view({'get': 'list'}), name='contact_caseactivityapi'),
     path('api/case/notifications/', caseviews.CaseNotificationAPI.as_view(), name='notifications'), 
-    re_path('^case_search/$', caseviews.CaseFilter.as_view(), name='casesearch'),
+    path('cases/', caseviews.CasesView.as_view(), name='casesearch'),
     path('case/new/', caseviews.CreateNewCaseView.as_view(), name='newcase'),
-    re_path('^case/(?P<caseid>[0-9]+)/$', caseviews.CaseView.as_view(), name='case'),
-    re_path('^case/(?P<caseid>[0-9]+)/edit/$', caseviews.EditCaseView.as_view(), name='edit_case'),
-    re_path('^case/(?P<caseid>[0-9]+)/advisory/$', caseviews.EditAdvisoryView.as_view(), name='advisory'),
+    re_path('^cases/(?P<caseid>[0-9]+)/?(err)?/?$', caseviews.CasesView.as_view(), name='case'),
+    re_path('^cases/(?P<caseid>[0-9]+)/status/$', caseviews.CasesView.as_view(), name='casestatus'),
+    #re_path('^case/(?P<caseid>[0-9]+)/$', caseviews.CaseView.as_view(), name='case'),
+    re_path('^cases/(?P<caseid>[0-9]+)/edit/$', caseviews.EditCaseView.as_view(), name='edit_case'),
+    re_path('^cases/(?P<caseid>[0-9]+)/advisory/$', caseviews.CasesView.as_view(), name='advisory'),
 
     re_path('^api/case/(?P<caseid>[0-9]+)/advisory/latest/$', caseviews.AdvisoryAPIView.as_view({'get': 'retrieve', 'patch': 'partial_update'}), name='advisoryapi'),
     re_path('^api/case/(?P<caseid>[0-9]+)/advisory/$', caseviews.AdvisoryAPIView.as_view({'get': 'list', 'post': 'create'}), name='advisoryapi-list'),
     re_path('^api/case/(?P<caseid>[0-9]+)/advisory/csaf/$', caseviews.CSAFAdvisoryAPIView.as_view(), name='csafapi'),
-    #path('case/search/results/', caseviews.CaseFilterResults.as_view(), name='caseresults'),
     #re_path('^case/(?P<caseid>[0-9]+)?/post/filter/', caseviews.CasePostFilterView.as_view(), name='searchposts'),
-    re_path('^case/(?P<caseid>[0-9]+)/participants/$', caseviews.ManageCaseParticipants.as_view(), name='caseparticipants'),
+    #re_path('^cases/(?P<caseid>[0-9]+)/participants/$', caseviews.ManageCaseParticipants.as_view(), name='caseparticipants'),
+    re_path('^cases/(?P<caseid>[0-9]+)/participants/$', caseviews.CasesView.as_view(), name='caseparticipants'),
     #re_path('^case/post/(?P<pk>[0-9]+)/$', caseviews.PostView.as_view(), name='post'),
     #re_path('^case/posts/(?P<pk>[0-9]+)/$', caseviews.ThreadPostsView.as_view(), name='posts'),
     re_path('^case/thread/post/diff/(?P<revision_id>[0-9]+)/$', caseviews.PostDiffView.as_view(), name='diff'),
@@ -166,6 +174,9 @@ urlpatterns = [
 
     path('api/manage/cve/account/', manageviews.CVEAccountAPI.as_view({'get': 'list', 'post':'create'}), name='cve_api'),
     re_path('^api/manage/cve/account/(?P<pk>\d+)/$', manageviews.CVEAccountAPI.as_view({'get': 'retrieve', 'patch':'update', 'delete': 'destroy'}), name='cve_api'),
+
+    path('api/manage/case/options/resolutions/', manageviews.ResolutionAPIView.as_view({'get': 'list', 'post': 'create'}), name='res_api'),
+    re_path('^api/manage/case/options/resolution/(?P<pk>\d+)/$', manageviews.ResolutionAPIView.as_view({'delete': 'destroy'}), name='res_api_detail'),
     path('api/user/assignments/', views.assignable_users_api),
     path('api/manage/email/templates/', manageviews.EmailTemplateAPI.as_view({'get': 'list'}), name='emailtmpl_api'),
     path('api/manage/connections/', manageviews.ConnectionAPI.as_view({'get': 'list', 'post': 'create'}), name='connection_api'),
@@ -182,6 +193,7 @@ urlpatterns = [
     path('api/components/', componentviews.ComponentAPIView.as_view({'get': 'list', 'post': 'create'}), name='componentapi'),
     re_path('^api/component/(?P<pk>\d+)/$', componentviews.ComponentAPIView.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}), name='componentapi-detail'),
     path('components/', componentviews.ComponentView.as_view(), name='components'),
+    re_path('^components/(?P<pk>\d+)/?(err)?/?$', componentviews.ComponentView.as_view(), name='componentdetail'),
     path('components/add/', componentviews.AddComponentView.as_view(), name='addcomponent'),
     path('api/components/upload/', componentviews.UploadSPDXFile.as_view(), name='spdxupload'),
     re_path('^api/components/group/(?P<pk>\d+)/upload/', componentviews.UploadSPDXFile.as_view(), name='spdxuploadgroup'),

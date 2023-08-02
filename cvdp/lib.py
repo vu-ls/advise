@@ -411,13 +411,22 @@ def create_contact_change(action, field, old_value, new_value):
     return change
 
 def get_status_status(case, user):
+    print("GET STATUS STATUS")
     # if no vuls, no status
-    if (not Vulnerability.objects.filter(case=case).exists()):
+    if (not Vulnerability.objects.filter(case=case, deleted=False).exists()):
         return False
     # is status required for this case by this user?
-
+    
     components = ComponentStatus.objects.filter(vul__case=case).distinct('component__name').order_by('component__name')
-    case_components = components.values_list('component__id', flat=True)
-    my_groups = my_case_vendors(user, case)
-    products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
-    return not(components.filter(component__id__in=products).exists())
+    if components:
+        case_components = components.values_list('component__id', flat=True)
+        my_groups = my_case_vendors(user, case)
+        if my_groups:
+            if case_components:
+                products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
+                return not(components.filter(component__id__in=products).exists())
+        else:
+            #any status made by this user?
+            return not(components.filter(current_revision__user=user).exists())
+    
+    return True

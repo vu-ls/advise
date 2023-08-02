@@ -118,7 +118,7 @@ export default function PostList(props) {
 	    setPreviousUrl("");
 	    setPinnedPosts([])
             setPosts([])
-            threadapi.searchPosts(thread, props.search.value).then((response) => {
+            threadapi.searchPosts(thread, encodeURIComponent(props.search.value)).then((response) => {
 		console.log(response);
                 if (toggle == "fifo") {
                     setPosts(response.results.reverse());
@@ -137,7 +137,7 @@ export default function PostList(props) {
 
     const getAllPosts=() => {
 	setIsLoading(true);
-	props.update();
+	//props.update();
         threadapi.getPosts(thread).then((response) => {
 	    setNextUrl(response.next);
 	    setPreviousUrl(response.previous);

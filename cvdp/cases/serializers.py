@@ -306,8 +306,7 @@ class CaseParticipantSummarySerializer(serializers.Serializer):
     vendors = serializers.IntegerField()
 
     
-    
-class CaseParticipantSerializer(serializers.ModelSerializer):
+class CaseParticipantSerializer(DynamicFieldsModelSerializer):
 
     name = serializers.SerializerMethodField()
     photo = serializers.SerializerMethodField()
@@ -761,10 +760,12 @@ class VulSerializer(serializers.ModelSerializer):
                 my_groups = my_case_vendors(user, obj.case)
                 components = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
                 case_components = components.values_list('component__id', flat=True)
-                products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
-                #get all my components/or component status set to Share
-                status = components.filter(component__id__in=products)
-            
+                if my_groups and case_components:
+                    products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
+                    #get all my components/or component status set to Share
+                    status = components.filter(component__id__in=products)
+                else:
+                    status = components.filter(current_revision__user=user)
         else:
             #if user isn't present, we could possibly leak info that we shouldn't
             #status = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)

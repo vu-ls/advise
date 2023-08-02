@@ -58,23 +58,23 @@ const InboxApp = (props) => {
 	    setFeedback(null);
 	}
 
-	try {
-	    if (props.group) {
-		messageapi.getGroupThreads(props.group).then((response) => {
-		    setThreads(response.results);
-		    setItemsCount(response.count);
-		});
-	    } else {
-		messageapi.getThreads().then((response) => {
-                    setThreads(response.results);
-		    setItemsCount(response.count);
-		});
-	    }
-
-        } catch (err) {
-            console.log(err);
-            setApiError(err);
-        }
+	if (props.group) {
+	    messageapi.getGroupThreads(props.group).then((response) => {
+		setThreads(response.results);
+		setItemsCount(response.count);
+	    }).catch(err => {
+		console.log(err);
+		setError("Error retrieving group threads");
+	    });
+	} else {
+	    messageapi.getThreads().then((response) => {
+                setThreads(response.results);
+		setItemsCount(response.count);
+	    }).catch(err => {
+		console.log(err);
+		setError("Error retrieving threads");
+	    });
+	}
     };
 
 
@@ -94,14 +94,14 @@ const InboxApp = (props) => {
 		setThreads(response.results);
 		setItemsCount(response.count);
 	    }).catch(err => {
-		setApiError(err);
+		setError(err);
 	    })
 	} else {
             messageapi.getThreadsByPage(page).then((response) => {
 		setThreads(response.results);
 		setItemsCount(response.count);
             }).catch( err => {
-		setApiError(err);
+		setError(err);
 	    });
 	}
     }
@@ -182,6 +182,9 @@ const InboxApp = (props) => {
 	    setNewMessage(false);
 	    messageapi.getMessages(curThread).then((response) => {
 		setMessages(response);
+	    }).catch(err => {
+		setError("Error retrieving messages for this thread.");
+		console.log(err);
 	    });
 	    const newList = threads.map((item) => {
 		if (item.id == curThread.id) {
@@ -334,7 +337,9 @@ const InboxApp = (props) => {
 		     />
 		     :
 		     <>
-
+			 {error &&
+			  <Alert variant="danger"> {error}</Alert>
+			 }
 			 {loadingMessages ?
 			  <div className="d-flex justify-content-center pt-5"><h5>Loading Messages...</h5></div>
 			  :

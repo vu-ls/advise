@@ -49,6 +49,7 @@ class StandardResultsPagination(PageNumberPagination):
 """
 Group Detail View - Django based
 """
+"""
 class GroupDetailView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
     model = Group
     login_url = "authapp:login"
@@ -72,7 +73,7 @@ class GroupDetailView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailVie
         context['object'] = self.object
         context['contactpage']=1
         return context
-
+"""
 
 """
 Group/Contact Activity
@@ -461,7 +462,7 @@ class GroupDetailAPIView(viewsets.ModelViewSet):
 
             group=serializer.create(validated_data=request.data)
             action = create_group_action(f"added new group {group.group.name}", request.user, group.group)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({'new': reverse('cvdp:group', args=[group.group.id])}, status=status.HTTP_201_CREATED)
         logger.debug(serializer.errors)
         return Response(serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)

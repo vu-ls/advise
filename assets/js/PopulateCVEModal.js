@@ -82,17 +82,22 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
 
 
     const fetchCVEInfo = async () => {
-	let cveAPI = new CVEAPI(cveAccount.org_name, cveAccount.email, cveAccount.api_key, cveAccount.server);
+
+	let cveAPI = new CVEAPI();
+	if (cveAccount) {
+	    cveAPI = new CVEAPI(cveAccount.org_name, cveAccount.email, cveAccount.api_key, cveAccount.server);
+	} 
         await cveAPI.getCVE(vul).then((response) => {
 	    setCveInfo(response);
 	    console.log(response);
 	}).catch(err => {
-	    if (err.response.status == 400) {
-		setApiError(`Error retrieving CVE ${err.response.data.error}: ${err.response.data.message}`)
-	    } else if (err.response.status == 404) {
-		setApiError(`Error retrieving CVE ${err.response.data.message}`);
-	    }
             console.log(err);
+	    if (err.response.status == 400) {
+		setApiError(`Error retrieving CVE: ${err.response.data.error}: ${err.response.data.message}`)
+	    } else if (err.response.status == 404) {
+		setApiError(`Error retrieving CVE: ${err.response.data.message}`);
+	    }
+
         });
 
     }
@@ -120,7 +125,7 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
     }, [cveInfo])
 
     useEffect(() => {
-	if (showModal && cveAccount && vul) {
+	if (showModal && vul) {
 	    setCveInfo(null);
 	    setApiError(null);
 	    fetchCVEInfo()
@@ -130,7 +135,7 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
 
 
     return (
-        <Modal show={showModal} onHide={hideModal} size="lg" backdrop="static">
+        <Modal show={showModal} onHide={hideModal} size="lg" centered backdrop="static">
             <Modal.Header closeButton>
 		<Modal.Title>Confirm CVE Additions</Modal.Title>
             </Modal.Header>

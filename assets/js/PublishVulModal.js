@@ -217,7 +217,7 @@ const PublishVulModal = (props) => {
     };
 
     useEffect(() => {
-	if (props.vul && showModal) {
+	if (props.vul && props.showModal) {
 
 	    fetchCVEAccount();
 	    setSuccessMsg(null);

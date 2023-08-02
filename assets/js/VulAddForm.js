@@ -42,6 +42,7 @@ const VulAddForm = (props) => {
     const [publishCVE, setPublishCVE] = useState(false);
     const [buttonDisabled, setButtonDisabled] = useState(false);
     const [accounts, setAccounts] = useState([]);
+    const [populate, setPopulate] = useState(false);
     const [cveAccount, setCVEAccount] = useState(null);
     const [showPopulateModal, setShowPopulateModal] = useState(false);
     const [showPublishModal, setShowPublishModal] = useState(false);
@@ -55,17 +56,21 @@ const VulAddForm = (props) => {
     const hideErrorModal = () => {
         setDisplayErrorModal(false);
     }
-    
+
     const hidePublishModal = () => {
         setShowPublishModal(false);
     }
 
-    const submitVul = async (event) => {
+    const submitVul = async (event, newcve) => {
 	if (event) {
 	    event.preventDefault();
 	}
 	let error = false;
 	const formData = {'description': vulDescription, 'cve': vulCVE}
+	if (newcve) {
+	    formData['cve'] = newcve;
+	}
+
 	if (vulDescription === "") {
 	    setInvalidDescription(true);
 	    error = true;
@@ -177,26 +182,22 @@ const VulAddForm = (props) => {
     }
 
     const pullCVENow = async (account) => {
+        hideCVEModal();
 	setCVEAccount(account);
 	setShowPopulateModal(true);
-
+	setPopulate(false);
 	console.log("DO IT!", account);
-        let cveAPI = new CVEAPI(account.org_name, account.email, account.api_key, account.server);
-        try {
-            let newcve = await cveAPI.getCVE(vulCVE);
-            console.log(newcve);
-            let newcveid = await newcve.data;
-            console.log(newcveid);
-
-            hideCVEModal();
-        } catch (err) {
-            setReserveMessage(<Alert variant="danger">Error retrieving CVE {err.message}</Alert>)
-            console.log(err);
-        }
     }
 
     const reserveCVENow = async (account) => {
 	console.log("DO IT!", account);
+
+	if (populate) {
+	    /*got here after picking account*/
+	    pullCVENow(account);
+	    return;
+	}
+
 	let cveAPI = new CVEAPI(account.org_name, account.email, account.api_key, account.server);
 	try {
 	    let newcve = await cveAPI.reserve1CVE();
@@ -205,7 +206,8 @@ const VulAddForm = (props) => {
 	    console.log(newcveid);
 	    setVulCVE(newcveid.cve_ids[0].cve_id);
 	    /* also need to save it in AdVISE */
-	    setReserveMessage(<Alert variant="success">Success! {newcveid.cve_ids[0].cve_id} has been reserved.  Don't forget to Save!</Alert>)
+	    setReserveMessage(<Alert variant="success">Success! {newcveid.cve_ids[0].cve_id} has been reserved.  Don't forget to save!</Alert>)
+	    submitVul(null, newcveid.cve_ids[0].cve_id);
 	    hideCVEModal();
 	} catch (err) {
 	    setReserveMessage(<Alert variant="danger">Error reserving CVE {err.message}</Alert>)
@@ -213,6 +215,21 @@ const VulAddForm = (props) => {
 	}
     }
 
+    const preReserveCVE = async () => {
+
+	let accs = await fetchCVEAccounts();
+	let rj = await accs.data
+	if (rj.length > 1) {
+	    setModalMessage(rj);
+	    setShowCVEModal(true);
+	} else if (rj.length == 1) {
+	    reserveCVENow(rj[0]);
+	} else {
+	    setModalMessage([])
+	    setShowCVEModal(true);
+	}
+	
+    }
 
     const ReserveCVEButton = () => {
 
@@ -221,19 +238,7 @@ const VulAddForm = (props) => {
 	const reserveCVE = async (e) => {
 	    /*get user CVE account */
             setButtonText("Loading...");
-	    let accs = await fetchCVEAccounts();
-	    let rj = await accs.data
-	    if (rj.length > 1) {
-		setButtonText("Checking..");
-		setModalMessage(rj);
-		setShowCVEModal(true);
-	    } else if (rj.length == 1) {
-		reserveCVENow(rj[0]);
-	    } else {
-		setModalMessage([])
-		setShowCVEModal(true);
-	    }
-
+	    preReserveCVE();
 	}
 
 	return (
@@ -253,17 +258,21 @@ const VulAddForm = (props) => {
 	/*get user CVE account */
 	setShowEditVulModal(false);
         let accs = await fetchCVEAccounts();
-        let rj = await accs.data;
-	console.log(rj);
-        if (rj.length > 1) {
-            setModalMessage(rj);
-            setShowCVEModal(true);
-        } else if (rj.length == 1) {
-            pullCVENow(rj[0]);
-        } else {
-            setModalMessage([])
-            setShowCVEModal(true);
-        }
+	let rj = await accs.data;
+	if (rj.length > 0) {
+	    /* add unauth prod */
+	    rj.push({'id': 0, 'org_name': 'None', 'email': 'unauthenticated', 'server_type': 'Prod', 'server': null})
+	    setPopulate(true);
+	    setModalMessage(rj);
+	    setShowCVEModal(true);
+	    
+	/*} else if (rj.length == 1) {
+	    setPopulate(true);
+	    pullCVENow(rj[0]); */
+	} else {
+	    /* no accounts - plan B pull from prod */
+	    pullCVENow(null);
+	}
     }
 
     const FillCVEButton = () => {
@@ -285,6 +294,7 @@ const VulAddForm = (props) => {
 	setEditVul(null);
 	setVulDescription("");
 	setVulCVE("");
+	setReserveMessage(null);
 	setFormTitle("Add a new vulnerability");
     }
 
@@ -544,6 +554,7 @@ const VulAddForm = (props) => {
 			 vul={editVul}
 			 updateVul={doneEdit}
 			 syncCVE={pullCVEInfo}
+			 reserveCVE={preReserveCVE}
 		     />
 
 		     <PickCVEModalAccount
@@ -551,6 +562,7 @@ const VulAddForm = (props) => {
 			 hideModal = {hideCVEModal}
 			 message = {modalMessage}
 			 confirmModal = {reserveCVENow}
+			 test = {populate ? false: true}
 		     />
 		     <PopulateCVEModal
 			 showModal = {showPopulateModal}
@@ -583,7 +595,7 @@ const VulAddForm = (props) => {
                          showModal = {displayErrorModal}
 	                 hideModal = {hideErrorModal}
                          message = {errorMessage}
-                     />    
+                     />
 		 </>
 
 		}

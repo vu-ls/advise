@@ -155,7 +155,7 @@ export default class ContactAPI{
 
     searchThreadContacts(thread, search) {
 	console.log("IN THREAD CONTACTS", thread);
-	const url = `${API_URL}/groups/search/`;
+	const url = `${API_URL}/groups/`;
 	let formField = new FormData();
 	formField.append('search', search);
 	formField.append('thread', thread);
@@ -164,7 +164,7 @@ export default class ContactAPI{
 
     searchCaseContacts(c, search) {
 	console.log("IN SEARCH CONTACTS", c);
-        const url = `${API_URL}/groups/search/`;
+        const url = `${API_URL}/groups/`;
         let formField = new FormData();
         formField.append('search', search);
         formField.append('case', c);
@@ -172,7 +172,7 @@ export default class ContactAPI{
     }
 
     searchAllContacts(search) {
-        const url = `${API_URL}/groups/search/`;
+        const url = `${API_URL}/groups/`;
         let formField = new FormData();
         formField.append('search', search);
         return axios.post(url, formField).then(response => response.data);

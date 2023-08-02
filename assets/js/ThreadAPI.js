@@ -7,7 +7,8 @@ axios.defaults.xsrfCookieName = 'csrftoken'
 
 export default class CaseThreadAPI{
 
-    constructor(){}
+    constructor(){
+    }
 
     getUserCaseState(c) {
 	console.log(c)
@@ -276,12 +277,16 @@ export default class CaseThreadAPI{
         return axios.get(url, {cancelToken: cancel.token})
     }
     
-    getMyCases() {
-	const url = `${API_URL}/api/cases/?owned=True&status=0&status=1`;
+    getMyCases(search=null) {
+	let url = `${API_URL}/api/cases/?owned=True&status=0&status=1`;
+	if (search) {
+	    url = `${API_URL}/api/cases/?owned=True&status=0&status=1&${search}`;
+	}
 	return axios.get(url).then(response => response.data);
     }
 
     getMyCasesByPage(page) {
+        console.log("in here")
 	const url = `${API_URL}/api/cases/?owned=True&status=0&status=1&page=${page}`;
 	return axios.get(url).then(response => response.data);
     }
@@ -294,9 +299,11 @@ export default class CaseThreadAPI{
         return axios.patch(url, data).then(response => response.data);
     }
     
-    getUnassignedCases() {
-	console.log("IN TRIAGE API");
-        const url = `${API_URL}/api/triage/`;
+    getUnassignedCases(search=null) {
+	let url = `${API_URL}/api/triage/`;
+	if (search) {
+            url = `${API_URL}/api/triage/?${search}`;
+	}
         return axios.get(url).then(response=>response.data);
     }
 

@@ -134,7 +134,6 @@ const CaseDetailApp = (props) => {
 	if (vuls) {
 	    setStatus(vuls.some(item => item.affected_products.length > 0));
 	    console.log("vuls are updated");
-	    props.updateActivity();
 	}
     }, [vuls]);
 
@@ -145,7 +144,8 @@ const CaseDetailApp = (props) => {
 	threadapi.updateCase(props.caseInfo, formDataObj).then((response) => {
 	    let f = <Alert variant="success">Got it! Thanks for adding more information!</Alert>;
 	    setFeedback(f);
-	    props.updateActivity();
+	    props.updateStatus();
+	    //props.updateActivity();
 	}).catch(err => {
 	    console.log(err);
 	    let f= <Alert variant="danger">An error occurred: {err.response.data.detail}. Make sure you are assigned to the case before editing.</Alert>
@@ -330,6 +330,7 @@ const CaseDetailApp = (props) => {
 				vuls = {vuls}
 				transfers = {transfers}
 				user={props.user}
+				active={activeTab == "addstatus" ? true : false}
 			    />
 			</Tab.Pane>
 		    </Tab.Content>

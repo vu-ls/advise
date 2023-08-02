@@ -2066,5 +2066,13 @@ class CaseTransfer(models.Model):
 	null=True)
     
 
+class CaseResolutionOptions(models.Model):
 
+    description = models.CharField(
+        max_length=500)
+
+    def __str__(self):
+        return self.description
+
+    
     

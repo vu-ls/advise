@@ -7,6 +7,7 @@ import {Card, Alert, OverlayTrigger, Tooltip, ButtonGroup, ToggleButton, Dropdow
 import DisplayVulStatus from './DisplayVulStatus';
 import StatusTransferModal from './StatusTransferModal';
 import ErrorModal from "./ErrorModal";
+import {Link} from "react-router-dom";
 import {AsyncTypeahead} from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.bs5.css';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
@@ -106,7 +107,7 @@ const StatusAddForm = (props) => {
     const [status, setStatus] = useState("");
     const [showJustification, setShowJustification] = useState(false);
     const [justification, setJustification] = useState("");
-    const [versionRange, setVersionRange]=useState(null);
+    const [versionRange, setVersionRange]=useState("");
     const [endVersion, setEndVersion] = useState("");
     const [checkedVuls, setCheckedVuls] = useState([]);
     const [invalidVersion, setInvalidVersion] = useState(false);
@@ -227,7 +228,11 @@ const StatusAddForm = (props) => {
 	setVersion(q.version);
 	setEndVersion(q.version_end_range);
 	setVulStatement(q.statement);
-	setVersionRange(q.version_range);
+	if (q.version_range) {
+	    setVersionRange(q.version_range);
+	} else {
+	    setVersionRange("");
+	}
 	setCheckedVuls([q.vul.id]);
 	setStatus(q.status);
 	if (q.justification) {
@@ -378,9 +383,15 @@ const StatusAddForm = (props) => {
     }, [props.vuls]);
 
     useEffect(() => {
-	setIsLoading(true);
-        setVuls(props.vuls)
-	getSelectedComponents();
+
+	if (props.active) {
+	    setIsLoading(true);
+	    getSelectedComponents();
+	}
+    }, [props.active])
+
+    useEffect(() => {
+	console.log(`USER IS  ${props.user} in statusaddform`);
 	setReqUser(props.user);
 	if (['owner', 'coordinator'].includes(props.user.role)) {
 	    setTransfers(props.transfers)
@@ -390,8 +401,7 @@ const StatusAddForm = (props) => {
 	    setAllowAddStatus(true);
 
 	}
-    }, [props])
-
+    }, [props.user]);
 
     const getSelectedComponents = async () => {
         console.log("fetching case components");
@@ -468,6 +478,7 @@ const StatusAddForm = (props) => {
                                            title={<i className="bx bx-dots-vertical-rounded"></i>}
                            >
 			       <Dropdown.Item eventKey='add' onClick={()=>(addStatus(), setShowForm(true))} >Add Status</Dropdown.Item>
+			       <Dropdown.Item as={Link} to="status">View All</Dropdown.Item>
 			   </DropdownButton>
 			   :
 			   <Button type="button" className="btn btn-primary" onClick={()=>(addStatus(), setShowForm(true))}>
@@ -508,11 +519,14 @@ const StatusAddForm = (props) => {
 		    return (
 			<Accordion.Item className="card mt-2" eventKey={index} key={index}>
                             <Accordion.Header>
-				<div className="d-flex gap-5 justify-content-between">
+				<div className="d-flex gap-5 justify-content-between align-items-center">
 				    <span>{c.component.owner ? "" :
+					   <>
 					   <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>
 					       <i className="fas fa-exclamation-triangle warningtext"></i>
-					   </OverlayTrigger>}
+					   </OverlayTrigger>
+					       {" "}
+					   </>}
 					{c.component.name} {c.component.version && c.component.version}
 				    </span>
 				    <DisplayVulStatusSummary
@@ -557,10 +571,10 @@ const StatusAddForm = (props) => {
 							    status={v.status}
 							/>
 						    </td>
-						    <td>{v.version} {v.version_range ? v.version_range : ""} {v.version_end_range ? v.version_end_range : "" }
+						    <td><a href={`/advise/components/${c.component.id}/`}>{v.version} {v.version_range ? v.version_range : ""} {v.version_end_range ? v.version_end_range : "" } </a>
 						    </td>
 						    <td>{c.component.owner ?
-							 `${c.component.owner.name}`
+							 <a href={`/advise/groups/${c.component.owner.id}`}>{c.component.owner.name}</a>
 							 :
 							 <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>
 							     <i className="fas fa-exclamation-triangle warningtext"></i>             
@@ -849,7 +863,7 @@ const StatusAddForm = (props) => {
 	    <StatusModal
 		showModal = {showStatusModal}
 		hideModal = {hideStatusModal}
-		component = {comp}
+		comp = {comp}
 		status = {editStatus}
 		
 	    />

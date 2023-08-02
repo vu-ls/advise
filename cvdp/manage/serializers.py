@@ -1,11 +1,12 @@
 from cvdp.manage.models import *
-from cvdp.models import UserAssignmentWeight, AssignmentRole, CVEServicesAccount, CaseReport, EmailTemplate
+from cvdp.models import UserAssignmentWeight, AssignmentRole, CVEServicesAccount, CaseReport, EmailTemplate, CaseResolutionOptions
 from rest_framework import serializers
 from django.contrib.auth.models import Group
 from django.urls import reverse
 from authapp.models import User
 from cvdp.serializers import ChoiceField, UserSerializer
 from cvdp.groups.serializers import GroupSerializer
+from django.conf import settings
 
 class QuestionSerializer(serializers.ModelSerializer):
 
@@ -26,9 +27,14 @@ class ReportingFormSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ReportingForm
-        fields = ("id", "title", "description", 'intro', 'send_ack_email', 'email_from', 'email_subject', 'email_answers', 'email_message', 'login_required', 'allow_file_upload',)
+        fields = ("id", "title", "description", 'intro', 'send_ack_email', 'email_from', 'email_subject', 'email_answers', 'email_message', 'login_required', )
 
 
+class ResolutionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CaseResolutionOptions
+        fields = ('description', 'id', )
         
 class AssignmentWeightSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='user.screen_name')
@@ -67,12 +73,10 @@ class CVEAccountSerializer(serializers.ModelSerializer):
         fields = ('id', 'org_name', 'email', 'active', 'server_type', 'server', 'group', 'api_key')
 
     def get_server(self, obj):
-        if obj.server_type == "prod":
-            return "https://cveawg.mitre.org/api/"
-        elif obj.server_type == "dev":
-            return "https://cveawg-dev.mitre.org/api/"
-        else:
-            return "https://cveawg-test.mitre.org/api/"
+        for i in settings.CVE_SERVICES_API_URLS:
+            if obj.server_type == i[0]:
+                return i[1]
+        return "Not Found"
     
         
 class ConnectionSerializer(serializers.ModelSerializer):

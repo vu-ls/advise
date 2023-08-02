@@ -3,6 +3,7 @@ import {Card, Modal, Alert, NavDropdown, DropdownButton, Dropdown, InputGroup, F
 import {createEvent} from 'ics';
 import { format, formatDistance } from 'date-fns'
 import CaseThreadAPI from './ThreadAPI';
+import AdminAPI from './AdminAPI';
 import '../css/casethread.css';
 import PDFDownloader from './PDFDownloader';
 import DisplayStatus from './DisplayStatus';
@@ -12,8 +13,10 @@ import AutoAssignModule from './AutoAssignModule';
 import NotifyVendorModal from "./NotifyVendorModal";
 import TransferCaseModal from "./TransferCaseModal";
 import ErrorModal from "./ErrorModal";
+import {Link} from "react-router-dom"
 
 const threadapi = new CaseThreadAPI();
+const adminapi = new AdminAPI();
 
 const CaseStatusApp = (props) => {
 
@@ -22,11 +25,13 @@ const CaseStatusApp = (props) => {
     const [date, setDate] = useState("")
     const [datePublic, setDatePublic] = useState("");
     const [dateDue, setDateDue] = useState("");
+    const [caseResolution, setCaseResolution] = useState("");
     const [users, setUsers] = useState([]);
     const [roles, setRoles] = useState([]);
     const [showAutoAssign, setShowAutoAssign] = useState(false);
     const [error, setError] = useState(null);
     const [showNotifyPrompt, setShowNotifyPrompt] = useState(false);
+    const [showResolutionPrompt, setShowResolutionPrompt] = useState(false);
     const [newStatus, setNewStatus] = useState(null);
     const [displayVNModal, setDisplayVNModal] = useState(false);
     const [notifyVendorCount, setNotifyVendorCount] = useState(0);
@@ -37,13 +42,13 @@ const CaseStatusApp = (props) => {
     const hideErrorModal = () => {
 	setDisplayErrorModal(false);
     }
-    
+
     const hideTransferModal = () => {
 	setDisplayTransferModal(false);
 	/*if transfer was successful, case status should have changed */
 	props.updateStatus();
     }
-    
+
     const hideAutoAssign = () => {
         setShowAutoAssign(false);
     };
@@ -54,12 +59,14 @@ const CaseStatusApp = (props) => {
 	   at the email prompt, so we need to update status */
 	props.updateStatus();
     }
-    
+
     const hideNotifyPrompt = () => {
 	setShowNotifyPrompt(false);
-
 	updateStatus("Active");
-	
+    }
+
+    const hideResolutionPrompt = () => {
+	setShowResolutionPrompt(false);
     }
 
     function assignUser(evtKey, evt) {
@@ -94,10 +101,11 @@ const CaseStatusApp = (props) => {
         }).catch(err => {
 	    console.log(err);
 	});
-        
+
     }
-	
+
     function updateStatus(status) {
+	setShowResolutionPrompt(false);
 	const data = {'status': status};
         threadapi.updateCase(caseInfo, data).then((response) => {
 	    props.updateStatus();
@@ -108,7 +116,7 @@ const CaseStatusApp = (props) => {
 	});
 
     }
-    
+
     function changeStatus(evtKey, evt) {
 	if (caseInfo.status != "Active" && evtKey == "Active") {
 	    /*check to see if there are unnotified vendors and prompt user to notify*/
@@ -123,6 +131,8 @@ const CaseStatusApp = (props) => {
 		    updateStatus(evtKey);
 		}
 	    });
+	} else if (caseInfo.status != "Inactive" && evtKey == "Inactive") {
+	    setShowResolutionPrompt(true);
 	} else {
 	    updateStatus(evtKey);
 	}
@@ -213,7 +223,27 @@ const CaseStatusApp = (props) => {
 	    setDisplayVNModal(true);
 	});
     }
-	
+
+    const updateResolution = async () => {
+	const data = {'resolution': caseResolution, 'status': 'Inactive'};
+        threadapi.updateCase(caseInfo, data).then((response) => {
+            props.updateStatus();
+        }).catch(err => {
+            setErrorMessage(`Error updating status: ${err.message}. Is this case assigned?`);
+            setDisplayErrorModal(true);
+            console.log(err);
+        });
+    }
+
+    
+    useEffect(()=> {
+	if (caseResolution && showResolutionPrompt) {
+	    console.log(`do something ${caseResolution}`);
+	    setShowResolutionPrompt(false);
+	    updateResolution();
+	}
+    }, [caseResolution]);
+
 
     const NotifyPrompt = (props) => {
 
@@ -235,6 +265,93 @@ const CaseStatusApp = (props) => {
 	)
     }
 
+    const AddResolutionPrompt = (props) => {
+
+	const [resolution, setResolution] = useState("");
+	const [other, setOther] = useState("");
+	const [showOther, setShowOther] = useState(false);
+	const [options, setOptions] = useState([]);
+	const [error, setError] = useState(null);
+	
+	const fetchInitialData = async () => {
+	    adminapi.getResolutionOptions().then((response) => {
+		setOptions(response);
+		if (response.length == 0) {
+		    setError("Improperly configured. No resolutions available. Ask admin to create resolution options.");
+		}
+            }).catch(err => {
+		console.log(err);
+		setError(`Error retrieving resolutions - ${err.message}`);
+            });
+	}
+	
+	useEffect(() => {
+	    if (props.show) {
+		fetchInitialData();
+	    }
+	}, []);
+	
+	const addResolution = async () => {
+	    if (other) {
+		setCaseResolution(other);
+	    } else if (resolution) {
+		setCaseResolution(resolution);
+	    } else {
+		updateStatus("Inactive");
+	    }
+	}
+
+	return (
+            <Modal show={props.show} centered onHide={props.hide} backdrop="static">
+                <Modal.Header closeButton>
+                    <Modal.Title>Add Resolution</Modal.Title>
+                </Modal.Header>
+                <Modal.Body><p>Optional: Add a resolution for this case.</p>
+		    {error &&
+		     <Alert variant="danger">{error}</Alert>
+		    }
+		    <Form.Group className="mb-3" controlId="_type">
+			<Form.Label>Resolution </Form.Label>
+			{options.map((o, index) => {
+			    return (
+				<Form.Check
+				    label={o.description}
+				    name="resolution"
+				    type="radio"
+				    value="fixed"
+				    onChange={(e)=>setResolution(o.description)}
+				    key={`resolution-${o.id}`}
+				/>
+			    )
+			})}
+			<Form.Check
+			    label="Other"
+			    name="resolution"
+			    type="radio"
+			    value="other"
+			    onChange={(e)=>setShowOther(true)}
+			    key="resolution-other"
+			/>
+		    </Form.Group>
+		    {showOther &&
+		     <Form.Group className="mb-3">
+			 <Form.Control autoFocus placeholder="Required: resolution" name="resolution" as="textarea" rows={3} value={other} onChange={(e)=>setOther(e.target.value)}/>
+		     </Form.Group>
+		     }
+		     
+		</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={addResolution}>
+			{resolution || other ?
+                         `Add Resolution`
+			 :
+			 `Continue without resolution`
+			}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        )
+    }
 
     const downloadJSON = () => {
 	let obj = {};
@@ -268,11 +385,11 @@ const CaseStatusApp = (props) => {
 	}
 	return (
 	    <div className="d-flex align-items-center gap-3">
-		<a href="advisory/">
+		<Link to="advisory/" state={{caseInfo: caseInfo}}>
 		    <Badge pill bg={badgetype}>
 			{props.advisory}
 		    </Badge>
-		</a>
+		</Link>
 		{props.advisory !== "NOT STARTED" &&
                 <DropdownButton variant="btn p-0"
                                 title={<i className="fas fa-download"></i>}
@@ -329,7 +446,7 @@ const CaseStatusApp = (props) => {
 	const popperConfig = {
 	    strategy: "fixed"
 	};
-	
+
 	let title = (
 	    <div className="d-flex align-items-center gap-2 mt-2 mb-2">
 		<DisplayLogo
@@ -416,6 +533,7 @@ const CaseStatusApp = (props) => {
     }
 
     useEffect(() => {
+	console.log("case info updating");
         setCaseInfo(props.caseInfo);
 	setDate(new Date(props.caseInfo.created));
 	if (props.caseInfo.due_date) {
@@ -427,11 +545,17 @@ const CaseStatusApp = (props) => {
     }, [props.caseInfo]);
 
     useEffect(() => {
+	console.log("user updating");
 	if (['coordinator', 'owner'].includes(props.user.role)) {
 	    try {
 		threadapi.getUserAssignments().then((response) => {
-		    setUsers(response['users']);
-		    setRoles(response['roles']);
+		    console.log(response);
+		    if ('users' in response) {
+			setUsers(response['users']);
+		    }
+		    if ('roles' in response) {
+			setRoles(response['roles']);
+		    }
 		})
 	    } catch (err) {
 		console.log(err);
@@ -482,7 +606,7 @@ const CaseStatusApp = (props) => {
 			    }
 			</Col>
 		    </Row>
-		    {props.user.role ==="owner" && caseInfo.resolution && 
+		    {props.user.role ==="owner" && caseInfo.resolution &&
 		     <Row className="mb-2 align-items-center">
 			 <Col sm={4}>
 			     <Form.Label>Resolution</Form.Label>
@@ -577,11 +701,15 @@ const CaseStatusApp = (props) => {
 			 confirmModal = {autoAssignUser}
 			 roles = {roles}
 		     />
+		     <AddResolutionPrompt
+			 show = {showResolutionPrompt}
+			 hide = {hideResolutionPrompt}
+		     />
 		     <NotifyPrompt
 			 show = {showNotifyPrompt}
 			 hide = {hideNotifyPrompt}
 			 title="Do you want to notify all participants?"
-			 message="Now that the case is public, do you want to notify all participants that haven't been notified?"
+			 message="Now that the case is active, do you want to notify all participants that haven't been notified?"
 		     />
 		     <NotifyVendorModal
 			 showModal = {displayVNModal}
@@ -599,11 +727,12 @@ const CaseStatusApp = (props) => {
 			 hideModal = {hideErrorModal}
 			 message = {errorMessage}
 		     />
-		     
+
 		 </>
 		}
 	    </Card>
-	:<></>
+	:
+	<div className="text-center"><div className="lds-spinner"><div></div><div></div><div></div></div></div>
     )
 }
 

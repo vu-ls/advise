@@ -468,8 +468,22 @@ REST_FRAMEWORK = {
 }
 
 
-#allowed options: "prod", "test", "dev"                                         
-CVE_SERVICES_API = os.environ.get("CVE_SERVICES_API", "test")
+#allowed options: "prod", "test", "dev", "adptest"                                         
+#List available options here:
+CVE_SERVICES_API_OPTIONS = (
+    ('prod', "Production"),
+    ('test', "Test"),
+    ('dev', "Development"),
+    ('adptest', 'ADP Test'),
+)
+
+CVE_SERVICES_API_URLS  = (
+    ("prod", "https://cveawg.mitre.org/api/"),
+    ("dev", "https://cveawg-dev.mitre.org/api/"),
+    ("test", "https://cveawg-test.mitre.org/api/"),
+    ("adptest", "https://cveawg-adp-test.mitre.org/api/")
+)
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

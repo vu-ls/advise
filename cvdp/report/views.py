@@ -290,12 +290,29 @@ class ReportView(UserPassesTestMixin, generic.TemplateView):
 
         return context
 
+    def form_invalid(self, form):
+        logger.debug("INVALID FORM")
+        logger.debug(f"{self.__class__.__name__} errors: {form.errors}")
+        base_template = settings.CVDP_BASE_TEMPLATE
+        if self.request.user.is_anonymous:
+            base_template = 'cvdp/report_no_auth.html'
+
+        rform = ReportingForm.objects.all().first()
+        if rform:
+            intro = rform.intro
+        else:
+            intro = "Error Occurred"
+        return render(self.request, 'cvdp/report.html',
+                      {'form': form,
+                       'intro': intro,
+                       'base_template': base_template, })
+    
     def post(self, request, *args, **kwargs):
-        logger.debug(f"{self.__class__.__name__} post: {self.request.POST}")
+        logger.debug(f"{self.__class__.__name__} post: {self.request.POST}, files: {self.request.FILES}")
 
         rform = ReportingForm.objects.all().first()
 
-        form = rform.get_form(self.request.POST)
+        form = rform.get_form(self.request.POST, self.request.FILES)
         if form.is_valid():
             #create form entry
             fe = FormEntry(form=rform)
@@ -310,6 +327,7 @@ class ReportView(UserPassesTestMixin, generic.TemplateView):
 
             logger.debug(pp)
 
+            
             #create case report
             cr = CaseReport(entry=fe,
                             report=pp)
@@ -323,6 +341,15 @@ class ReportView(UserPassesTestMixin, generic.TemplateView):
 
             case.save()
 
+            for k, v in self.request.FILES.items():
+                artifact = add_artifact(v)
+                action = create_case_action(f"uploaded file with report", self.request.user, case)
+                artifact = CaseArtifact(file=artifact,
+                                        case=case,
+                                        action=action)
+                artifact.save()
+                                        
+            
             #add reporter to Case as reporter
             if self.request.user.is_authenticated:
                 contact = Contact.objects.filter(user=self.request.user).first()
@@ -337,3 +364,5 @@ class ReportView(UserPassesTestMixin, generic.TemplateView):
                 return redirect("cvdp:reports")
             else:
                 return redirect("authapp:login")
+        else:
+            return self.form_invalid(form)

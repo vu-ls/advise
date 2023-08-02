@@ -5,7 +5,7 @@ import { Modal, Button } from "react-bootstrap";
 const ErrorModal = ({ showModal, hideModal, message }) => {
 
     return (
-        <Modal show={showModal} onHide={hideModal}>
+        <Modal show={showModal} onHide={hideModal} centered backdrop="static">
         <Modal.Header closeButton>
           <Modal.Title>Error</Modal.Title>
         </Modal.Header>

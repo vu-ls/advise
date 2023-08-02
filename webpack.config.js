@@ -9,24 +9,19 @@ module.exports = {
     mode: 'development',
     context: __dirname,
     entry: {
-	main: './assets/js/index',
 	login: './assets/js/login',
-	participantapp: './assets/js/participants',
 	app: './assets/js/app',
 	reportapp: './assets/js/report',
 	triageapp: './assets/js/triage',
 	dashboardapp: './assets/js/dashboard',
 	componentapp: './assets/js/component',
-	searchcases: './assets/js/casesearch',
+	searchcases: './assets/js/case',
 	searchall: './assets/js/search',
 	admin: './assets/js/admin',
 	cvdp: './assets/js/cvdp',
 	cve: './assets/js/cve',
 	inbox: './assets/js/inbox',
-	advisory: './assets/js/advisory',
 	groups: './assets/js/groups',
-	coordgroup: './assets/js/group',
-	group_components: './assets/js/groupcomponents',
 	groupadmin: './assets/js/groupadmin',
 	myreports: './assets/js/myreports',
 	contactapp: './assets/js/contact',
@@ -93,7 +88,7 @@ module.exports = {
 	    
 	]
     },
-
+    
     resolve: {
 	modules: ['node_modules'],
 	extensions: ['.js', '.jsx',]

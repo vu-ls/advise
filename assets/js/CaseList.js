@@ -3,12 +3,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {format, formatDistance} from 'date-fns';
 import DisplayStatus from './DisplayStatus';
 import StandardPagination from './StandardPagination';
-
+import {Link, useLocation} from "react-router-dom"
 
 
 export default function CaseList(props) {
 
-    const {cases, count, page, setCurrentPage, emptymessage} = props;
+    const {cases, count, page, setCurrentPage, emptymessage, crumbs, crumb_link} = props;
     
     return (
 	<>
@@ -20,8 +20,8 @@ export default function CaseList(props) {
 		 
 		 return (
 		     <div key={index}>
-			 <a className="search-result-link" href={`/advise/case/${c.case_id}`}>
-			 {c.case_identifier}: {c.title} </a>
+			 <Link className="search-result-link" to={`/advise/cases/${c.case_id}`} state={{breadcrumbs: crumbs, crumb_link:crumb_link}}>
+			 {c.case_identifier}: {c.title} </Link>
 			 <DisplayStatus
 			     status= {c.status}
 			 />

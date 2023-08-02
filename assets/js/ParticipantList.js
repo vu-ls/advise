@@ -4,6 +4,7 @@ import CaseThreadAPI from './ThreadAPI';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import DisplayLogo from "./DisplayLogo";
 import Dropdown from 'react-bootstrap/Dropdown';
+import {useParams, useNavigate, Link, useLocation} from "react-router-dom"
 import {Modal, Popover, OverlayTrigger, Tooltip, Card, Alert, Button} from 'react-bootstrap';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import ParticipantModal from './ParticipantModal.js';
@@ -14,6 +15,8 @@ import 'react-perfect-scrollbar/dist/css/styles.css'
 const threadapi = new CaseThreadAPI();
 
 export default function ParticipantList(props) {
+
+    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true);
     const [participants, setParticipants] = useState([]);
     const [profileStore, setProfileStore] = useState([]);
@@ -116,7 +119,7 @@ export default function ParticipantList(props) {
 				 title={<i className="bx bx-dots-vertical-rounded"></i>}
 		 >
 		     <Dropdown.Item eventKey='add' onClick={(e)=>(setDisplayParticipantModal(true))}>Add Participant</Dropdown.Item>
-		     <Dropdown.Item eventKey='manage' href="participants/"> Manage Participants </Dropdown.Item>
+		     <Dropdown.Item eventKey='manage' onClick={(e)=>(navigate("participants", {state: {caseInfo: caseInfo, reqUser: props.user}}))}> Manage Participants </Dropdown.Item>
 		     <Dropdown.Item eventKey='remove' onClick={(e)=>(setShowRemove(true))}>Remove Participant</Dropdown.Item>
 		     {allowSelectRole ? ""
 		      :

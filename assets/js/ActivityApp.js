@@ -9,7 +9,7 @@ const ActivityApp = (props) => {
 
     return (
 	<>
-	<div className="d-flex align-items-center justify-content-between">
+	<div className="d-flex align-items-center justify-content-between activity-item">
 	    <div className="d-flex align-items-center gap-2">
 		<DisplayLogo
 		    photo = {props.activity.user.photo}

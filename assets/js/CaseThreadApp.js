@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import ThreadDisplay from './ThreadDisplay';
 import ThreadSearchForm from './ThreadSearch';
 import {Card, DropdownButton, Dropdown, InputGroup, FloatingLabel, Form, Container, Alert, Row, Col, Tab, Tabs, Nav, Button} from 'react-bootstrap';
+import {useParams, useNavigate, Link, useLocation} from "react-router-dom"
 import CaseThreadAPI from './ThreadAPI';
 import PostList from './PostList';
 import ParticipantList from './ParticipantList';
@@ -14,15 +14,21 @@ import CaseActivityApp from './CaseActivityApp';
 
 const threadapi = new CaseThreadAPI();
 
-const CaseThreadApp = (caseid) => {
+const CaseThreadApp = () => {
 
+    const { id } = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [crumbs, setCrumbs] = useState(location.state?.breadcrumbs);
+    const [crumbLink, setCrumbLink] = useState(location.state?.crumb_link);
+    //const [caseid, setCaseId] = useState(location.state?.caseid);
     const [threadError, setThreadError] = useState(null);
     const [threads, setThreads] = useState([]);
     const [threadSubject, setThreadSubject] = useState("");
     const [invalidSubject, setInvalidSubject] = useState(false);
     const [caseInfo, setCaseInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [reqUser, setReqUser] = useState("");
+    const [reqUser, setReqUser] = useState(null);
     const [showRemove, setShowRemove] = useState(false);
     const [searchStr, setSearchStr] = useState(null);
     const [activeTab, setActiveTab] = useState(null);
@@ -35,6 +41,7 @@ const CaseThreadApp = (caseid) => {
     const [removeID, setRemoveID] = useState(null);
     const [showArchived, setShowArchived] = useState(false);
     const [reloadActivity, setReloadActivity] = useState(0);
+
     
     const searchThreads=(searchprop) => {
 	const {value, togglebutton} = searchprop;
@@ -103,16 +110,18 @@ const CaseThreadApp = (caseid) => {
 	/*todo: add error handling - null subject not allowed */
 
 	console.log(event.target[0].value);
-	if (threadSubject == "") {
+	if (event.target[0].value == "") {
 	    setInvalidSubject(true);
 	} else {
-	    threadapi.createThread(caseid, threadSubject).then((response) => {
+	    threadapi.createThread({'case': id}, event.target[0].value).then((response) => {
 		setThreads(threads => [...threads, response]);
 		setShowNewThread(false);
 		setActiveTab(response);
 
             });
 	    setThreadSubject("");
+	    event.target[0].value = "";
+	    
 	}
     }
 
@@ -130,7 +139,7 @@ const CaseThreadApp = (caseid) => {
     const getArchivedThreads = async () => {
 	setShowArchived(true);
 	try {
-	    await threadapi.getArchivedThreads(caseid).then((response) => {
+	    await threadapi.getArchivedThreads({'case':id}).then((response) => {
 		console.log(response);
 		if (response.length > 0) {
 		    setActiveTab(response[0]);
@@ -147,45 +156,50 @@ const CaseThreadApp = (caseid) => {
     // Async Fetch
     const fetchInitialData = async () => {
 	setShowArchived(false);
-	console.log("FETCH INITIAL CASE DATA");
+	console.log(`FETCH INITIAL CASE DATA ${id}`);
 	try {
 	    setReloadActivity(reloadActivity + 1);
-	    await threadapi.getCase(caseid).then((response) => {
+	    await threadapi.getCase({'case': id}).then(async (response) => {
                 console.log(response);
                 setCaseInfo(response);
-            })
-	    await threadapi.getCaseOwners(caseid).then((response) => {
-		setOwners(response);
-		console.log("owners: ", response);
-	    });
-	    await threadapi.getUserCaseState(caseid).then((response) => {
-		console.log("USER IS ", response);
-		setReqUser(response);
-            })
-	    await threadapi.getThreads(caseid).then((response) => {
-		const queryString = window.location.search;
-		const urlParams = new URLSearchParams(queryString);
-		const thread = urlParams.get('thread')
-		if (thread) {
-		    /* find thread */
-		    let findtab = response.filter((item) => item.id == thread)
-		    if (findtab) {
-			setActiveTab(findtab[0]);
+	    
+		await threadapi.getCaseOwners({'case': id}).then((response) => {
+		    setOwners(response);
+		    console.log("owners: ", response);
+		});
+		await threadapi.getUserCaseState({'case': id}).then((response) => {
+		    console.log("USER IS ", response);
+		    setReqUser(response);
+		})
+		await threadapi.getThreads({'case': id}).then((response) => {
+		    const queryString = window.location.search;
+		    const urlParams = new URLSearchParams(queryString);
+		    const thread = urlParams.get('thread')
+		    if (thread) {
+			/* find thread */
+			let findtab = response.filter((item) => item.id == thread)
+			if (findtab) {
+			    setActiveTab(findtab[0]);
+			} else {
+			    setActiveTab(response[0]);
+			}
 		    } else {
 			setActiveTab(response[0]);
 		    }
-		} else {
-		    setActiveTab(response[0]);
+		    console.log(response);
+                    setThreads(response);
+		    
+		    //console.log("SETTING ACTIVE TAB");
+		    //console.log(response[0].id);
+
+		    //setIsLoading(false);
+		})
+	    }).catch(err => {
+		console.log(err);
+		if (err.response && (err.response.status == 403 || err.response.status==404)) {
+		    navigate("err");
 		}
-                setThreads(response);
-
-		console.log("SETTING ACTIVE TAB");
-		console.log(response[0].id);
-
-		//setIsLoading(false);
-	    })
-
-
+	    });
 
 	} catch (err) {
 	    console.log('Error:', err)
@@ -206,15 +220,28 @@ const CaseThreadApp = (caseid) => {
 
     
     const updateCaseActivity = () => {
-	console.log("RELOAD ACTIVITY");
+	console.log(`RELOAD ACTIVITY, ${reloadActivity}`);
 	setReloadActivity(reloadActivity + 1);
     };
     
 
     return (
 	<>
-	    {caseInfo ? (
-	     <Row>
+	    {caseInfo && reqUser ? (
+		<>
+		    {crumbs ?
+
+		     <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">{crumbs[0]} /</span> <Link to={crumbLink} >{crumbs[1]}</Link> / {caseInfo.case_identifier} {caseInfo.title}</h4>
+		     :
+		     <>
+			 {caseInfo.owners.length == 0 && caseInfo.status=="Pending" ?
+			  <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Triage /</span> <Link to={"/advise/triage/"}>Unasiggned Cases</Link> /  {caseInfo.case_identifier} {caseInfo.title}</h4>    
+			  :
+			  <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Cases /</span> {caseInfo.case_identifier} {caseInfo.title}</h4> 
+			 }
+		     </>
+		    }
+		    <Row>
 		 <Col lg={8} md={8} className="h-100">
 		     <CaseDetailApp
 			 caseInfo = {caseInfo}
@@ -288,6 +315,8 @@ const CaseThreadApp = (caseid) => {
 							      {showRemove &&
 							       <>
 								   {thread.official ?
+
+
 								    ""
 								    :
 								    <div className="react-tabs-tab-close" onMouseUp={(e)=>closeTab(thread)}>×</div>
@@ -330,13 +359,19 @@ const CaseThreadApp = (caseid) => {
 
 					  <Tab.Pane eventKey="addTab">
 					      <p>To start a new thread, please provide a subject.</p>
-					      <form onSubmit={(e)=>createThread(e)}>
+					      <Form onSubmit={(e)=>createThread(e)}>
 						  <InputGroup className="mb-3">
-						      <Form.Control type="subject" value={threadSubject} onChange={(e)=>setThreadSubject(e.target.value)} placeholder="Add a subject for this new thread" />
+						      <Form.Control isInvalid={invalidSubject} name="subject" placeholder="Add a subject for this new thread" />
 						      <Button
 							  type="submit"
 							  variant="outline-primary"
 						      >Create</Button>
+						      <Button
+							  type="cancel"
+							  variant="outline-secondary"
+							  onClick={(e)=>(e.preventDefault(),setActiveTab(threads[0]),setShowNewThread(false))}>
+						      Cancel</Button>
+							  
 						  </InputGroup>
 						  {invalidSubject &&
 						   <Form.Text className="error">
@@ -344,7 +379,7 @@ const CaseThreadApp = (caseid) => {
 						   </Form.Text>
 						  }
 
-					      </form>
+					      </Form>
 					      
 					  </Tab.Pane>
 				      </Tab.Content>
@@ -382,7 +417,7 @@ const CaseThreadApp = (caseid) => {
 				  participants = {participants}
 				  activethread = {activeTab}
 				  reload = {getThreadParticipants}
-				   removeThread = {closeTab}
+				  removeThread = {closeTab}
 				  user = {reqUser}
 				  caseInfo = {caseInfo}
 			      />
@@ -404,7 +439,8 @@ const CaseThreadApp = (caseid) => {
 			 buttonText="Confirm"
 		     />
 		 </Col>
-	     </Row>
+		    </Row>
+		</>
 	    )
 	     :
 	     ""

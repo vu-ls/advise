@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from "react-dom";
-//import 'react-quill/dist/quill.snow.css';
 import { createRoot } from 'react-dom/client';
-import GroupApp from './GroupApp';
+import {BrowserRouter} from 'react-router-dom';
+import GroupRouterApp from './GroupRouterApp';
+
 const container = document.getElementById("app");
 const root = createRoot(container);
 
@@ -10,8 +11,9 @@ const root = createRoot(container);
 
 root.render(
     <React.StrictMode>
-	<GroupApp
-	/>
+	<BrowserRouter>
+	    <GroupRouterApp />
+	</BrowserRouter>
     </React.StrictMode>
 
 );

@@ -1,14 +1,15 @@
 import axios from 'axios';
 const API_URL = process.env.API_URL || 'http://localhost:8000/advise';
-
+const CVE_URL = process.env.CVE_URL || 'https://cveawg.mitre.org/api/';
 
 export default class CVEAPI{
 
-    constructor(org_name, user, api_key, url) {
+    constructor(org_name=null, user=null, api_key=null, url=null) {
 	this.org_name = org_name;
 	this.user = user;
 	this.api_key = api_key;
-	this.url = url;
+	/* use production or default if not provided */
+	this.url = url ? url : CVE_URL;
 	this.user_path = "/org/"+this.org_name+"/user/"+this.user;
 	this.headers = { headers: {'CVE-API-KEY': this.api_key,
 				   'CVE-API-ORG': this.org_name,
@@ -37,8 +38,11 @@ export default class CVEAPI{
 	return axios.get(url, this.headers).then(response => response.data);
     }
 
-    listCVEs() {
+    listCVEs(page=null) {
 	let url = `${this.url}cve-id/`;
+	if (page) {
+	    url = `${this.url}cve-id?page=${page}`;
+	}
 	return axios.get(url, this.headers).then(response => response.data);
     }
 
@@ -47,16 +51,13 @@ export default class CVEAPI{
 	return axios.put(url, null, this.headers).then(response=>response.data);
     }
 
-
-    
-
     getCVEMeta(id) {
 	let url = `${this.url}cve-id/${id}`;
         return axios.get(url, this.headers).then(response => response.data);
     }
     getCVE(id) {
 	let url = `${this.url}cve/${id}`;
-        return axios.get(url, this.headers).then(response => response.data);
+        return axios.get(url).then(response => response.data);
     }
 
     getCVEsByYear(year) {

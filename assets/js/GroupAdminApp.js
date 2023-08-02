@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import {useParams, useNavigate, Link, useLocation} from "react-router-dom";
 import {Row, Table, Alert, Card, Col, ListGroup, Button, Form, Dropdown, Tab, Nav, InputGroup, DropdownButton} from 'react-bootstrap';
 import InfiniteScroll from 'react-infinite-scroll-component'
 import ActivityApp from './ActivityApp.js';
@@ -18,8 +19,9 @@ import GroupContactApp from './GroupContactApp';
 
 const contactapi = new ContactAPI();
 
-const GroupAdminApp = (props) => {
+const GroupAdminApp = () => {
 
+    const { id } = useParams();
     const [apiError, setApiError] = useState(false);
     const [apiKey, setApiKey] = useState(null);
     const [keys, setKeys] = useState([]);
@@ -53,6 +55,23 @@ const GroupAdminApp = (props) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsCount, setItemsCount] = useState(0);
 
+    const IndeterminateCheckbox = React.forwardRef(
+	({ indeterminate, ...rest }, ref) => {
+	    const defaultRef = React.useRef()
+	    const resolvedRef = ref || defaultRef
+	    
+	    React.useEffect(() => {
+		resolvedRef.current.indeterminate = indeterminate
+	    }, [resolvedRef, indeterminate])
+	    
+	    return (
+		<>
+		    <input type="checkbox" ref={resolvedRef} {...rest} />
+		</>
+	    )
+	}
+    )
+    
     const columns = useMemo(
 	() => [
             {
@@ -61,14 +80,14 @@ const GroupAdminApp = (props) => {
                 // to render a checkbox
                 Header: ({ getToggleAllRowsSelectedProps }) => (
                     <div>
-                        <input type="checkbox" {...getToggleAllRowsSelectedProps()} />
+                        <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
                     </div>
                 ),
                 // The cell can use the individual row's getToggleRowSelectedProps method
                 // to the render a checkbox
                 Cell: ({ row }) => (
                     <div>
-                        <input type="checkbox" {...row.getToggleRowSelectedProps()} />
+                        <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
                     </div>
                 )
             },
@@ -299,8 +318,8 @@ const GroupAdminApp = (props) => {
 		})
 	} else if (removeGroup) {
 	    setRemoveGroup(false);
-	    contactapi.removeGroup(props.group).then((response) => {
-		window.location.href='/advise/groups/search/';
+	    contactapi.removeGroup(id).then((response) => {
+		window.location.href='/advise/groups/';
 	    })
 		.catch(err=>{
 		    setApiError(`Error deleting group: ${err.message}`);
@@ -345,7 +364,7 @@ const GroupAdminApp = (props) => {
 	if (selectedGroup) {
 	    fetchAPIKeys();
 	    fetchActivity();
-	    if (props.group || admin.includes(selectedGroup.uuid)){
+	    if (id || admin.includes(selectedGroup.uuid)){
 		setGroupAdmin(true);
 	    } else {
 		setGroupAdmin(false);
@@ -392,7 +411,7 @@ const GroupAdminApp = (props) => {
     const fetchGroupData = async () => {
 	setApiError(null);
 	try {
-            contactapi.getGroup(props.group).then((response) => {
+            contactapi.getGroup(id).then((response) => {
 		console.log("GETTING GROUP!")
 		console.log(response);
                 setGroups([response.data]);
@@ -405,7 +424,7 @@ const GroupAdminApp = (props) => {
     };
 
     const fetchInitialData = async () => {
-	if (props.group) {
+	if (id) {
 	    fetchGroupData();
 	    return;
 	}
@@ -446,13 +465,13 @@ const GroupAdminApp = (props) => {
 	    window.location.href=`/advise/inbox/${selectedGroup.uuid}/`;
 	    return;
 	case 'activate':
-	    contactapi.activateGroup(props.group).then((response) => {
-		fetchGroupData(props.group);
+	    contactapi.activateGroup(id).then((response) => {
+		fetchGroupData(id);
 	    });
 	    return;
 	case 'deactivate':
-	    contactapi.deactivateGroup(props.group).then((response) => {
-		fetchGroupData(props.group);
+	    contactapi.deactivateGroup(id).then((response) => {
+		fetchGroupData(id);
 	    });
 	    return;
 	case 'delete':
@@ -520,7 +539,7 @@ const GroupAdminApp = (props) => {
     const hideContactModal = () => {
 	setAddContactModal(false);
 	setEditContact(null);
-	if (props.group) {
+	if (id) {
 	    fetchGroupData();
 	} else {
 	    fetchInitialData();
@@ -530,7 +549,8 @@ const GroupAdminApp = (props) => {
 
 
     useEffect(() => {
-	if (props.group) {
+	console.log(`IN useeffect ${id}`);
+	if (id) {
 	    setGroupAdmin(true);
 	    fetchGroupData();
 	} else {
@@ -592,7 +612,9 @@ const GroupAdminApp = (props) => {
 		{apiError &&
 		 <Alert variant="danger">{apiError}</Alert>
 		}
-
+		{id &&
+		 <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Groups /</span> <Link to="/advise/groups/">Group Search</Link> / Group Detail</h4>
+		}
 		<Tab.Container
 		    defaultActiveKey="group"
 		    activeKey = {activeTab}
@@ -601,7 +623,7 @@ const GroupAdminApp = (props) => {
 		>
 		    <Nav variant="pills" className="mb-3">
 			<Nav.Item key="group">
-			    <Nav.Link eventKey="group"><i className="bx bx-user me-1"></i>{" "}{props.group ? "Group Details" : "My Contacts"}</Nav.Link>
+			    <Nav.Link eventKey="group"><i className="bx bx-user me-1"></i>{" "}{id ? "Group Details" : "My Contacts"}</Nav.Link>
 			</Nav.Item>
 			{groupAdmin &&
 			 <>
@@ -622,7 +644,7 @@ const GroupAdminApp = (props) => {
                              </Nav.Item>
 			 </>
 			}
-			{props.group &&
+			{id &&
 			 <>
 			     <Nav.Item key="cases">
 				 <Nav.Link eventKey="cases"><i className="fas fa-briefcase"></i>{" "}Cases</Nav.Link>
@@ -654,7 +676,7 @@ const GroupAdminApp = (props) => {
 
 					    <h3 className="px-3">
 						{selectedGroup.name}
-						{props.group &&
+						{id &&
 						 <>
 						     {groups[0].active ?
 						      " (Active)"
@@ -702,7 +724,7 @@ const GroupAdminApp = (props) => {
 					     <Dropdown.Item eventKey="add">Add Contact</Dropdown.Item>
 					     <Dropdown.Item eventKey="edit">Edit Contact</Dropdown.Item>
 					     <Dropdown.Item eventKey="remove">Remove Contact</Dropdown.Item>
-					     {props.group &&
+					     {id &&
 					      <>
 						  {groups[0].active ?
 						   <Dropdown.Item eventKey="deactivate">Deativate Group</Dropdown.Item>
@@ -886,7 +908,7 @@ const GroupAdminApp = (props) => {
 			 </>
 			}
 
-			{props.group &&
+			{id &&
 			 <>
 			     <Tab.Pane eventKey="cases" key="cases">
 				 <Card>
@@ -913,7 +935,7 @@ const GroupAdminApp = (props) => {
 
 			     <Tab.Pane eventKey="components" key="components">
 				 <ComponentTable
-				     group={props.group}
+				     group={id}
 				 />
 			     </Tab.Pane>
 			 </>
@@ -937,7 +959,7 @@ const GroupAdminApp = (props) => {
                              next={fetchMoreActivity}
                              hasMore={activityHasMore}
                              loader={<div className="text-center"><div className="lds-spinner"><div></div><div></div><div></div></div></div>}
-                             endMessage={<div className="text-center">No more activity updates</div>}
+                             endMessage={<div className="text-center mt-2">No more activity updates</div>}
                              scrollableTarget="scrollableDiv"
                          >
 			     <ListGroup variant="flush">

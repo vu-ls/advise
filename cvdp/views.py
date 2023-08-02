@@ -262,6 +262,7 @@ class TriageView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView):
 class TriageAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
     serializer_class = CaseSerializer
+    search_fields = ['title', 'summary', 'case_id']
     pagination_class=StandardResultsPagination
 
     def get_queryset(self):
@@ -278,7 +279,7 @@ def error_view(request):
     data = {}
     return render(request, "cvdp/500.html", data, status=500)
 
-def permission_denied_view(request, exception):
+def permission_denied_view(request, exception=None):
     data = {}
     return render(request, "cvdp/403.html", data, status=403)
 

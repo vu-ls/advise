@@ -22,7 +22,9 @@ const CaseActivityApp = (props) => {
 	console.log("get case activity");
 	await threadapi.getCaseActivity(props.caseInfo).then((response) => {
             console.log(response);
-            setActivity(response.results);
+	    if (response.results) {
+		setActivity(response.results);
+	    }
         }).catch(err => {
 	    setError(err.response.data.message);
 	});
@@ -34,15 +36,20 @@ const CaseActivityApp = (props) => {
     };
     
     useEffect(() => {
+	console.log('loading activity');
 	setCaseInfo(props.caseInfo);
     }, []);
 
     useEffect(() => {
 	setLoading(false);
+
     }, [activity]);
 
     useEffect(() => {
-	fetchInitialData();
+	console.log(`props.reload ${props.reload}`);
+	if (props.reload > 0) {
+	    fetchInitialData();
+	}
     }, [props.reload]);
     
     return (

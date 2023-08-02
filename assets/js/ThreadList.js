@@ -14,22 +14,19 @@ const threadapi = new CaseThreadAPI();
 
 export function ThreadList(caseid) {
     const [threads, setThreads] = useState([]);
+    const [search, setSearch] = useState("");
+    const [requser, setReqUser] = useState("");
+    
     useEffect(() => {
 	console.log("in this 1");
 	getAllThreads();
     }, []);
 
 
-    const [requser, setReqUser] = useState("");
     useEffect(() => {
 	console.log("in this 2");
 	getUserCaseState();
     }, []);
-
-    const [search, setSearch] = useState("");
-    
-    console.log("IN THREADLIS");
-    console.log(caseid);
 
     const searchThreads=(props) => {
 	setSearch(props.value);

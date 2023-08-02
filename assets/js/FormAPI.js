@@ -14,6 +14,12 @@ export default class FormAPI{
         return axios.get(url).then(response => response.data);
     }
 
+    getQuestionTypeOptions(c) {
+        const url = `${API_URL}/api/manage/form/${c.form}/question/`;
+        return axios.options(url).then(response => response.data);
+    }
+
+    
     getQuestions(c) {
 	const url = `${API_URL}/api/manage/form/${c.form}/question/`;
 	return axios.get(url).then(response => response.data);

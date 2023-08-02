@@ -38,7 +38,7 @@ const ManageCVEApp = () => {
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [removeID, setRemoveID] = useState(null);
     const [tableLoading, setTableLoading] = useState(false);
-    const [pageCount, setPageCount] = useState(1);
+    const [nextPage, setNextPage] = useState(null);
     const [searchVal, setSearchVal] = useState("");
     const [searchState, setSearchState] = useState("");
     const [searchYear, setSearchYear] = useState("Year");
@@ -49,6 +49,7 @@ const ManageCVEApp = () => {
     const [feedback, setFeedback] = useState("");
     const [formAlert, setFormAlert] = useState(null);
     const [reserveModal, setReserveModal] = useState(false);
+    const [cveServerTypes, setCVEServerTypes] = useState([]);
     
     const fetchIdRef = React.useRef(0)
 
@@ -72,6 +73,8 @@ const ManageCVEApp = () => {
     };
 
     const updateAdviseCVE = (event) => {
+	setFormAlert(null);
+	setApiError(null);
 	event.preventDefault();
         let error = false;
         const formData = new FormData(event.target),
@@ -234,18 +237,30 @@ const ManageCVEApp = () => {
     );
 
     const fetchInitialData = async () => {
-        try {
-            adminapi.getCVEAccounts().then((response) => {
-                console.log(response);
-                setAccounts(response);
-		if (response.length > 0 ) {
-		    setSelectedAccount(response[0]);
-		}
-            });
-        } catch (err) {
-            console.log(err);
+        adminapi.getCVEAccounts().then((response) => {
+            console.log(response);
+            setAccounts(response);
+	    if (response.length > 0 ) {
+		setSelectedAccount(response[0]);
+	    }
+        }).catch(err => {
             setApiError(err);
-        }
+        });
+	try {
+	    await adminapi.getCVEAPIOptions().then((response) => {
+		console.log(`RESPONSE:`);
+		console.log(response);
+		setCVEServerTypes(response['actions']['POST']["server_type"]["choices"]);
+	    }).catch(err => {
+		console.log(err);
+		setApiError(err);
+	    });
+	} catch (error) {
+	    console.log(error);
+	    setApiError(error);
+	}
+
+	
     };
 
 
@@ -267,39 +282,39 @@ const ManageCVEApp = () => {
 
     };
 
-    const fetchData = React.useCallback(({ pageSize, pageIndex, cveAPI }) => {
-	// This will get called when the table needs new data
-	// You could fetch your data from literally anywhere,
-	// even a server. But for this example, we'll just fake it.
 
-	// Give this fetch an ID
-	const fetchId = ++fetchIdRef.current
+    const fetchNextData = async () => {
 
-	// Set the loading state
-	setTableLoading(true)
-
-	const startRow = pageSize * pageIndex
-        const endRow = startRow + pageSize
-	console.log("IN FETCH DATA", startRow, endRow);
-	console.log("PAGE SIZE", pageSize);
-	console.log("PAGE INDEX", pageIndex);
-	if (fetchId === fetchIdRef.current) {
-	    try {
-		cveAPI.listCVEs().then((response) => {
-                    console.log(response)
-		    setCVEResponse(response)
-		    setCVEData(response.cve_ids.slice(startRow, endRow));
-		    setPageCount(Math.ceil(response.cve_ids.length/pageSize));
-		    setTableLoading(false);
-
-                    //setPageCount(response.pageCount);
-		})
-	    } catch (err) {
-		console.log(err);
-		console.log("data doesn't span multiple pages");
+	await cveAPI.listCVEs(nextPage).then((response) => {
+	    if ('nextPage' in response) {
+		if (response['currentPage'] < response['pageCount']) {
+		    setNextPage(response['nextPage'])
+		} else {
+		    setNextPage(null);
+		}
+	    } else {
+		setNextPage(null);
 	    }
+            console.log(response)
+	    setCVEResponse(response)
+	    setCVEData(response.cve_ids);
+	}).catch(err => {
+	    console.log(err);
+	    console.log("data doesn't span multiple pages");
+	})
+
+    }
+
+    const fetchData = () => {
+	console.log("loading more...");
+	if (nextPage) {
+            fetchNextData();
 	}
-    }, [])
+        setTimeout(() => {
+
+        }, 1500);
+
+    };
 
     const fetchAccountInfo = async () => {
 	if (activeAccount) {
@@ -316,6 +331,9 @@ const ManageCVEApp = () => {
 
     useEffect(() => {
 	fetchAccountInfo();
+	if (cveAPI) {
+	    fetchNextData();
+	}
     }, [activeAccount]);
 
     useEffect(() => {
@@ -355,6 +373,7 @@ const ManageCVEApp = () => {
     useEffect(() => {
 	if (cveAPI) {
 	    fetchCVEAccount();
+	    
 	}
     }, [cveAPI]);
 
@@ -411,7 +430,7 @@ const ManageCVEApp = () => {
 
     }
 
-    function SubRowAsync({ row, rowProps, visibleColumns, api }) {
+    function SubRowAsync({ row, rowProps, visibleColumns, api}) {
         const [loading, setLoading] = React.useState(true);
         const [data, setData] = React.useState([]);
 	console.log(row.original.cve_id)
@@ -457,7 +476,7 @@ const ManageCVEApp = () => {
                 row={row}
                 rowProps={rowProps}
                 visibleColumns={visibleColumns}
-		api={cveAPI}
+		api = {cveAPI}
             />
         ),
         []
@@ -602,11 +621,10 @@ const ManageCVEApp = () => {
 				     <CVETable
 					 columns = {cveColumns}
 					 data = {cveData}
-					 fetchData = {fetchData}
-					 loading={tableLoading}
-					 cveAPI = {cveAPI}
+					 update = {fetchData}
+					 hasMore = {nextPage ? true : false}
 					 showRowExpansion={showDetails}
-					 pageCount={pageCount}
+					 cveAPI = {cveAPI}
 				     />
 
 				 </Card.Body>
@@ -664,7 +682,7 @@ const ManageCVEApp = () => {
 
                                  <Card.Body>
 				     {apiError &&
-				      <Alert variant="danger">CVE API Connection Error: {apiError}</Alert>
+				      <Alert variant="danger">CVE API Connection Error for this account: {apiError}. Confirm credentials.</Alert>
 				     }
 
 				     {formAlert &&
@@ -687,9 +705,9 @@ const ManageCVEApp = () => {
 					      <Col lg={6}>
 						  <Form.Label>Server</Form.Label>
 						  <Form.Select name="server_type" value={testServer} onChange={(e)=>setTestServer(e.target.value)}>
-						      {['Production', 'Test', 'Development'].map((item, index) => {
+						      {cveServerTypes.map((item, index) => {
 							  return (
-							      <option key={item} value={item}>{item}</option>
+							      <option key={`st-${index}`} value={item.display_name}>{item.display_name}</option>
 							  )
 						      })}
 						  </Form.Select>

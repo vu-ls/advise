@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse, reverse_lazy
 from django.views import generic, View
 from django.utils.timesince import timesince
@@ -47,18 +48,18 @@ class CreateNewReportingForm(LoginRequiredMixin, UserPassesTestMixin, FormView):
             form = self.form_class(self.request.POST, instance=form_initial)
         else:
             form = self.form_class(self.request.POST)
-            
+
         if form.is_valid():
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
-    
+
     def form_valid(self, form):
         logger.debug("VALID FORM")
         f = form.save()
         f.created_by = self.request.user
         f.save()
-        
+
         return redirect("cvdp:design_form", f.id)
 
     def get_context_data(self, **kwargs):
@@ -70,11 +71,11 @@ class CreateNewReportingForm(LoginRequiredMixin, UserPassesTestMixin, FormView):
         else:
             context['title'] = "Create new reporting form"
         return context
-    
+
     def form_invalid(self, form):
         logger.debug("INVALID FORM")
         logger.debug(f"{self.__class__.__name__} errors: {form.errors}")
-        
+
         return render(self.request, 'cvdp/newform.html',
                       {'form': form,})
 
@@ -97,7 +98,7 @@ class DesignReportingForm(LoginRequiredMixin, UserPassesTestMixin, generic.Templ
         #context.update(forms)
         return context
 
-"""    
+"""
 class QuestionForm(LoginRequiredMixin, UserPassesTestMixin, FormView):
     form_class = QuestionForm
     login_url = "authapp:login"
@@ -112,13 +113,13 @@ class QuestionForm(LoginRequiredMixin, UserPassesTestMixin, FormView):
         context['theform'] = theform
         context['form'] = self.form_class(initial = {'form': theform.id })
         return context
-    
+
     def form_valid(self, form):
         logger.debug(f"{self.__class__.__name__} post: {self.request.POST}")
         theform = get_object_or_404(ReportingForm, id=self.kwargs['pk'])
         q = form.save()
         return redirect("cvdp:question", q.id)
-    
+
 
 class QuestionDetail(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
     model=FormQuestion
@@ -127,7 +128,7 @@ class QuestionDetail(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView
 
     def test_func(self):
         return self.request.user.is_coordinator
-""" 
+"""
 
 class QuestionAPIView(viewsets.ModelViewSet):
     serializer_class = QuestionSerializer
@@ -139,7 +140,7 @@ class QuestionAPIView(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return FormQuestion.objects.none()
-        
+
         form = get_object_or_404(ReportingForm, id=self.kwargs['pk'])
         return FormQuestion.objects.filter(form=form)
 
@@ -171,10 +172,8 @@ class QuestionAPIView(viewsets.ModelViewSet):
             logger.debug(serializer.errors)
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
-        
-                
 
-# anyone can submit a vul report?  Should IsAuthenticated even be here?
+
 class ReportingFormAPIView(viewsets.ModelViewSet):
     queryset = ReportingForm.objects.all()
     serializer_class = ReportingFormSerializer
@@ -183,7 +182,7 @@ class ReportingFormAPIView(viewsets.ModelViewSet):
     def get_view_name(self):
         return f"Reporting Form"
 
-    
+
 class FormManagement(LoginRequiredMixin, UserPassesTestMixin, generic.ListView):
     template_name = "cvdp/manage_forms.html"
     login_url = "authapp:login"
@@ -196,7 +195,7 @@ class FormManagement(LoginRequiredMixin, UserPassesTestMixin, generic.ListView):
         context = super(FormManagement, self).get_context_data(**kwargs)
         context['manageform'] = 1
         return context
-    
+
 
 #TODO: can anyone authenticated manage CVE here?  Or just coordinators?
 class CVEServicesDashboard(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
@@ -215,7 +214,7 @@ class CVEServicesDashboard(LoginRequiredMixin, UserPassesTestMixin, generic.Temp
         elif context['accounts']:
             acc = context['accounts'][0]
         return context
-    
+
 class UserAdminView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
     template_name = 'cvdp/user_admin.html'
     login_url="authapp:login"
@@ -240,7 +239,7 @@ class SystemAdminView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateV
         context['sysadminpage'] = 1
         return context
 
-    
+
 class PendingUsersAPI(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
     serializer_class = UserSerializer
@@ -253,7 +252,7 @@ class PendingUsersAPI(viewsets.ModelViewSet):
         if user.pending:
             user.pending=False;
             user.save()
-            
+
             return Response({}, status=status.HTTP_202_ACCEPTED)
         else:
             return Response({'error': 'user not pending'}, status=status.HTTP_400_BAD_REQUEST)
@@ -290,7 +289,7 @@ class AutoAssignmentAPIView(viewsets.ModelViewSet):
         logger.debug(request.data)
         if not(request.user.is_staff):
             #only staff members can create auto assignment weights
-            raise PermissionDenied()
+            raise PermissionDenied
 
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -305,8 +304,8 @@ class AutoAssignmentAPIView(viewsets.ModelViewSet):
         logger.debug(request.data)
         if not(request.user.is_staff):
             #only staff members can create auto assignment weights
-            raise PermissionDenied()
-        
+            raise PermissionDenied
+
         instance = self.get_object()
         data = request.data
         if request.data.get('user'):
@@ -323,7 +322,7 @@ class AutoAssignmentAPIView(viewsets.ModelViewSet):
                                                                 defaults={'weight': request.data.get('weight', 1)
                                                                       })
         return Response({}, status=status.HTTP_202_ACCEPTED)
-        
+
 
 class CVEServicesAccountManagement(LoginRequiredMixin, UserPassesTestMixin, FormView):
     template_name = 'cvdp/add_cve_account.html'
@@ -343,7 +342,7 @@ class CVEServicesAccountManagement(LoginRequiredMixin, UserPassesTestMixin, Form
             context['title'] = "Edit Account Information"
             form = CVEAccountForm(instance=account)
             context['form'] = form
- 
+
             context['action'] = reverse("cvdp:edit_cve_account", args=self.kwargs['pk'])
         else:
             context['title'] = 'Add new account'
@@ -352,8 +351,8 @@ class CVEServicesAccountManagement(LoginRequiredMixin, UserPassesTestMixin, Form
             context['form'] = form
             context['action'] = reverse("cvdp:add_cve_account")
         return context
-    
-    
+
+
     def form_valid(self, form):
         account = form.save()
         account.user_added = self.request.user
@@ -369,8 +368,8 @@ class CVEAccountAPI(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
     serializer_class = CVEAccountSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['active']
-    
+    filterset_fields = ['active', 'server_type']
+
     def get_queryset(self):
         return CVEServicesAccount.objects.filter(user_added=self.request.user)
 
@@ -378,18 +377,20 @@ class CVEAccountAPI(viewsets.ModelViewSet):
         question = get_object_or_404(CVEServicesAccount, id=self.kwargs['pk'])
         question.delete()
         return Response({}, status=status.HTTP_202_ACCEPTED)
-    
+
 class EmailTemplateAPI(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
     serializer_class = EmailTemplateSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['template_type']
+    search_fields = ['template_name']
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return EmailTemplate.objects.none()
-        
+
         return EmailTemplate.objects.all()
-    
+
 
 class ConnectionAPI(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, StaffPermission)
@@ -405,18 +406,18 @@ class ConnectionAPI(viewsets.ModelViewSet):
 
     def get_object(self):
         return get_object_or_404(AdVISEConnection, id=self.kwargs['pk'])
-        
+
     def create(self, request, *args, **kwargs):
         logger.debug(request.data)
 
         g = get_object_or_404(Group, groupprofile__uuid=request.data['group'])
-        
+
         connection = AdVISEConnection(
             group = g,
             url = request.data['url'],
             external_key= request.data['external_key'],
             created_by = self.request.user)
-        
+
         if request.data.get('incoming_api_key'):
             #lookup
             tokens = APIToken.objects.filter(last_four = request.data['incoming_api_key'])
@@ -428,7 +429,7 @@ class ConnectionAPI(viewsets.ModelViewSet):
                 connection.incoming_key = token;
         connection.save()
         return Response({}, status=status.HTTP_202_ACCEPTED)
-    
+
     def update(self, request, *args, **kwargs):
         logger.debug(request.data)
         connection = self.get_object()
@@ -437,14 +438,14 @@ class ConnectionAPI(viewsets.ModelViewSet):
             connection.disabled=False
             connection.save()
             return Response({}, status=status.HTTP_202_ACCEPTED)
-        
+
         g = get_object_or_404(Group, groupprofile__uuid=request.data['group'])
         connection.group = g
         connection.url = request.data['url']
         connection.external_key= request.data['external_key']
 
         if request.data.get('incoming_api_key'):
-            #lookup 
+            #lookup
             tokens = APIToken.objects.filter(last_four = request.data['incoming_api_key'])
             token = tokens.filter(user__groups__id=g.id)
             if len(token) != 1:
@@ -455,9 +456,40 @@ class ConnectionAPI(viewsets.ModelViewSet):
         connection.save()
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
-    
+
     def destroy(self, request, *args, **kwargs):
         connection = get_object_or_404(AdVISEConnection, id=self.kwargs['pk'])
         connection.disabled = True
         connection.save()
+        return Response({}, status=status.HTTP_202_ACCEPTED)
+
+
+class ResolutionAPIView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
+    serializer_class = ResolutionSerializer
+
+    def get_queryset(self):
+        return CaseResolutionOptions.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        logger.debug(request.data)
+        if not(request.user.is_staff):
+            #only staff members can create new options
+            raise PermissionDenied
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        else:
+            logger.debug(serializer.errors)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+    def destroy(self, request, *args, **kwargs):
+        question = get_object_or_404(CaseResolutionOptions, id=self.kwargs['pk'])
+        if not(request.user.is_staff):
+            #only staff members can delete
+            raise PermissionDenied
+        question.delete()
         return Response({}, status=status.HTTP_202_ACCEPTED)

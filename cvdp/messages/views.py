@@ -211,13 +211,14 @@ class MessageAPIView(viewsets.ModelViewSet):
         if getattr(self, 'swagger_fake_view', False):
             return Message.objects.none()
         thread = get_object_or_404(MessageThread, id=self.kwargs['pk'])
+        logger.debug("HEYEHEYEHEY")
         if not UserThread.objects.filter(thread=thread, user=self.request.user).exists():
-            gt = GroupThread.objects.filter(thread=thread).first()
-            if not self.request.user.groups.filter(id=gt.group.id).exists():
+            my_groups = self.request.user.groups.values_list('id', flat=True)
+            gt = GroupThread.objects.filter(thread=thread, group__in=my_groups).first()
+            if not gt:
                 #this isn't your thread, yo
-                return Http404
+                raise Http404
             else:
-                logger.debug("MARK THIS THREAD AS READ!")
                 gt.unread=False
                 gt.save()
         else:

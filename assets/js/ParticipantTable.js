@@ -7,6 +7,7 @@ import DisplayLogo from "./DisplayLogo";
 import BTable from "react-bootstrap/Table";
 import '../css/casethread.css';
 import { useTable, useSortBy, useRowSelect } from 'react-table';
+import {useParams, useNavigate, Link, useLocation} from "react-router-dom"
 import DropDownCustomEditor from './customDropDownEditor';
 import ParticipantModal from './ParticipantModal.js';
 import DeleteConfirmation from "./DeleteConfirmation";
@@ -114,7 +115,13 @@ function Table({columns, data, setSelectedRows}) {
 
 /*rowProps(row)*/
 
-const ParticipantTable = (caseid) => {
+const ParticipantTable = () => {
+    
+    const { id } = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();    
+    const [caseInfo, setCaseInfo] = useState(location.state?.caseInfo);
+    const [reqUser, setReqUser] = useState(location.state?.reqUser);
     const [data, setData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -125,7 +132,6 @@ const ParticipantTable = (caseid) => {
     const [displayConfirmationModal, setDisplayConfirmationModal] = useState(false);
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [removeID, setRemoveID] = useState([]);
-    const [caseInfo, setCaseInfo] = useState(null);
     const [summary, setSummary] = useState(null);
     const [displayVNModal, setDisplayVNModal] = useState(false);
     
@@ -147,10 +153,13 @@ const ParticipantTable = (caseid) => {
     };
 
 
-    const submitRemoveParticipant = () => {
+    const submitRemoveParticipant = async () => {
         setIsLoading(true);
-	threadapi.removeCaseParticipants(removeID).then((response) => {
+	await threadapi.removeCaseParticipants(removeID).then((response) => {
 	    fetchInitialData();
+	}).catch(err => {
+	    console.log(err);
+	    setError(`An error occurred during the participant removal: ${err.message} ${err.response.data.detail}`);
 	});
         setDisplayConfirmationModal(false);
     };
@@ -163,28 +172,76 @@ const ParticipantTable = (caseid) => {
 	setDisplayVNModal(false);
     }
 
-    const submitNotifyVendors = (subject, content) => {
+    const submitNotifyVendors = async (subject, content) => {
 	let formField = new FormData();
 	let participants = selectedRows.map(item => item.original.id);
+
 	formField.append('subject', subject);
 	formField.append('content', content);
+
 	for (var i = 0; i < participants.length; i++) {
             formField.append('participants[]', participants[i]);
         }
-	console.log(formField);
 
-	try {
-	    threadapi.notifyCaseParticipants({'case': caseInfo.case_id}, formField).then((response) => {
-		fetchInitialData();
-	    })
-	}
-	catch(err) {
+	await threadapi.notifyCaseParticipants({'case': caseInfo.case_id}, formField).then((response) => {
+	    fetchInitialData();
+	}).catch(err => {
 	    console.log(err);
-	}
+	});
 		
 	setDisplayVNModal(false);
     }
+
+    const IndeterminateCheckbox = React.forwardRef(
+	({ indeterminate, ...rest }, ref) => {
+	    const defaultRef = React.useRef()
+	    const resolvedRef = ref || defaultRef
+	    
+	    React.useEffect(() => {
+		resolvedRef.current.indeterminate = indeterminate
+	    }, [resolvedRef, indeterminate])
+	    
+	    return (
+		<>
+		    <input type="checkbox" ref={resolvedRef} {...rest} />
+		</>
+	    )
+	}
+    )
+
     
+    const cols = useMemo(
+	() => [
+	    {
+		Header: 'Name',
+		Cell: ({
+                    value: initialValue,
+                    row: row,
+                    column: {id}
+		}) => {
+                    return (
+			<div className="d-flex gap-2 align-items-center">
+			    <DisplayLogo
+				photo = {row.original.photo}
+				color = {row.original.logocolor}
+				name = {row.original.name}
+			    />
+			    {row.original.name}
+			</div>
+		    )
+		}
+            },
+            {
+		Header: 'type',
+		accessor: 'participant_type',
+            },
+	    {
+		Header: 'role',
+		accessor: 'role',
+	    }
+	]
+    )
+		    
     const columns = useMemo(
 	() => [
 	{
@@ -193,38 +250,37 @@ const ParticipantTable = (caseid) => {
             // to render a checkbox
             Header: ({ getToggleAllRowsSelectedProps }) => (
 		<div>
-		    <input type="checkbox" {...getToggleAllRowsSelectedProps()} />
+		    <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
 		</div>
             ),
             // The cell can use the individual row's getToggleRowSelectedProps method
             // to the render a checkbox
             Cell: ({ row }) => (
 		<div>
-		    <input type="checkbox" {...row.getToggleRowSelectedProps()} />
+		    <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
 		</div>
             )
 	},
 	{
-	    Header: 'Icon',
+	    Header: 'Name',
 	    Cell: ({
 		value: initialValue,
 		row: row,
 		column: {id}
 	    }) => {
 		return (
-		    <DisplayLogo
-			photo = {row.original.photo}
-			color = {row.original.logocolor}
-			name = {row.original.name}
-		    />
+		    <div className="d-flex gap-2 align-items-center">
+			<DisplayLogo
+			    photo = {row.original.photo}
+			    color = {row.original.logocolor}
+			    name = {row.original.name}
+			/>
+			{row.original.name}
+		    </div>
 		)
 	    }
 	},
-	{
-	    Header: 'name',
-	    accessor: 'name'
-	},
-	{
+	    {
 	    Header: 'type',
 	    accessor: 'participant_type',
 	},
@@ -295,7 +351,7 @@ const ParticipantTable = (caseid) => {
         threadapi.editCaseParticipant(rowIndex, value).then((response) => {
             console.log("successfully updated");
 	}).catch(err => {
-	    setError(`Error changing role for this user: ${err.response.data.role}`);
+	    setError(`Error changing role for this user: ${err.message} ${err.response.data.detail}`);
 	    console.log(err);
 	})
 	setData((old) =>
@@ -337,7 +393,6 @@ const ParticipantTable = (caseid) => {
     function handleManage(evt, evtKey) {
 	switch(evt) {
 	case 'add' :
-	    console.log("HERE");
 	    setDisplayParticipantModal(true);
 	    return;
 	case 'remove':
@@ -365,28 +420,42 @@ const ParticipantTable = (caseid) => {
 	  
     // Async Fetch
     const fetchInitialData = async () => {
-	console.log("fetching data");
-        try {
-            await threadapi.getCase(caseid).then((response) => {
+	if (caseInfo == null) {
+	    await threadapi.getCase({'case': id}).then((response) => {
                 setCaseInfo(response);
-            });
-	    
-            await threadapi.getCaseParticipants(caseid).then((response) => {
-		console.log(response);
-                setData(response);
-		setIsLoading(false);
-            });
+	    }).catch(err => {
+		if (err.response.status == 403 || err.response.status==404) {
+                    navigate("../err");
+                }
+		console.log(err);
+	    })
+	}
+	if (reqUser == null) {
+	    await threadapi.getUserCaseState({'case': id}).then((response) => {
+                console.log("USER IS ", response);
+                setReqUser(response);
+            })
+	}
+	
+        await threadapi.getCaseParticipants({'case': id}).then((response) => {
+	    console.log(response);
+            setData(response);
+	    setIsLoading(false);
+        }).catch(err => {
+	    console.log(err);
+	    if (err.response.status == 403) {
+                navigate("../err");
+            } else {
+		setError(`Could not retrieve participant list: ${err.message} ${err.response.data.detail}`);
+	    }
+	});
 
-	    await threadapi.getCaseParticipantSummary(caseid).then((response) => {
-		setSummary(response.data);
-		
-	    }).catch(err=> {
-		setError(`Error loading case participants ${err.message}`);
-	    });
+	await threadapi.getCaseParticipantSummary({'case': id}).then((response) => {
+	    setSummary(response.data);
 	    
-        } catch (err) {
-            console.log('Error:', err)
-        }
+	}).catch(err=> {
+	    setError(`Error loading case participants ${err.message}`);
+	});
     }
 
     useEffect(() => {
@@ -395,75 +464,86 @@ const ParticipantTable = (caseid) => {
 
     return (
 	caseInfo ?
-	<Card>
-	    <Card.Header>
-                {caseInfo && caseInfo.status === "Active" && summary && summary.notified < summary.count &&
-		 <Alert variant="warning">This case has {summary.count-summary.notified} participants that have not been notified.</Alert>
-		}
-		{caseInfo && caseInfo.status === "Pending" &&
-		 <Alert variant="warning">This case is currently in <b>Pending</b> state. Users can not be notified until case state has been changed to <b>Active</b>.</Alert>
-		 
-		}
-		<>
-		    {error &&
-		     <Alert variant="danger">{error}</Alert>
+	    <>
+		<h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Cases /</span> <Link to={'..'}>{caseInfo.case_identifier} {caseInfo.title}</Link> / Participants</h4>
+		
+		<Card>
+		    <Card.Header>
+			{caseInfo && caseInfo.status === "Active" && summary && summary.notified < summary.count &&
+			 <Alert variant="warning">This case has {summary.count-summary.notified} participants that have not been notified.</Alert>
+			}
+			{caseInfo && caseInfo.status === "Pending" &&
+			 <Alert variant="warning">This case is currently in <b>Pending</b> state. Users can not be notified until case state has been changed to <b>Active</b>.</Alert>
+			 
+			}
+			<>
+			    {error &&
+			     <Alert variant="danger">{error}</Alert>
+			    }
+			</>
+			<div className="d-flex align-items-start justify-content-between mt-2 gap-5">    
+			    <Searchbar onChange={onSearchbarChange} />
+			    {reqUser && reqUser.role === "owner" &&
+			     <DropdownButton
+				 variant="primary"
+				 title={
+				     <span>Manage Participants <i className="fas fa-chevron-down"></i>
+				     </span>
+				 }
+				 onSelect={handleManage}
+			     >
+				 <Dropdown.Item eventKey="add">Add Participant</Dropdown.Item>
+				 <Dropdown.Item eventKey="remove">Remove Participant</Dropdown.Item>
+				 {caseInfo.status === "Active" &&
+				  <Dropdown.Item eventKey="email">Notify Selected Participants</Dropdown.Item>
+				 }
+			     </DropdownButton>
+			    }
+			</div>
+		    </Card.Header>
+		    <Card.Body>
+			{ isLoading ?
+			  <div className='text-center'>Loading...</div>
+			  :
+			  <div className="flex justify-center mt-8">
+			      <Table columns={reqUser.role === "owner" ? columns : cols}
+				     data= {filteredData.length > 0 ? filteredData : data}
+				     setSelectedRows = {setSelectedRows}
+			      />
+			      {reqUser.role === "owner" &&
+			       <p className="mt-4">Selected Rows: {selectedRows.length}</p>
+			      }
+			  </div>
+			}
+		    </Card.Body>
+		    {reqUser && reqUser.role === "owner" &&
+		     <>
+			 <ParticipantModal
+			     showModal = {displayParticipantModal}
+			     hideModal = {hideParticipantModal}
+			     caseid = {id}
+			     confirmInvite = {fetchInitialData}
+			     title = "Invite Participants to Case"
+			     allowSelectRole = "True"
+			     caseInfo = {caseInfo}
+			 />
+			 <DeleteConfirmation
+			     showModal={displayConfirmationModal}
+			     confirmModal={submitRemoveParticipant}
+			     hideModal={hideConfirmationModal}
+			     id={removeID}
+			     message={deleteMessage} />
+			 <NotifyVendorModal
+			     showModal = {displayVNModal}
+			     hideModal = {hideVNModal}
+			     confirmModal = {submitNotifyVendors}
+			     count={selectedRows.length}
+			 />
+		     </>
 		    }
-		</>
-                <div className="d-flex align-items-start justify-content-between mt-2 gap-5">    
-		    <Searchbar onChange={onSearchbarChange} />		    
-		    <DropdownButton
-			variant="primary"
-			title={
-			    <span>Manage Participants <i className="fas fa-chevron-down"></i>
-			    </span>
-			}
-			onSelect={handleManage}
-		    >
-			<Dropdown.Item eventKey="add">Add Participant</Dropdown.Item>
-			<Dropdown.Item eventKey="remove">Remove Participant</Dropdown.Item>
-			{caseInfo.status === "Active" &&
-			<Dropdown.Item eventKey="email">Notify Selected Participants</Dropdown.Item>
-			}
-		    </DropdownButton>
-
-		</div>
-	    </Card.Header>
-	    <Card.Body>
-            { isLoading ?
-              <div className='text-center'>Loading...</div>
-              :
-	      <div className="flex justify-center mt-8">
-		  <Table columns={columns}
-			 data= {filteredData.length > 0 ? filteredData : data}
-			 setSelectedRows = {setSelectedRows}
-		  />
-		   <p className="mt-4">Selected Rows: {selectedRows.length}</p>
-	      </div>
-	    }
-	    </Card.Body>
-	    <ParticipantModal
-                showModal = {displayParticipantModal}
-                hideModal = {hideParticipantModal}
-		caseid = {caseid}
-                confirmInvite = {fetchInitialData}
-		title = "Invite Participants to Case"
-		allowSelectRole = "True"
-		caseInfo = {caseInfo}
-            />
-	    <DeleteConfirmation
-		showModal={displayConfirmationModal}
-                confirmModal={submitRemoveParticipant}
-                hideModal={hideConfirmationModal}
-                id={removeID}
-		message={deleteMessage} />
-	    <NotifyVendorModal
-		showModal = {displayVNModal}
-		hideModal = {hideVNModal}
-		confirmModal = {submitNotifyVendors}
-		count={selectedRows.length}
-	    />
-	</Card>
-	:
+		</Card>
+	    </>
+		:
 	<div className="text-center">                                                                    
             <div className="lds-spinner"><div></div><div></div><div></div></div>                         
         </div> 

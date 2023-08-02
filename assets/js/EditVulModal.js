@@ -25,7 +25,9 @@ const EditVulModal = (props) => {
     const [references, setReferences] = useState([]);
     const [tags, setTags] = useState([]);
     const [datePublic, setDatePublic] = useState("");
-
+    const [userInput, setUserInput] = useState(false);
+    const [alert, setAlert] = useState(null);
+    
     useEffect(() => {
 	if (props.vul) {
 	    /* check to make sure these things aren't null, otherwise react complains */
@@ -47,7 +49,12 @@ const EditVulModal = (props) => {
 	    if (props.vul.date_public) {
 		setDatePublic(props.vul.date_public);
 	    }
+	    setUserInput(false);
 
+	}
+	if (props.showModal) {
+	    setUserInput(false);
+	    setAlert(null);
 	}
     }, [props]);
 
@@ -61,10 +68,19 @@ const EditVulModal = (props) => {
 
     const changeDate = (value) => {
 	/* this is to avoid weird timezone issues */
+	setUserInput(true);
 	setDatePublic(value);
     };
 
 
+    const tryReserve = () => {
+	if (userInput) {
+	    setAlert("Save changes before reserving CVE.");
+	} else {
+	    props.reserveCVE();
+	}
+    }
+    
     const submitVul = (event) => {
         event.preventDefault();
         const error = false;
@@ -119,6 +135,9 @@ const EditVulModal = (props) => {
             </Modal.Header>
 	    <Form onSubmit={(e)=>submitVul(e)}>
 		<Modal.Body>
+		    {alert &&
+		     <div className="alert alert-info">{alert}</div>
+		    }
                     {error &&
                      <div className="alert alert-danger">{error}</div>
                     }
@@ -129,7 +148,7 @@ const EditVulModal = (props) => {
 				<div className="d-flex justify-content-between">
                                     <Form.Label>CVE 
 				    </Form.Label>
-				    {vulCVE &&
+				    {vulCVE ?
 				     <Button
 					 size="sm"
 					 className="mb-2"
@@ -137,7 +156,16 @@ const EditVulModal = (props) => {
 					 variant="outline-secondary">
 					 Sync CVE
 				     </Button>
+				     :
+				     <Button
+					 size="sm"
+					 className="mb-2"
+					 onClick={(e)=>tryReserve()}
+					 variant="outline-secondary">
+					 Reserve CVE
+				     </Button>
 				    }
+				    
 				</div>
                                 <Form.Control name="cve" isInvalid={invalidCVE} value={vulCVE} onChange={(e)=>setVulCVE(e.target.value)}/>
                                 {invalidCVE &&
@@ -148,7 +176,7 @@ const EditVulModal = (props) => {
                             </Form.Group>
 			    <Form.Group className="mb-3" controlId="_type">
                                 <Form.Label>Vulnerability Description</Form.Label>
-                                <Form.Control name="description" as="textarea" rows={3} isInvalid={invalidDescription} value={vulDescription} onChange={(e)=>setVulDescription(e.target.value)}/>
+                                <Form.Control name="description" as="textarea" rows={3} isInvalid={invalidDescription} value={vulDescription} onChange={(e)=>(setUserInput(true),setVulDescription(e.target.value))}/>
                                 {invalidDescription &&
                                  <Form.Text className="error">
                                      This field is required.
@@ -181,7 +209,7 @@ const EditVulModal = (props) => {
 				    multiple
 				    labelKey="cwe"
 				    options={cwes}
-				    onChange={setCWESelected}
+				    onChange={(e)=>(setUserInput(true), setCWESelected(e))}
 				    selected={cweSelected}
 				    placeholder="Add problem type(s)..."
 				/>
@@ -193,7 +221,7 @@ const EditVulModal = (props) => {
 				    multiple
 				    options={[]}
 				    allowNew
-				    onChange={setReferences}
+				    onChange={(e)=>(setUserInput(true), setReferences(e))}
 				    selected={references}
 				    placeholder="Add references"
 				/>

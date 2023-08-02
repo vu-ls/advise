@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {Nav, Dropdown, DropdownButton, InputGroup, CardGroup, Alert, Button, Tab, Tabs, Row, Form, Card, Col} from 'react-bootstrap';
 import AdminAPI from './AdminAPI';
 import ContactAPI from './ContactAPI.js';
+import CaseSettings from './CaseSettings.js';
 import ThreadAPI from './ThreadAPI';
 import DisplayLogo from "./DisplayLogo";
 import { format, formatDistance } from 'date-fns'
@@ -58,7 +59,7 @@ const SysAdminApp = () => {
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [removeID, setRemoveID] = useState(null);
     const [editConnection, setEditConnection] = useState("");
-    
+
     const submitRemoveConnection = (id) => {
         adminapi.deleteConnection(id).then((response) => {
 	    fetchInitialData();
@@ -72,7 +73,7 @@ const SysAdminApp = () => {
 	setDisplayConfirmationModal(false);
     }
 
-    
+
     const fetchInitialData = async () => {
 	try {
 	    adminapi.getAllConnections().then((response) => {
@@ -146,7 +147,7 @@ const SysAdminApp = () => {
             setError(err.response.detail);
         });
     }
-    
+
     const setEdit = (val) => {
 	let c = connections[val];
 
@@ -157,7 +158,7 @@ const SysAdminApp = () => {
 	setShowForm(true);
 	setEditConnection(c.id);
     };
-    
+
     const submitConnection = (event) => {
         event.preventDefault();
         const error = false;
@@ -172,7 +173,7 @@ const SysAdminApp = () => {
 	if (!outgoingURL) {
 	    setInvalidURL(true);
 	}
-	
+
 	if (!incomingKey && !outgoingKey) {
 	    /*both fields must be provided */
 	    setInvalidOutgoing(true);
@@ -203,7 +204,7 @@ const SysAdminApp = () => {
 		setOutgoingKey("");
 		setIncomingKey("");
 		fetchInitialData();
-		
+
 	    }).catch(err => {
 		console.log(err);
 		setError(err.response.data.detail);
@@ -227,6 +228,9 @@ const SysAdminApp = () => {
 	    <Nav variant="pills" className="mb-3">
 		<Nav.Item key="fed">
                     <Nav.Link eventKey="fed">Federation</Nav.Link>
+		</Nav.Item>
+		<Nav.Item key="case">
+		    <Nav.Link eventKey="case">Case Settings</Nav.Link>
 		</Nav.Item>
 	    </Nav>
 	    <Tab.Content id="admin-fns" className="p-0">
@@ -365,14 +369,20 @@ const SysAdminApp = () => {
 			</Card.Body>
 		    </Card>
 		</Tab.Pane>
+		<Tab.Pane eventKey="case" key="case">
+		    <CaseSettings />
+		    
+		</Tab.Pane>
+			
 		<DeleteConfirmation
                     showModal={displayConfirmationModal}
                     confirmModal={submitRemoveConnection}
                     hideModal={hideConfirmationModal}
                     id={removeID}
-                    message={deleteMessage} />   
-				
+                    message={deleteMessage} />
+
 	    </Tab.Content>
+
 	</Tab.Container>
 
     )

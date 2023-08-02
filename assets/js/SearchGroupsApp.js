@@ -12,7 +12,7 @@ import ActivityApp from './ActivityApp.js';
 
 const contactapi = new ContactAPI();
 
-const GroupApp = () => {
+const SearchGroupsApp = () => {
 
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -82,6 +82,13 @@ const GroupApp = () => {
         fetchInitialData();
     };
 
+    const addNewGroup = (response) => {
+	setAddGroupModal(false);
+	console.log(response);
+	window.location.href=response['new'];
+    };
+	
+    
     const goToContact = (url) => {
         window.location.href=url;
     };
@@ -89,7 +96,8 @@ const GroupApp = () => {
     useEffect(() => {
 	let urlstr = `type=${searchType}`;
 	if (searchVal) {
-	    urlstr = `${urlstr}&name=${searchVal}`;
+	    let sval = encodeURIComponent(searchVal);
+	    urlstr = `${urlstr}&name=${sval}`;
 	}
 
 	if (searchType === "All" && !searchVal) {
@@ -108,9 +116,12 @@ const GroupApp = () => {
     }, []);
 
 
-       return (
-	   <Row>
-	       <Col lg={12}>
+    return (
+	<>
+	    <Row>
+		<Col lg={12}>
+		    <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Groups /</span> Group Search</h4>
+
                 {error &&
                  <Alert variant="danger">{error}</Alert>
                 }
@@ -195,6 +206,7 @@ const GroupApp = () => {
 		   <AddGroupModal
                        showModal = {addGroupModal}
                        hideModal = {hideGroupModal}
+		       addNewGroup = {addNewGroup}
 		   />
 		   <Card className="dashboard-card-2">
 		       <Card.Header>
@@ -236,7 +248,8 @@ const GroupApp = () => {
 	       </div>
 	       </Col>
 	   </Row>
+	</>
        )
 }
 
-export default GroupApp;
+export default SearchGroupsApp;

@@ -12,7 +12,6 @@ export default function ThreadDisplay(props) {
     const displayThreads = (props) => {
 	const {threads, user} = props;
 	if (threads.length > 0) {
-	    console.log("BOOOOOOOSH");
 	    return (
 		<Tab.Container
 		    defaultActiveKey={threads[0].id}

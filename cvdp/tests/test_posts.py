@@ -415,7 +415,7 @@ class CaseParticipantTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         cps = CaseParticipant.objects.filter(case=self.case).exclude(notified__isnull=True)
-        serializer = CaseParticipantSerializer(cps, many=True)
+        serializer = CaseParticipantSerializer(cps, many=True, fields=['id', 'added_by', 'added', 'notified', 'roles_available', 'uuid'])
         self.assertEqual(serializer.data, response.data)
 
     def test_coordinator_add_vendor(self):

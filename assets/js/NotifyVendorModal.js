@@ -41,16 +41,24 @@ const NotifyVendorModal = (props) => {
 
     useEffect(() => {
 	if (data.length > 0) {
-	    setTemplate(data[0].id);
-	    setSubject(data[0].subject);
-	    setContent(data[0].plain_text);
+	    let notify = data.filter((i, index) => i.template_name.includes('notify'));
+	    if (notify) {
+		setTemplate(notify[0].id);
+		setSubject(notify[0].subject);
+		setContent(notify[0].plain_text);
+	    } else {
+		setTemplate(data[0].id);
+		setSubject(data[0].subject);
+		setContent(data[0].plain_text);
+	    }
 	}
     }, [data]);
     
     useEffect(() => {
-	fetchInitialData();
-
-    }, []);
+	if (props.showModal) {
+	    fetchInitialData();
+	}
+    }, [props.showModal]);
 
     return (
         <Modal show={props.showModal} onHide={props.hideModal} size="lg" centered>

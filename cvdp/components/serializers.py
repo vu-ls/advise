@@ -166,7 +166,7 @@ class VulStatusSerializer(serializers.ModelSerializer):
     status = ChoiceField(source='current_revision.status', choices=VUL_STATUS_CHOICES)
     version = serializers.CharField(source='current_revision.version_value')
     version_end_range = serializers.CharField(source='current_revision.version_name')
-    version_range = ChoiceField(VERSION_RANGE_CHOICES, source='current_revision.version_affected')
+    version_range = ChoiceField(VERSION_RANGE_CHOICES, source='current_revision.version_affected', allow_blank=True)
     statement = serializers.CharField(source='current_revision.statement')
     vul = VulSerializer()
     revisions = serializers.SerializerMethodField()
@@ -174,7 +174,7 @@ class VulStatusSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     created = serializers.DateTimeField(source='current_revision.created')
     modified = serializers.DateTimeField(source='current_revision.modified')
-    justification = ChoiceField(source='current_revision.justification', choices=JUSTIFICATION_CHOICES)
+    justification = ChoiceField(source='current_revision.justification', choices=JUSTIFICATION_CHOICES, allow_blank=True)
     
     class Meta:
         model = ComponentStatus
@@ -182,7 +182,7 @@ class VulStatusSerializer(serializers.ModelSerializer):
 
     def get_revisions(self, obj):
         return obj.statusrevision_set.count() - 1
-
+    
     def get_user(self, obj):
         if obj.current_revision.user:
             return obj.current_revision.user.screen_name
@@ -214,7 +214,7 @@ class StatusSummarySerializer(serializers.ModelSerializer):
     def get_affected_vuls(self, obj):
         #this gets me affected status(es)
         affected = ComponentStatus.objects.filter(vul__case=obj.vul.case, component=obj.component, current_revision__status=1)
-        serializer = VulStatusSerializer(affected, many=True)
+        serializer = VulStatusSerializer(affected, many=True)        
         return serializer.data
 
     def get_unaffected_vuls(self, obj):

@@ -11,6 +11,7 @@ from authapp.models import APIToken, User
 from cvdp.cases.serializers import *
 from cvdp.components.models import *
 from cvdp.components.serializers import *
+from cvdp.manage.serializers import *
 from cvdp.manage.models import *
 from cvdp.lib import add_artifact
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -46,7 +47,7 @@ class GetAllCasesTest(TestCase):
         acase = Case.objects.create(case_id = '567891', status=Case.ACTIVE_STATUS, title='Test Case', summary="This is a summary of test case")
         case = Case.objects.create(case_id = '111111', status=Case.ACTIVE_STATUS, title='Test Case', summary="This is a summary of test case")
         pendingcase = Case.objects.create(case_id='444444', title='Pending Test', summary='This case is still pending')
-        
+
         CaseParticipant.objects.create(case=case, group=group, notified=timezone.now())
         CaseParticipant.objects.create(case=acase, group=group, notified=timezone.now())
 
@@ -395,7 +396,7 @@ class CaseAdvisoryTest(TestCase):
 	    reverse('cvdp:advisoryapi', args=['111111']))
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        
+
     def test_coordinator_share_advisory(self):
         client = APIClient()
         client.force_authenticate(user=self.coord_user)
@@ -415,9 +416,9 @@ class CaseAdvisoryTest(TestCase):
             reverse('cvdp:advisoryapi', args=['111111']),
             data=json.dumps({'share': 1}),
             content_type='application/json')
-        
+
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        
+
     def test_coordinator_get_all_revisions(self):
         client = APIClient()
         client.force_authenticate(user=self.coord_user)
@@ -447,7 +448,7 @@ class CaseAdvisoryTest(TestCase):
         response = client.get(
             reverse('cvdp:advisoryapi-list', args=['111111']))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        
+
 
     def test_notified_vendor_get_all_revisions(self):
         client = APIClient()
@@ -457,7 +458,7 @@ class CaseAdvisoryTest(TestCase):
         cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
         cp.notified = timezone.now()
         cp.save()
-        
+
         response = client.get(
             reverse('cvdp:advisoryapi-list', args=['111111']))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -471,7 +472,7 @@ class CaseAdvisoryTest(TestCase):
         cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
         cp.notified = timezone.now()
         cp.save()
-        
+
         #make advisory shared
         ca = CaseAdvisory.objects.get(case=self.case)
         ca.current_revision.date_shared=timezone.now()
@@ -492,7 +493,7 @@ class CaseAdvisoryTest(TestCase):
         cp = CaseParticipant.objects.filter(case=self.case, group=group).first()
         cp.notified = timezone.now()
         cp.save()
-        
+
         #make advisory shared
         ca = CaseAdvisory.objects.get(case=self.case)
         ca.current_revision.date_shared=timezone.now()
@@ -509,7 +510,7 @@ class CaseAdvisoryTest(TestCase):
 
 
 
-        
+
 class CaseArtifactTest(TestCase):
 
     def setUp(self):
@@ -628,7 +629,7 @@ class CaseArtifactTest(TestCase):
         #make sure it still exsits, not deleted
         artifact = CaseArtifact.objects.filter(file__uuid=artifact.file.uuid).exists()
         self.assertEqual(artifact, True)
-            
+
     def test_reporter_get_artifact_detail(self):
         client=APIClient()
         client.force_authenticate(user=self.reporter_user)
@@ -680,7 +681,7 @@ class CaseArtifactTest(TestCase):
             reverse('cvdp:artifactapi', args=['111111']))
         #should be empty since artifact wasn't shared
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        
+
     def test_notified_vendor_get_shared_artifact(self):
         client = APIClient()
         client.force_authenticate(user=self.vendor_user)
@@ -694,13 +695,13 @@ class CaseArtifactTest(TestCase):
         artifact.save()
         response = client.get(
             reverse('cvdp:artifactapi', args=['111111']))
-        #should be empty since artifact wasn't shared                                                             
+        #should be empty since artifact wasn't shared
         artifacts = CaseArtifact.objects.all()
         serializer = ArtifactSerializer(artifacts, many=True, context={'user':self.vendor_user})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
-        
+
 class ComponentAPITest(TestCase):
 
     def setUp(self):
@@ -1173,7 +1174,7 @@ class TestFormSubmissions(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         #make sure private responses are included
         self.assertEqual(len(serializer.data['report']['report']), 3)
-        
+
     def test_coord_get_form_submissions(self):
         #should be empty since it's user specific
         self.api_client.force_authenticate(user=self.coord_user)
@@ -1219,4 +1220,100 @@ class TestFormSubmissions(APITestCase):
     def test_unauth_triage_view(self):
         response = self.api_client.get(
             reverse('cvdp:triageapi'))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+class TestSystemSettings(TestCase):
+
+    def setUp(self):
+        self.coord_user = User.objects.create(email='coordinator', password='Pas$w0rd', is_coordinator=True)
+        self.staff_user = User.objects.create(email='staff', password='Pas$w0rd', is_coordinator=True, is_staff=True)
+        self.random_user = User.objects.create(email='random@random.org', password='ABC123')
+
+        CaseResolutionOptions.objects.create(description = 'Fixed')
+        CaseResolutionOptions.objects.create(description= "Won't fix")
+
+    def test_coordinator_get_resolutions(self):
+
+        client = APIClient()
+        client.force_authenticate(self.coord_user)
+
+        response = client.get(reverse('cvdp:res_api'))
+
+        resolutions = CaseResolutionOptions.objects.all()
+        serializer = ResolutionSerializer(resolutions, many=True)
+
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_random_get_resolutions(self):
+        client = APIClient()
+        client.force_authenticate(self.random_user)
+
+        response = client.get(reverse('cvdp:res_api'))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_coordinator_add_resolution(self):
+        client = APIClient()
+        client.force_authenticate(self.coord_user)
+        valid_payload = {'description': 'Spam - not taking case'}
+
+        response = client.post(reverse('cvdp:res_api'),
+                               data=json.dumps(valid_payload),
+                               content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def	test_staffmember_add_resolution(self):
+        client = APIClient()
+        client.force_authenticate(self.staff_user)
+        valid_payload = {'description': 'Spam - not taking case'}
+
+        response = client.post(reverse('cvdp:res_api'),
+                               data=json.dumps(valid_payload),
+                               content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+    def test_random_add_resolution(self):
+        client = APIClient()
+        client.force_authenticate(self.random_user)
+        valid_payload = {'description': 'BAD BAD BAD'}
+
+        response = client.post(reverse('cvdp:res_api'),
+                               data=json.dumps(valid_payload),
+                               content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+    def test_staffmember_rm_resolution(self):
+
+        client = APIClient()
+        client.force_authenticate(self.staff_user)
+        obj = CaseResolutionOptions.objects.all().first()
+        response = client.delete(reverse('cvdp:res_api_detail', args=[obj.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+    def test_coord_rm_resolution(self):
+
+        client = APIClient()
+        client.force_authenticate(self.coord_user)
+
+        #get first resolution to remove
+        obj = CaseResolutionOptions.objects.all().first()
+        response = client.delete(reverse('cvdp:res_api_detail', args=[obj.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_random_rm_resolution(self):
+
+        client = APIClient()
+        client.force_authenticate(self.random_user)
+
+        #get first resolution to remove
+        obj = CaseResolutionOptions.objects.all().first()
+        response = client.delete(reverse('cvdp:res_api_detail', args=[obj.id]))
+
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

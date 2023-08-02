@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import FormAPI from './FormAPI';
 import DeleteConfirmation from "./DeleteConfirmation";
-import {Card, Accordion, Row, Col, Button, Form} from 'react-bootstrap';
+import {Card, Alert, Accordion, Row, Col, Button, Form} from 'react-bootstrap';
 import '../css/casethread.css';
 
 /*import '../css/core.css';*/
@@ -16,6 +16,7 @@ const DesignForm = (form) => {
     const [formTitle, setFormTitle] = useState("Add a new question");
     const [showForm, setShowForm] = useState(false);
     const [showChoices, setShowChoices] = useState(false);
+    const [questionOptions, setQuestionOptions] = useState([]);
     const [selectValue, setSelectValue] = useState("");
     const [questionValue, setQuestionValue] = useState("");
     const [choicesValue, setChoicesValue] = useState("");
@@ -27,23 +28,32 @@ const DesignForm = (form) => {
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [removeID, setRemoveID] = useState(null);
     const [editQuestion, setEditQuestion] = useState(null);
+    const [error, setError] = useState(null);
+    
     const formRef = useRef(null);
     
     const fetchInitialData = async () => {
-	try {
-
-	    await formapi.getForm(form).then((response) => {
-		setTheForm(response);
-	    });
-	    
-	    await formapi.getQuestions(form).then((response) => {
-		setQuestions(response);
-		setIsLoading(false);
-	    })
-	    
-	} catch (err) {
-	    console.log('Error:', err)
-	}
+	await formapi.getForm(form).then((response) => {
+	    setTheForm(response);
+	}).catch(err => {
+	    console.log(err);
+	    setError(err.message);
+	});
+	
+	await formapi.getQuestionTypeOptions(form).then((response) => {
+	    setQuestionOptions(response['actions']['POST']['question_type']['choices'])
+	}).catch(err => {
+	    console.log(err);
+	    setError(err.message);
+	});
+	
+	await formapi.getQuestions(form).then((response) => {
+	    setQuestions(response);
+	    setIsLoading(false);
+	}).catch(err => {
+	    console.log(err);
+	    setError(err.message);
+	});
     }
 
     const submitQuestion = (event) => {
@@ -177,6 +187,9 @@ const DesignForm = (form) => {
 		</div>
             </Card.Header>
 	    <Card.Body>
+		{error &
+		 <Alert variant='danger'>Error loading form designer: {error}</Alert>
+		}
 		<Accordion>
 		    
 		    { questions.map((question, index) => {
@@ -226,16 +239,10 @@ const DesignForm = (form) => {
 			 </Form.Text>
 			 <Form.Select name="question_type" value={selectValue} className="select form-select" required="" id="id_question_type" onChange={(e)=> makeSelect(e)} isInvalid={invalidQuestionType}>
 			     <option value="">Select Question Type</option>
-			     <option>Single Line Text</option>
-			     <option>Multi Line Text</option>
-			     <option>Number</option>
-			     <option>Checkbox Multiple</option>
-			     <option>Checkbox</option>
-			     <option>Select</option>
-			     <option>Email</option>
-			     <option>Date</option>
-			     <option>Radio Buttons</option>
-			     
+			     {questionOptions.map((q, index) => {
+				 return (
+				     <option>{q.display_name}</option>
+				 )})}
 			 </Form.Select>
 			 {invalidQuestionType &&
 			  <Form.Text className="error">

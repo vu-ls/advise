@@ -32,6 +32,7 @@ const SearchFilter = ({ onChange, value, owner, status }) => {
 			      label={o.name}
 			      value={o.id}
 			      title={o.name}
+			      data-testid={`check-${o.name}`}
 			      type="checkbox"
 			  />
 		      </Dropdown.ItemText>
@@ -48,6 +49,7 @@ const SearchFilter = ({ onChange, value, owner, status }) => {
 			      onChange={(e)=>onChange(e, "status")}
                               label={o.name}
                               value={o.id}
+			      data-testid={`check-${o.name}`}
 			      title={o.name}
                               type="checkbox"
                           />                                                                                                                                 

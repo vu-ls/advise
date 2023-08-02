@@ -91,7 +91,7 @@ const IndeterminateCheckbox = React.forwardRef(
   }
 )
 
-const ResizableTable = ({columns, data, setSelectedRows, update, showRowExpansion, hasMore}) => {
+const ResizableTable = ({columns, data, setSelectedRows, update, showRowExpansion, hasMore, searchParams}) => {
 
     const defaultColumn = React.useMemo(
     () => ({
@@ -242,7 +242,7 @@ const ResizableTable = ({columns, data, setSelectedRows, update, showRowExpansio
                             {row.cells.map(cell => {
                                 return (
                                     <td
-                                        {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                                        {...cell.getCellProps()}>{cell.render('Cell', {search: searchParams})}</td>
                                 )
                             })}
                         </tr>

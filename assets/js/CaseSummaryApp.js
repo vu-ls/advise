@@ -51,7 +51,7 @@ const CaseSummaryApp = (props) => {
                         </Nav.Item>
 			}
 			<Nav.Item>
-                            <Nav.Link eventKey="vuls"><span className="text-nowrap">Vulnerabilties{" "}
+                            <Nav.Link eventKey="vuls"><span className="text-nowrap">Vulnerabilities{" "}
 				{vuls.length > 0 &&
 				 <Badge pill bg="info">{vuls.length}</Badge>
 				}
@@ -76,7 +76,8 @@ const CaseSummaryApp = (props) => {
 			     feedback
 			    }
 			    <p className="lead"><b>{caseInfo.case_identifier} {caseInfo.title}</b></p>
-			    <p>Summary:<br/>
+			    <Form.Label>Summary:</Form.Label>
+			    <p>
 				{caseInfo.summary}
 			    </p>
 			</Tab.Pane>
@@ -100,6 +101,7 @@ const CaseSummaryApp = (props) => {
 				caseInfo = {caseInfo}
 				vuls = {vuls}
 				user = {props.user}
+				active={activeTab == "status" ? true : false}
 			    />
 			</Tab.Pane>
 		    </Tab.Content>

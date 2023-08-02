@@ -6,9 +6,10 @@ import { format, formatDistance } from 'date-fns'
 
 const componentapi = new ComponentAPI();
 
-const StatusModal = ({showModal, hideModal, component, status}) => {
+const StatusModal = ({showModal, hideModal, comp, status}) => {
 
     const [error, setError] = useState(null);
+    const [component, setComponent] = useState(null);
     const [revisions, setRevisions] = useState([]);
     const [formContent, setFormContent] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -40,36 +41,50 @@ const StatusModal = ({showModal, hideModal, component, status}) => {
 	build_vex['version'] = status.revision_number;
 	let comps = `${component.component.name} ${component.component.version}`;
 
-	if (component.affected_vuls.length > 0) {
-	    stmts.push(component.affected_vuls.map((v, index) => {
-		return {"vulnerability": v.vul.vul,
-			"products": [comps],
-			"status": "affected"}
-	    }));
+	if ('affected_vuls' in component) {
+	    if (component.affected_vuls.length > 0) {
+		stmts.push(component.affected_vuls.map((v, index) => {
+		    return {"vulnerability": v.vul.vul,
+			    "products": [comps],
+			    "status": "affected"}
+		}));
+	    }
+	    if (component.fixed_vuls.length > 0) {
+		stmts.push(component.fixed_vuls.map((v, index) => {
+		    return {"vulnerability": v.vul.vul,
+			    "products":	[comps],
+			    "status": "fixed"}
+		}))
+	    }
+	    if (component.investigating_vuls.length > 0 ) {
+		
+		stmts.push(component.investigating_vuls.map((v, index) => {
+		    return {"vulnerability": v.vul.vul,
+			    "products": [comps],
+			    "status": "under_investigation"}
+		}))
+	    }
+	    if (component.unaffected_vuls.length > 0) {
+		stmts.push(component.unaffected_vuls.map((v, index) => {
+		    return {"vulnerability": v.vul.vul,
+			    "products": [comps],
+			    "status": "not_affected",
+			    "justification": status.justification}
+		}))
+	    }
+	} else {
+	    if (status.status == "Not Affected") {
+		stmts.push({"vulnerability": status.vul.vul,
+			    "products": [comps],
+			    "status": "not_affected",
+			    "justification": status.justification});
+	    } else {
+		stmts.push({"vulnerability": status.vul.vul,
+			    "products": [comps],
+			    "status": status.status.toLowerCase().replace(" ", "_")})
+	    }
 	}
-	if (component.fixed_vuls.length > 0) {
-	    stmts.push(component.fixed_vuls.map((v, index) => {
-		return {"vulnerability": v.vul.vul,
-			"products":	[comps],
-			"status": "fixed"}
-	    }))
-	}
-	if (component.investigating_vuls.length > 0 ) {
-
-	    stmts.push(component.investigating_vuls.map((v, index) => {
-		return {"vulnerability": v.vul.vul,
-			"products": [comps],
-			"status": "under_investigation"}
-            }))
-	}
-	if (component.unaffected_vuls.length > 0) {
-	    stmts.push(component.unaffected_vuls.map((v, index) => {
-		return {"vulnerability": v.vul.vul,
-			"products": [comps],
-			"status": "not_affected",
-			"justification": status.justification}
-            }))
-	}
+			    
 	build_vex['statements'] = stmts;
 	setVex(build_vex);
 	setLoading(false);
@@ -84,6 +99,13 @@ const StatusModal = ({showModal, hideModal, component, status}) => {
         setActiveTab(props);
     }
 
+    useEffect(() => {
+	if (showModal) {
+	    setComponent(comp);
+	}
+
+    }, [showModal]);
+    
     return (
 
 	<Modal show={showModal} onHide={hideModal} size="lg" centered backdrop="static">

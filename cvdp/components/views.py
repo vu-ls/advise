@@ -29,7 +29,7 @@ from cvdp.permissions import *
 from cvdp.components.serializers import *
 from cvdp.components.forms import *
 from cvdp.lib import create_case_action
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -190,7 +190,21 @@ class ComponentAPIView(viewsets.ModelViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
+class ComponentDetailView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
+    model = Component
+    login_url = "authapp:login"
+    template_name = "cvdp/component.html"
 
+    def test_func(self):
+        component = self.get_object()
+        return is_my_component(self.request.user, component)
+
+    
+    def get_object(self, queryset=None):
+        return Component.objects.get(id=self.kwargs['pk'])
+
+    
+        
 class ProductAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission)
     serializer_class = ProductSerializer
@@ -300,6 +314,8 @@ class ComponentView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateVie
         return False
 
     def get(self, request, *args, **kwargs):
+        #TEMPORARY
+        return render(request, self.template_name, {'componentspage': 1})
         if self.request.user.is_coordinator or self.request.user.is_staff or self.request.user.is_superuser:
             return render(request, self.template_name, {'componentspage': 1})
         else:
@@ -386,10 +402,13 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
             #get all case components
             case_components = components.values_list('component__id', flat=True)
             my_groups = my_case_vendors(self.request.user, case)
-            products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
-            return components.filter(component__id__in=products)
+            if my_groups:
+                products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)
+                return components.filter(component__id__in=products)
+            else:
+                return components.filter(current_revision__user=self.request.user)
 
-    #TO DO ADD A SHARED COMPONENT STATUS VIEW
+    #TO DO ADD A SHARED COMPONENT STATUS VIEW (share = True)
 
     def create(self, request, *args, **kwargs):
         logger.debug("In STATUS CREATE VIEW")
@@ -453,6 +472,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                 share =	False
                 if request.data.get('share'):
                     share = True if (request.data['share'] == "true" or request.data['share'] == True) else False
+                logger.debug(f" VUL IS {v}")
                 vul = get_object_or_404(Vulnerability, id=v)
                 #does cs exist?
                 cs, created = ComponentStatus.objects.update_or_create(component=component,
@@ -485,6 +505,9 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                 if self.request.user.is_coordinator:
                     #user must be owner or staff to delete
                     raise PermissionDenied()
+            else:
+                raise PermissionDenied()    
+        
 
         if component.component.get_vendor():
             action = create_case_action(f"Removed status for {component.component.get_vendor()}'s component {component.component.name} {component.component.version} for vulnerability {component.vul.vul}", request.user, component.vul.case)
@@ -520,7 +543,9 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
         serializer = StatusSerializer(data=request.data)
         if serializer.is_valid():
              #get vuls
+            logger.debug(request.data['vuls'])
             for v in request.data['vuls']:
+                logger.debug(f"VUL is {v}")
                 vul = get_object_or_404(Vulnerability, id=v)
                 logger.debug(f"VUL IS {vul}")
                 cs = ComponentStatus.objects.filter(component=component.component, vul=vul).first()

@@ -20,6 +20,21 @@ export default class AdminAPI{
         return axios.patch(url, data).then(response => response.data);
     }
 
+    getResolutionOptions() {
+	const url = `${API_URL}/api/manage/case/options/resolutions/`;
+        return axios.get(url).then(response => response.data);
+    }
+
+    addResolutionOption(data) {
+	const url = `${API_URL}/api/manage/case/options/resolutions/`;
+	return axios.post(url, data).then(response => response.data);
+    }
+
+    deleteResolutionOption(c) {
+	const url = `${API_URL}/api/manage/case/options/resolution/${c}/`;
+	return axios.delete(url).then(response => response.data);
+    }
+    
     getNewUsers() {
 	const url = `${API_URL}/api/manage/users/new/`;
         return axios.get(url).then(response => response.data);
@@ -60,6 +75,12 @@ export default class AdminAPI{
 	return axios.get(url).then(response => response.data);
     }
 
+    getCVEAPIOptions() {
+	const url = `${API_URL}/api/manage/cve/account/`;
+        return axios.options(url).then(response => response.data);
+    }
+    
+
     getActiveCVEAccounts() {
 	const url = `${API_URL}/api/manage/cve/account/?active=true`;
 	return axios.get(url)
@@ -80,6 +101,11 @@ export default class AdminAPI{
 
     getCaseEmailTemplates() {
 	const url = `${API_URL}/api/manage/email/templates/?template_type=0`;
+	return axios.get(url).then(response => response.data);
+    }
+
+    getNotifyEmailTemplates() {
+	const url = `${API_URL}/api/manage/email/templates/?template_type=0&search=notify`;
 	return axios.get(url).then(response => response.data);
     }
 

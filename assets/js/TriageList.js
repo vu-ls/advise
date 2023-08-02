@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import CaseThreadAPI from './ThreadAPI';
 import AdminAPI from './AdminAPI';
-import {Row, Button, Card, Col} from 'react-bootstrap';
+import {Row, Alert, Button, Card, Col} from 'react-bootstrap';
 import Searchbar from './Searchbar.js';
 import DisplayLogo from './DisplayLogo';
 const caseapi = new CaseThreadAPI();
@@ -13,9 +13,9 @@ import CaseList from './CaseList.js';
 const TriageList = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [cases, setCases] = useState([]);
-    const [filteredCases, setFilteredCases] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsCount, setItemsCount] = useState(0);
+    const [error, setError] = useState(null);
     const [pendingUsers, setPendingUsers] = useState([]);
     const [newUsers, setNewUsers] = useState([]);
     const [approvedUsers, setApprovedUsers] = useState([]);
@@ -43,32 +43,16 @@ const TriageList = () => {
 
 
     const filterData = (value) => {
-        if (value === "") {
-            setFilteredCases(cases)
-	} else {
-            const result = cases.filter((item) => {
-		if (item.report) {
-                    return (
-			item.title.toString()
-                            .toLowerCase()
-                            .indexOf(value.toLowerCase()) > -1
-			    ||
-			    item.report.report.toString()
-			    .toLowerCase().
-			    indexOf(value.toLowerCase()) > -1
-
-                    );
-		} else {
-		    return (
-                        item.title.toString()
-                            .toLowerCase()
-                            .indexOf(value.toLowerCase()) > -1
-		    );
-		}
-
-            });
-            setFilteredCases(result)
+        let urlstr = "";
+        if (value) {
+	    value = encodeURIComponent(value);
+            urlstr = `search=${value}`
         }
+
+	caseapi.getUnassignedCases(urlstr).then((response) => {
+	    setCases(response.results);
+	    setItemsCount(response.count);
+	});
     }
 
     const getPendingUsers = async () => {
@@ -81,6 +65,7 @@ const TriageList = () => {
 	    });
 
 	} catch (err) {
+	    setError(err.response.data.message);
 	    console.log('Error:', err);
 	}
     }
@@ -91,28 +76,26 @@ const TriageList = () => {
     // Async Fetch
     const fetchInitialData = async () => {
         console.log("fetching data");
-        try {
-            await caseapi.getUnassignedCases().then((response) => {
-		console.log(response);
-		setItemsCount(response.count);
-                setCases(response.results);
-
-            })
-
-        } catch (err) {
-            console.log('Error:', err)
-        }
+        await caseapi.getUnassignedCases().then((response) => {
+	    setItemsCount(response.count);
+            setCases(response.results);
+	    setIsLoading(false);
+	    
+        }).catch(err => {
+	    console.log('Error:', err);
+	    setError(err.response.data.message);
+	});
+	    
     }
 
     const approveUser = async (user) => {
 	console.log("approving user", user);
-	try {
-	    await adminapi.approvePendingUser(user).then((response) => {
-		getPendingUsers();
-	    })
-	} catch(err) {
+	await adminapi.approvePendingUser(user).then((response) => {
+	    getPendingUsers();
+	}).catch(err => {
 	    console.log(err);
-	}
+	    setError(err.repsonse.data.message);
+	});
     }
 
 
@@ -124,13 +107,13 @@ const TriageList = () => {
     }, []);
 
 
-    useEffect(() => {
-	setFilteredCases(cases);
-	setIsLoading(false);
-    }, [cases]);
-
     return (
-        <Row>
+	<>
+	    <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Triage /</span> Unassigned Cases</h4>
+	    {error &&
+	     <Alert variant="danger"> {error}</Alert>
+	    }
+            <Row>
             <Col lg={8}>
                 <Card>
                     <Card.Header>
@@ -145,12 +128,14 @@ const TriageList = () => {
                           </div>
 			  :
 			  <CaseList
-			      cases={filteredCases}
+			      cases={cases}
 			      count={itemsCount}
 			      onSearchBarChange={onSearchbarChange}
 			      page={currentPage}
 			      setCurrentPage={setCurrentPage}
 			      emptymessage="You have no unassigned cases"
+			      crumbs={["Triage", "Unassigned Cases"]}
+			      crumb_link="/advise/triage/"
 			  />
 			}
 		    </Card.Body>
@@ -225,7 +210,8 @@ const TriageList = () => {
 		</Card>
 	    </Col>
 
-        </Row>
+            </Row>
+	</>
     )
 }
 

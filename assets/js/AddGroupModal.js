@@ -5,7 +5,7 @@ import ContactAPI from './ContactAPI.js'
 
 const contactapi = new ContactAPI();
 
-const AddComponentModal = ({showModal, hideModal}) => {
+const AddComponentModal = ({showModal, hideModal, addNewGroup}) => {
 
     const [error, setError] = useState("");
     const [formContent, setFormContent] = useState(null);
@@ -38,15 +38,15 @@ const AddComponentModal = ({showModal, hideModal}) => {
 	const formData = new FormData(event.target),
               formDataObj = Object.fromEntries(formData.entries());
 	console.log(formDataObj);
-	try {
-	    let res = await contactapi.addGroup(formDataObj);
-	    let data = await res.data;
-	    hideModal();
-	} catch (err) {
+	await contactapi.addGroup(formDataObj).then(response => {
+	    console.log(response);
+	    let data = response.data;
+	    console.log(data);
+	    addNewGroup(data);
+	}).catch(err =>  {
 	    console.log(err);
 	    setError(`Error adding group: ${err.response.data.message}`);
-
-	}
+	});
     }
 
     

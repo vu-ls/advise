@@ -32,7 +32,6 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 	    });
 	}
         try {
-	    console.log("EDIT IS ", edit);
 	    if (edit) {
 		await componentapi.getEditComponentForm(edit).then((response) => {
 		    setFormContent(response);

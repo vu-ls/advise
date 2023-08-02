@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import CaseThreadAPI from './ThreadAPI';
-import {Row, Card, Col} from 'react-bootstrap';
+import {Row, Alert, Card, Col, Button} from 'react-bootstrap';
 import SearchFilter from './SearchFilter.js';
 
 const caseapi = new CaseThreadAPI();
@@ -15,85 +15,96 @@ const SearchCases = () => {
     const [searchVal, setSearchVal] = useState("");
     const [searchOwners, setSearchOwners] = useState([]);
     const [searchStatus, setSearchStatus] = useState([]);
+    const [error, setError] = useState(null);
     const OWNER_CHOICES = JSON.parse(document.getElementById('owner_option').textContent);
     const STATUS_CHOICES = JSON.parse(document.getElementById('case_status_options').textContent);
 
-    // Searchbar functionality
-    const onSearchbarChange = (e, field) => {
-        const value = e.target.value
-	if (field == "search") {
-	    setSearchVal(e.target.value);
-	}else if (field == "owner") {
-	    if (e.target.checked) {
-		setSearchOwners(searchOwners => [...searchOwners, value])
-	    } else {
-		let newowners = searchOwners.filter((item) => item !== value);
-		setSearchOwners(newowners);
-	    }
-	}else if (field == "status") {
-	    if (e.target.checked) {
-                setSearchStatus(searchStatus => [...searchStatus, value])
-	    } else {
-                let newowners = searchStatus.filter((item) => item !== value);
-		setSearchStatus(newowners);
-            }
-	}
-    }
+    const searchCaseFn = async(val, owners, status) => {
 
-    useEffect(()=> {
+	setIsLoading(true);
 	let urlstr = "";
-	if (searchVal) {
-	    urlstr = `search=${searchVal}`
+	if (val) {
+	    let sv = encodeURIComponent(val);
+	    urlstr = `search=${sv}`
 	}
-	searchOwners.map((item) => urlstr = `${urlstr}&owner=${item}`)
-	searchStatus.map((item) => urlstr = `${urlstr}&status=${item}`)
+	owners.map((item) => urlstr = `${urlstr}&owner=${item}`)
+	status.map((item) => urlstr = `${urlstr}&status=${item}`)
 
 	caseapi.searchCases(urlstr).then((response)=> {
 	    setCases(response.results);
 	    setItemsCount(response.count);
 	    setIsLoading(false);
+	}).catch(err => {
+	    console.log(err);
+            setError(`Error fetching new cases: ${err.response}`);
+            setIsLoading(false);
 	});
-
-    }, [searchVal, searchOwners, searchStatus])
+    }
+    
+    // Searchbar functionality
+    const onSearchbarChange = (e, field) => {
+        const value = e.target.value
+	if (field == "search") {
+	    setSearchVal(e.target.value);
+	    searchCaseFn(e.target.value, searchOwners, searchStatus);
+	}else if (field == "owner") {
+	    let newowners;
+	    if (e.target.checked) {
+		newowners = [...searchOwners, value];
+		setSearchOwners(newowners);
+		    //setSearchOwners(searchOwners => [...searchOwners, value])
+	    } else {
+		newowners = searchOwners.filter((item) => item !== value);
+		setSearchOwners(newowners);
+	    }
+	    searchCaseFn(searchVal, newowners, searchStatus);
+	}else if (field == "status") {
+	    let newstatus;
+	    if (e.target.checked) {
+                //setSearchStatus(searchStatus => [...searchStatus, value])
+		newstatus = [...searchStatus, value];
+		setSearchStatus(newstatus);
+	    } else {
+                newstatus = searchStatus.filter((item) => item !== value);
+		setSearchStatus(newowners);
+            }
+	    searchCaseFn(searchVal, searchOwners, newstatus);
+	}
+    }
 
     useEffect(()=> {
-	console.log("currentPage in use", currentPage);
 	paginationHandler(currentPage);
     }, [currentPage])
 
 
-    const paginationHandler = (page) => {
+    const paginationHandler = async (page) => {
 	console.log("IN PAGINATION HANDLER");
-        caseapi.getCasesByPage(page).then((response) => {
+        await caseapi.getCasesByPage(page).then((response) => {
 	    console.log(response.results)
 	    setCases(response.results);
 	    setItemsCount(response.count);
-        })
+	    setIsLoading(false);
+        }).catch(err => {
+	    console.log(err);
+	    setError(`Error fetching new cases: ${err.response}`);
+	    setIsLoading(false);
+	});
     }
-
-    // Async Fetch
-    const fetchInitialData = async () => {
-        console.log("fetching data");
-        try {
-            await caseapi.getCases().then((response) => {
-		console.log(response);
-		setItemsCount(response.count);
-                setCases(response.results);
-		setIsLoading(false);
-
-            })
-        } catch (err) {
-            console.log('Error:', err)
-        }
-    }
-
-    useEffect(() => {
-        fetchInitialData();
-    }, []);
-
 
     return (
-        <Row>
+	<>
+	    <Row>
+		<Col lg={9}>
+		    <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Cases /</span> Search</h4>
+		</Col>
+		<Col lg={3} className="text-end">
+		    {OWNER_CHOICES.length > 0 &&
+		     <Button variant="primary" href="/advise/case/new/"><i className="fas fa-plus"></i>{" "}New Case</Button>
+		    }
+		</Col>
+	    </Row>
+	    
+	<Row>
             <Col lg={8}>
                 <Card>
                     <Card.Header>
@@ -107,6 +118,9 @@ const SearchCases = () => {
                         </div>
                     </Card.Header>
                     <Card.Body>
+			{error &&
+			 <Alert variant="danger">{error}</Alert>
+			}
 			{ isLoading ?
 			  <div className="text-center">
                               <div className="lds-spinner"><div></div><div></div><div></div></div>
@@ -118,13 +132,16 @@ const SearchCases = () => {
 			      onSearchBarChange={onSearchbarChange}
 			      page={currentPage}
 			      setCurrentPage={setCurrentPage}
-			      emptymessage="You have no unassigned cases"
+			      emptymessage="You have no cases"
+			      crumbs = {["Cases", "Search"]}
+			      crumb_link="/advise/cases/"
 			  />
 			}
 		    </Card.Body>
                 </Card>
             </Col>
         </Row>
+	</>
     )
 }
 

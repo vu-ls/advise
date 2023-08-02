@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import ComponentAPI from './ComponentAPI';
 import {Row, Alert, Card, Col, Button, Form, Dropdown, InputGroup, DropdownButton} from 'react-bootstrap';
@@ -9,7 +10,7 @@ import UploadFileModal from './UploadFileModal';
 import ComponentDetailModal from "./ComponentDetailModal";
 import SelectGroupModal from "./SelectGroupModal";
 import axios from 'axios';
-
+import {Link, useLocation} from "react-router-dom"
 
 
 const componentapi = new ComponentAPI();
@@ -35,14 +36,14 @@ const Searchbar = ({ onChange, value }) => {
 
 const ComponentTable = (props) => {
 
+    const location = useLocation();
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);
     const [count, setCount] = useState(0);
-    const [response, setResponse] = useState(null);
     const [nextUrl, setNextUrl] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedRows, setSelectedRows] = useState([]);
-    const [searchVal, setSearchVal] = useState(null);
+    const [searchVal, setSearchVal] = useState("");
     const [addComponentModal, setAddComponentModal] = useState(false);
     const [editComponent, setEditComponent] = useState(null);
     const [displayConfirmationModal, setDisplayConfirmationModal] = useState(false);
@@ -55,7 +56,8 @@ const ComponentTable = (props) => {
     const [group, setGroup] = useState(null);
     const [showGroupModal, setShowGroupModal] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
-
+    const [feedback, setFeedback] = useState(null);
+    
     const hideUploadModal = () => {
         setShowUploadModal(false);
     };
@@ -65,7 +67,7 @@ const ComponentTable = (props) => {
         console.log(data);
 	setIsLoading(true);
         componentapi.loadSPDX(data, props.group).then((response) => {
-	    fetchInitialData();
+	    fetchInitialData(searchVal);
         }).catch(err => {
 	    console.log(err);
 	    setError(`Error uploading SBOM file: ${err.response.data.error}`);
@@ -100,6 +102,9 @@ const ComponentTable = (props) => {
 	    {
 		Header: 'name',
 		accessor: 'name',
+		Cell: props => (
+		    <Link to={`/advise/components/${props.row.original.id}`} state={{component: props.row.original, search: props.search}}>{props.row.original.name}</Link>
+		)
 	    },
             {
 		Header: 'version',
@@ -178,7 +183,7 @@ const ComponentTable = (props) => {
         });
         if (rmnames.length > 0) {
             setRemoveID(rmids);
-            setDeleteMessage(`Are you sure you want to remove the following components: ${rmnames}`);
+            setDeleteMessage(<div>Are you sure you want to remove the following components: <ul>{rmnames.map((item, index)=><li key={`rm-${item}`}>{item}</li>)}</ul></div>);
         } else {
             setDeleteMessage("Plase select a component to remove.");
         }
@@ -188,7 +193,9 @@ const ComponentTable = (props) => {
 
     const submitRemoveComponent = () => {
         componentapi.removeComponents(removeID).then((response) => {
-            fetchInitialData();
+	    setFeedback(`Got it! ${removeID.length} items successfully removed.`);
+            fetchInitialData(searchVal);
+
         }).catch(err => {
 	    setError(`Error removing components: ${err.response.data.detail}`);
 	})
@@ -223,20 +230,21 @@ const ComponentTable = (props) => {
     const hideComponentModal = () => {
         setAddComponentModal(false);
 	setEditComponent(null);
-	fetchInitialData();
+	fetchInitialData(searchVal);
     };
 
     const hideGroupModal = () => {
 	setShowGroupModal(false);
-	fetchInitialData();
+	fetchInitialData(searchVal);
     };
 
     const filterData = (value) => {
         if (value === "") {
 	    /* get full data set back */
-	    fetchInitialData();
+	    fetchInitialData(value);
         } else {
 	    setNextUrl(null);
+	    value = encodeURIComponent(value);
 	    let query = `search=${value}`;
 	    /* stash full data set in filtered data */
 	    if (props.group) {
@@ -294,7 +302,7 @@ const ComponentTable = (props) => {
     };
 
     // Searchbar functionality
-    const onSearchbarChange = e => {
+    const onSearchbarChange = (e) => {
         console.log(selectedRows);
         const value = e.target.value
         setSearchVal(value);
@@ -325,39 +333,37 @@ const ComponentTable = (props) => {
 	   setProduct(null)
 	   setSelectedRows([]);
 	   setSearchVal(null);
-	   fetchInitialData();
+	   fetchInitialData(searchVal);
        } catch(err) {
 	   setError(`Error adding dependency: ${err.response.data.detail}`);
        };
    }
     // Async Fetch
-    const fetchInitialData = async () => {
+    const fetchInitialData = async (searchParam) => {
         console.log("fetching components");
 	
         try {
 	    if ('group' in props) {
 		await componentapi.getGroupComponents(props.group).then((response) => {
 		    console.log(response);
-		    setResponse(response);
 		    setData(response.results);
 		    setCount(response.count);
 		    setNextUrl(response.next);
                     setIsLoading(false);
-		    if (searchVal) {
-			filterData(searchVal);
+		    if (searchParam) {
+			filterData(searchParam);
 		    }
 
 		})
 	    } else {
 		await componentapi.getComponents().then((response) => {
 		    console.log(response);
-		    setResponse(response);
                     setData(response.results);
 		    setCount(response.count);
 		    setNextUrl(response.next);
                     setIsLoading(false);
-		    if (searchVal) {
-            		filterData(searchVal);
+		    if (searchParam) {
+            		filterData(searchParam);
                     }
 		})
 	    }
@@ -394,11 +400,17 @@ const ComponentTable = (props) => {
 
 
     useEffect(() => {
+
 	if ('group' in props) {
 	    setGroup(props.group);
 	}
+	if (location.state) {
+	    setSearchVal(location.state.search);
+	    fetchInitialData(location.state.search);
+	} else {
+	    fetchInitialData("");
+	}
 
-	fetchInitialData();
     }, []);
 
     const fetchMoreData = () => {
@@ -504,7 +516,12 @@ const ComponentTable = (props) => {
     );
 
     return (
-        <Card>
+	<>
+	    {props.group ? ""
+	     :
+	     <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Components /</span> Component List</h4>
+	    }
+	    <Card>
             <Card.Header>
 		{product ?
 		 <div className="d-flex align-items-start gap-4">
@@ -514,7 +531,10 @@ const ComponentTable = (props) => {
 		 : ""
 		}
                 <div className="d-flex align-items-start justify-content-between mt-2 gap-5">
-                    <Searchbar onChange={onSearchbarChange} />
+                    <Searchbar
+			onChange={onSearchbarChange}
+			value={searchVal}
+		    />
 
 		    {product ?
 		     <Button variant="primary" onClick={(e)=>submitDependencies()} disabled={btnDisabled}>Add Selected Dependencies for {product.name}</Button>
@@ -542,6 +562,9 @@ const ComponentTable = (props) => {
 		{error &&
 		 <Alert variant="danger">{error}</Alert>
 		}
+		{feedback &&
+		 <Alert variant="success">{feedback}</Alert>
+		}
 		
 		{ isLoading ?
 		  <div className="text-center">
@@ -554,6 +577,7 @@ const ComponentTable = (props) => {
 				  update={fetchMoreData}
 				  showRowExpansion={showDeps}
 				  hasMore={nextUrl ? true : false}
+				  searchParams = {searchVal}
 		  />
 		}
 	    </Card.Body>
@@ -592,7 +616,8 @@ const ComponentTable = (props) => {
 	     />
 	    }
 
-	</Card>
+	    </Card>
+	</>
     )
 };
 

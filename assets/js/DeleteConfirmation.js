@@ -6,9 +6,9 @@ const DeleteConfirmation = ({ showModal, hideModal, confirmModal, id, message, b
 
     const [showDeleteButton, setShowDeleteButton] = useState(true);
 
+
     useEffect(() => {
 	if (id) {
-	    console.log(id);
 	    if (id.isArray) {
 		if (id.length) {
 		    setShowDeleteButton(true);

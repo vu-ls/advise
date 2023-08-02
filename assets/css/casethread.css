@@ -22,7 +22,11 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow:hidden;
+}
 
+.activity-item {
+    text-overflow: ellipsis;
+    overflow-x: hidden;
 }
 
 .dashboard-activity-scroll {

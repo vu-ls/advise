@@ -8,7 +8,7 @@ const container = document.getElementById("app");
 const root = createRoot(container);
 
 root.render(
-    <React.StrictMode>                                                                                 
+    <React.StrictMode>
         <SearchCases
         />                                                                                             
     </React.StrictMode>

@@ -203,7 +203,6 @@ class CreateNewCaseView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         initial['case_id'] = generate_case_id()
         return initial
 
-
     def form_invalid(self, form):
         logger.debug("INVALID FORM")
         logger.debug(f"{self.__class__.__name__} errors: {form.errors}")
@@ -229,20 +228,6 @@ class CreateNewCaseView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         return redirect("cvdp:case", case.case_id)
 
 
-class CaseView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
-    model = Case
-    login_url = "authapp:login"
-    template_name = 'cvdp/case.html'
-
-
-    def get_object(self, queryset=None):
-        return Case.objects.get(case_id=self.kwargs.get('caseid'))
-
-    def test_func(self):
-        case = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
-        return is_my_case(self.request.user, case.id)
-
-
 class EditCaseView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     form_class = EditCaseForm
     model = Case
@@ -260,17 +245,6 @@ class EditCaseView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
         case = form.save(user=self.request.user)
         return HttpResponseRedirect(case.get_absolute_url())
 
-class EditAdvisoryView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
-    login_url = "authapp:login"
-    template_name = 'cvdp/advisory.html'
-
-    def test_func(self):
-        return self.request.user.is_coordinator
-
-    def get_context_data(self, **kwargs):
-        context = super(EditAdvisoryView, self).get_context_data(**kwargs)
-        context['case'] = get_object_or_404(Case, case_id=self.kwargs['caseid'])
-        return context
 
 class AdvisoryAPIView(viewsets.ModelViewSet):
     serializer_class = AdvisorySerializer
@@ -282,9 +256,12 @@ class AdvisoryAPIView(viewsets.ModelViewSet):
         return f"Case Advisory API"
 
     def get_object(self):
-        ca = get_object_or_404(CaseAdvisory, case__case_id=self.kwargs['caseid'])
-        if self.request.user.is_coordinator or ca.current_revision.date_shared:
-            return ca.current_revision
+        ca = CaseAdvisory.objects.filter(case__case_id=self.kwargs['caseid']).first()
+        if ca:
+            if self.request.user.is_coordinator or ca.current_revision.date_shared:
+                return ca.current_revision
+        elif self.request.user.is_coordinator:
+            raise Http404
         #this revision has been't shared
         raise PermissionDenied()
 
@@ -516,21 +493,13 @@ class CaseAPIView(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-class CaseFilter(LoginRequiredMixin, PendingTestMixin, generic.ListView):
+class CasesView(LoginRequiredMixin, PendingTestMixin, generic.TemplateView):
     template_name = 'cvdp/searchcases.html'
     login_url = "authapp:login"
     model = Case
 
-
     def get_context_data(self, **kwargs):
-        context = super(CaseFilter, self).get_context_data(**kwargs)
-        if 'q' in self.request.GET:
-            context['query'] = self.request.GET.get('q')
-
-        tag = self.request.GET.get('tag')
-        if tag:
-            context['query'] = tag
-        context['form'] = CaseFilterForm()
+        context = super(CasesView, self).get_context_data(**kwargs)
         context['status'] = [{"id": u[0], "name": u[1]} for u in Case.STATUS_CHOICES]
         if self.request.user.is_coordinator:
             context['owner'] = [{"id":u.id, "name":u.screen_name} for u in get_coordinators()]
@@ -754,6 +723,15 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
     def get_view_name(self):
         return f"Case Participants"
 
+    def get_serializer(self, *args, **kwargs):
+        serializer_class = self.get_serializer_class()
+        kwargs['context'] = self.get_serializer_context()
+        if not self.request.user.is_coordinator:
+            #fields to DROP
+            kwargs['fields'] = ['id', 'added_by', 'added', 'notified', 'roles_available', 'uuid']
+
+        return serializer_class(*args, **kwargs)
+    
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return CaseParticipant.objects.none()
@@ -841,7 +819,7 @@ class CaseParticipantSummaryAPIView(generics.GenericAPIView):
         # do summary stuff here
         stats = {'count': queryset.count(),
                  'notified': queryset.filter(notified__isnull=False).count(),
-                 'vendors': queryset.filter(role='vendor').count()}
+                 'vendors': queryset.filter(role='supplier').count()}
         return Response(stats)
 
     def get_queryset(self):
@@ -935,7 +913,7 @@ class UserCaseStateAPIView(generics.RetrieveAPIView):
             #this is a special role - because coordinators should be able to do
             # some special editing things, like inital assignment,
             role = "coordinator"
-        elif (role == "vendor"):
+        elif (role == "supplier"):
             status_needed = get_status_status(case, user)
         cv = CaseViewed.objects.filter(case=case, user=user).first()
         if (cv):
@@ -986,18 +964,7 @@ class PostDiffView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
         mimetype = 'application/json'
         return HttpResponse(data, mimetype)
 
-class ManageCaseParticipants(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
-    login_url = "authapp:login"
-    template_name = "cvdp/participants.html"
-
-    def test_func(self):
-        return self.request.user.is_coordinator
-
-    def get_context_data(self, **kwargs):
-        context = super(ManageCaseParticipants, self).get_context_data(**kwargs)
-        context['case'] = get_object_or_404(Case, case_id=self.kwargs.get('caseid'))
-        return context
-
+    
 class CWEAPIView(viewsets.ModelViewSet):
     serializer_class = CWESerializer
     permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
@@ -1035,7 +1002,7 @@ class VulAPIView(viewsets.ModelViewSet):
 
         case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         self.check_object_permissions(self.request, case)
-        return Vulnerability.objects.filter(case=case)
+        return Vulnerability.objects.filter(case=case, deleted=False)
 
     def get_object(self):
         object = get_object_or_404(Vulnerability, id=self.kwargs['pk'])
@@ -1733,7 +1700,7 @@ class CaseActivityAPIView(APIView):
             status_actions = status_serializer.data
             
         else:
-            actions = CaseAction.objects.filter(case__in=cases, action_type=2)
+            actions = CaseAction.objects.filter(case__in=cases, action_type=1)
             action_serializer = CaseActionSerializer(actions, many=True)
             case_actions = action_serializer.data
 

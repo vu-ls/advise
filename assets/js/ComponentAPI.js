@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useNavigate } from "react-router-dom";
 const API_URL = process.env.API_URL || 'http://localhost:8000/advise';
 
 axios.defaults.xsrfHeaderName = "X-CSRFToken"
@@ -7,13 +8,32 @@ axios.defaults.xsrfCookieName = 'csrftoken'
 
 export default class ComponentAPI {
 
-    constructor(){}
+    constructor(useInterceptor=false, navigateFn=null){
+	this.navigateFn = navigateFn;
+	this.useInterceptor = useInterceptor;
+	
+	if (this.useInterceptor) {
+	    axios.interceptors.response.use(
+		response=>response,
+		error => {
+		    console.log("IN FAIL");
+		    navigateFn();
+		}
+	    )
+	}
+	
+    }
 
     getDependencies(item) {
 	const url = `${API_URL}/api/components/${item}/dependency/`;
         return axios.get(url).then(response => response.data);
     }
 
+    getComponent(c) {
+	let url = `${API_URL}/api/component/${c}/`;
+        return axios.get(url);
+    }
+    
     getComponentCases(c) {
 	let url = `${API_URL}/api/components/${c.id}/cases/`;
 	return axios.get(url).then(response => response.data);
@@ -144,8 +164,9 @@ export default class ComponentAPI {
     }
     
     getSPDX(c, format="json") {
+	const ignoreInterrupt = axios.create();
 	let url = `${API_URL}/component/${c.id}/sbom/download/?format=${format}`;
-        return axios.get(url, {responseType: 'blob'})
+        return ignoreInterrupt.get(url, {responseType: 'blob'})
     }
 
     mergeStatus(id) {

@@ -26,7 +26,8 @@ FIELD_NAMES = (
     (5, _("Select")),
     (6, _("Email")),
     (7, _("Date")),
-    (8, _("Radio Buttons"))
+    (8, _("Radio Buttons")),
+    (9, _("File Input"))
 )
 
 
@@ -40,6 +41,7 @@ FIELD_TYPES = (
     (6, forms.EmailField),
     (7, forms.DateField),
     (8, forms.ChoiceField),
+    (9, forms.FileField)
 )
 
 FIELD_WIDGETS = {
@@ -98,11 +100,6 @@ class AbstractReportingForm(models.Model):
         help_text=_('If checked, only logged in users can view/submit form.')
     )
 
-    allow_file_upload = models.BooleanField(
-        default=False,
-        help_text=('Allow user to upload file.')
-    )
-
     def __str__(self):
         return str(self.title)
 
@@ -133,6 +130,8 @@ class AbstractReportingForm(models.Model):
                 for y in v:
                     selected.append(choices.get(int(y)))
                 answers.append({'question': fields[i].question, 'answer':selected, 'priv':fields[i].private})
+            elif fields[i].question_type == 9:
+                answers.append({'question': fields[i].question, 'answer': v.name, 'priv': fields[i].private})
             else:
                 answers.append({'question': fields[i].question, 'answer':v, 'priv': fields[i].private})
         return answers
@@ -333,11 +332,11 @@ class QuestionEntry(AbstractQuestionEntry):
 
 class CVEServicesAccount(models.Model):
 
-    SERVER_TYPES = (
+    SERVER_TYPES = getattr(settings, 'CVE_SERVICES_API_OPTIONS', (
         ('prod', "Production"),
         ('test', "Test"),
-        ('dev', "Development")
-    )
+        ('dev', "Development"),
+    ))
          
     org_name = models.CharField(
         _('Organization'),
