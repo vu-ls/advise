@@ -64,20 +64,23 @@ you will need to set up an application in it.
 1. Point a web browser at http://auth.advise.test:8000
 2. Log in using the username and password entered for `DJANGO_SUPERUSER_*`
 in the .env.test.local file.
-3. Under "Django OAuth Toolkit", choose "Applications", then "Add Application".
-4. In the "User" field, enter `1` (this is the id of the superuser).
-5. In "Redirect uris", enter: `http://app.advise.test:8000/accounts/adviseprovider/login/callback/`
-6. Choose "Confidential" for client type.
-7. Choose "Authorization code" for grant type.
-8. Enter a useful name, such as `local_provider`.
-9. Leave "Algorithm" and "Skip authorization" as they are.
-10. **IMPORTANT**: Copy the client secret and client id from this page and 
+4. Go to Sites->Sites.
+5. Select "example.com" to edit it.
+6. For domain name, enter "auth.advise.test". For display name, use "AdVISE". Save.
+7. Under "Django OAuth Toolkit", choose "Applications", then "Add Application".
+8. In the "User" field, enter `1` (this is the id of the superuser).
+9. In "Redirect uris", enter: `http://app.advise.test:8000/accounts/adviseprovider/login/callback/`
+10. Choose "Confidential" for client type.
+11. Choose "Authorization code" for grant type.
+12. Enter a useful name, such as `local_provider`.
+13. Leave "Algorithm" and "Skip authorization" as they are.
+14. **IMPORTANT**: Copy the client secret and client id from this page and 
 put it somewhere temporarily. It will be needed in a later step. 
-11. After you have copied and temporarily stored the client id and secret, 
+15. After you have copied and temporarily stored the client id and secret, 
 click "Save". 
-12. Click "logout" to log out of the OAuth2 Provider.
-13. Point your web browser back at http://auth.advise.test:8000
-14. Register for a new account and complete the form.
+16. Click "logout" to log out of the OAuth2 Provider.
+17. Point your web browser back at http://auth.advise.test:8000
+18. Register for a new account and complete the form.
 
 ### V. Set up AdVISE Authentication
 1. Point a web browser at http://app.advise.test:8000

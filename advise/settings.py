@@ -28,7 +28,7 @@ DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'local')
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT_DIR = environ.Path(__file__) - 3
 
-VERSION = '1.3.0'
+VERSION = '1.4.0b'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
