@@ -80,11 +80,13 @@ export default function PostList(props) {
 	threadapi.getPostsByURL(url).then((response) => {
             setNextUrl(response.next);
             setPreviousUrl(response.previous);
-	    if (toggle == "lifo") {
-		let newposts = response.results.reverse();
-		setPosts(posts => [...posts, ...newposts]);
-	    } else {
-		setPosts(posts => [...response.results, ...posts]);
+	    if (response.results) {
+		if (toggle == "lifo") {
+		    let newposts = response.results.reverse();
+		    setPosts(posts => [...posts, ...newposts]);
+		} else {
+		    setPosts(posts => [...response.results, ...posts]);
+		}
 	    }
 	    setIsLoading(false);
 
@@ -93,9 +95,11 @@ export default function PostList(props) {
 
     const getPinnedPosts=()=> {
 	threadapi.getPinnedPosts(thread).then((response) => {
-	    console.log(response.results);
-	    setPinnedPosts(response.results);
-	    console.log("in set pinned posts");
+	    console.log(response);
+	    if (response.results) {
+		setPinnedPosts(response.results);
+		console.log("in set pinned posts");
+	    }
 	    setIsPinnedLoading(false);
 	})
     }
@@ -120,13 +124,18 @@ export default function PostList(props) {
             setPosts([])
             threadapi.searchPosts(thread, encodeURIComponent(props.search.value)).then((response) => {
 		console.log(response);
-                if (toggle == "fifo") {
-                    setPosts(response.results.reverse());
-                }
-                else {
-                    setPosts(response.results);
-                }
-		setTotalPosts(response.count);
+		if (response.results) {
+                    if (toggle == "fifo") {
+			setPosts(response.results.reverse());
+                    }
+                    else {
+			setPosts(response.results);
+                    }
+		    setTotalPosts(response.count);
+		} else {
+		    setPosts([]);
+		    setTotalPosts(0);
+		}
                 setIsLoading(false);
             });
 	} else {
@@ -141,13 +150,16 @@ export default function PostList(props) {
         threadapi.getPosts(thread).then((response) => {
 	    setNextUrl(response.next);
 	    setPreviousUrl(response.previous);
-	    if (toggle == "fifo") {
-		setPosts(response.results.reverse());
-	    } else {
-		setPosts(response.results);
+	    if (response.results) {
+
+		if (toggle == "fifo") {
+		    setPosts(response.results.reverse());
+		} else {
+		    setPosts(response.results);
+		}
+		console.log("POSTS", response.results);
+		setTotalPosts(response.count);
 	    }
-	    console.log("POSTS", response.results);
-	    setTotalPosts(response.count);
 	    setIsLoading(false);
 	    setReplyPost(null);
 

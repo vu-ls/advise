@@ -60,15 +60,16 @@ const ParticipantModal = (props) => {
     }
 
     useEffect(() => {
-
-	setCaseInfo(props.caseInfo);
-	/* get initial suggestions */
-	handleSearch();
-	if (props.allowSelectRole) {
-	    setRole("supplier");
-	} else {
-	    /* leave this blank and the app will use the case role to decide thread permissions*/
-	    setRole("");
+	if (props.showModal) {
+	    setCaseInfo(props.caseInfo);
+	    /* get initial suggestions */
+	    handleSearch();
+	    if (props.allowSelectRole) {
+		setRole("supplier");
+	    } else {
+		/* leave this blank and the app will use the case role to decide thread permissions*/
+		setRole("");
+	    }
 	}
     }, [props]);
     

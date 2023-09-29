@@ -67,7 +67,7 @@ export default function Editor(props) {
     const submitPost = async (e) => {
 	e.preventDefault();
 	let formField = new FormData()
-	console.log("IN SUBMIT POST");
+	console.log(`IN SUBMIT POST ${text}`);
 	console.log(props.thread);
 	console.log(props.post);
 
@@ -81,10 +81,14 @@ export default function Editor(props) {
 	
 	if (props.post) {
 	    /* just need to update this post */
-	    threadapi.editPost(text, props.post).then((response) => {
+	    await threadapi.editPost(text, props.post).then((response) => {
 		props.dataUpdated()
 	    }).catch(err => {
-		setError(`Error editing post: ${err.response.data.error}`);
+		if (err.response) {
+		    setError(`Error editing post: ${err.response.data.error}`);
+		} else {
+		    setError(`Error editing post.`);
+		}
 	    });
 	} else {
 	    let url = `${API_URL}/api/case/thread/${props.thread.id}/posts/`;
@@ -92,11 +96,7 @@ export default function Editor(props) {
 	    if (props.reply) {
 		formField.append('reply', props.reply.id);
 	    }
-	    await axios({
-		method: 'post',
-		url: url,
-		data: formField,
-	    }). then(( response) => {
+	    await threadapi.addPost(formField, props.thread).then((response) => {
 		console.log(response.data)
 		setText('');
 		console.log("NOW UPDATE THIS");
@@ -133,7 +133,7 @@ export default function Editor(props) {
 		     </div>
 		     <div className="card-footer text-end">
 			 <button onClick={(e)=>clearText(e)} className="mx-1 btn btn-outline-secondary">Cancel</button>
-			 <button onClick={(e)=>submitPost(e)} className="btn btn-primary">Submit</button>
+			 <button onClick={(e)=>submitPost(e)} data-testid="submit-post" className="btn btn-primary">Submit</button>
 		     </div>
 		 </Form>
 	     </>
@@ -143,7 +143,4 @@ export default function Editor(props) {
         </div>
 	)
 } 
-
-
-
 

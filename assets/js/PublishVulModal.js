@@ -82,7 +82,7 @@ const PublishVulModal = (props) => {
 	    const fetchCVERole = async () => {
 		await api.getORG().then((response) => {
 		    let data = response.data;
-		    if (data.authority.active_roles.includes('ADP')) {
+		    if (data.authority && data.authority.active_roles.includes('ADP')) {
 			setAdpRole(true);
 		    }
 		});
@@ -94,7 +94,7 @@ const PublishVulModal = (props) => {
 
 
     useEffect(() => {
-	if (vul) {
+	if (vul && props.showModal) {
 	    let cveAPI = new CVEAPI(cveAccount.org_name, cveAccount.email, cveAccount.api_key, cveAccount.server);
 
             const fetchADPContainer = async () => {
@@ -118,7 +118,7 @@ const PublishVulModal = (props) => {
 			console.log("no cve, no adp");
 		    }
 		}).catch(err => {
-		    if (err.response.status == 404) {
+		    if (err.response && err.response.status == 404) {
 			setAdpError("CVE ADP container does not exist.  Did you publish it yet?");
 		    } else {
 			setAdpError(err.message);
@@ -129,7 +129,7 @@ const PublishVulModal = (props) => {
 
             fetchADPContainer();
         }
-    }, [adpRole, vul]);
+    }, [adpRole, vul, props.showModal]);
 
     const updateSSVC = (e) => {
 	let cveAPI = new CVEAPI(cveAccount.org_name, cveAccount.email, cveAccount.api_key, cveAccount.server);

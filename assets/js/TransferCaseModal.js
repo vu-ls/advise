@@ -705,7 +705,7 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 	     </Modal.Body>
 
 	     <Modal.Footer>
-		 <Button variant="secondary" onClick={hideModal}>
+		 <Button variant="secondary" data-testid="cancel-transfer-modal" onClick={hideModal}>
 		     Cancel
 		 </Button>
 		 {doneButton ?
@@ -713,9 +713,13 @@ const TransferCaseModal = ({showModal, hideModal, caseInfo, updateCase}) => {
 		      Done
                   </Button>
 		  :
-                 <Button variant="primary" onClick={()=>shareTheCase()} disabled={buttonDisabled}>
-                     {buttonDisabled ? `Attempting Transfer` : `Share` }
-                 </Button>
+		  <>
+		      {caseInfo.report && connections.length > 0 &&
+                       <Button variant="primary" onClick={()=>shareTheCase()} disabled={buttonDisabled}>
+			   {buttonDisabled ? `Attempting Transfer` : `Share` }
+                       </Button>
+		      }
+		  </>
 		 }
              </Modal.Footer>
 	 </Modal>

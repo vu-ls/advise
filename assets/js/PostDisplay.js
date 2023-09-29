@@ -36,6 +36,7 @@ export default function PostDisplay(props) {
 	}
 
 	const doneEditPost=()=> {
+	    console.log("DONE EDIT POST!");
 	    setEditPost(false);
 	    console.log(post);
 	    threadapi.getPost(post).then((response) => {
@@ -116,8 +117,8 @@ export default function PostDisplay(props) {
 	    </Card.Body>
 	    <Card.Footer className="d-flex flex-wrap justify-content-between align-items-center px-0 pt-0 pb-3">
 		<div className="px-4 pt-3">
-		    <div className="post-stats">{format(date, 'yyyy-MM-dd H:mm:ss ')} ({timeago})    		{post.revisions > 1 && (
-			<a href='#' onClick={(e)=>(e.preventDefault(), viewPostDiff(post.revision_id))} className="show-diff">{post.revisions} edits</a>
+		    <div className="post-stats">{format(date, 'yyyy-MM-dd H:mm:ss ')} ({timeago})    		{post.revisions > 0 && (
+			<a href='#' onClick={(e)=>(e.preventDefault(), viewPostDiff(post.revision_id))} className="show-diff">{post.revisions} edit{post.revisions > 1 &&"s"}</a>
 		    )}
 		    </div>
 		</div>
@@ -173,8 +174,9 @@ export default function PostDisplay(props) {
 	const showdelete = (showedits || user.delete_perm);
 	const showpin = (user.delete_perm && !post.pinned);
 	const showunpin = (user.delete_perm && post.pinned);
+
 	return (
-	    <DropdownButton variant="btn p-0" title={icon} onSelect={handlePostSelect}>
+	    <DropdownButton variant="btn p-0 postactions" title={icon} onSelect={handlePostSelect}>
 		{showedits && (
 		    <Dropdown.Item eventKey="edit">Edit Post</Dropdown.Item>
 		)}
@@ -206,7 +208,7 @@ export default function PostDisplay(props) {
     const displayPosts = (props) => {
         const {user, posts} = props;
 	
-        if (posts.length > 0) {
+        if (posts && posts.length > 0) {
             return (
 		posts.map((post, index) => {
 		    //console.log(format(post.created, 'yyyy/mm/dd'));

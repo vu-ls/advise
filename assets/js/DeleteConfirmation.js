@@ -30,11 +30,11 @@ const DeleteConfirmation = ({ showModal, hideModal, confirmModal, id, message, b
         </Modal.Header>
         <Modal.Body><div className="alert alert-danger">{message}</div></Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={hideModal}>
+          <Button data-testid="cancel-confirm" variant="secondary" onClick={hideModal}>
             Cancel
           </Button>
 	    {showDeleteButton ?
-             <Button variant="danger" onClick={() => confirmModal(id) }>
+             <Button variant="danger" data-testid="confirm-cancel" onClick={() => confirmModal(id) }>
 		 {buttonText}
              </Button>
 	     :

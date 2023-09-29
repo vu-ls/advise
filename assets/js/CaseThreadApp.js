@@ -108,19 +108,19 @@ const CaseThreadApp = () => {
 	event.preventDefault();
 
 	/*todo: add error handling - null subject not allowed */
-
-	console.log(event.target[0].value);
-	if (event.target[0].value == "") {
+	console.log(event);
+	console.log(event.target.elements);
+	if (event.target.elements[0].value == "") {
 	    setInvalidSubject(true);
 	} else {
-	    threadapi.createThread({'case': id}, event.target[0].value).then((response) => {
+	    threadapi.createThread({'case': id}, event.target.elements[0].value).then((response) => {
 		setThreads(threads => [...threads, response]);
 		setShowNewThread(false);
 		setActiveTab(response);
 
             });
 	    setThreadSubject("");
-	    event.target[0].value = "";
+	    event.target.elements[0].value = "";
 	    
 	}
     }
@@ -147,7 +147,12 @@ const CaseThreadApp = () => {
                 setThreads(response);
             })
 	} catch (err) {
-	    setThreadError(err.response.data.detail);
+	    if (err.response) {
+		setThreadError(err.response.data.detail);
+	    }else {
+		setThreadError("Error retrieving archived threads");
+	    }
+	    
 	    console.log('Error:' , err)
 	}
     }
@@ -258,8 +263,9 @@ const CaseThreadApp = () => {
 				 }
 			     Case Threads</Card.Title>
 			     {
-			     <DropdownButton variant="btn p-0"
-					     title={<i className="bx bx-dots-vertical-rounded"></i>}
+				 <DropdownButton variant="btn p-0"
+						 id="thread-dropdown"
+						 title={<i className="bx bx-dots-vertical-rounded"></i>}
 			     >
 				 {showArchived || reqUser.role !== "owner" ? ""
 				  :
@@ -367,6 +373,7 @@ const CaseThreadApp = () => {
 							  variant="outline-primary"
 						      >Create</Button>
 						      <Button
+							  data-testid="cancel-create-thread"
 							  type="cancel"
 							  variant="outline-secondary"
 							  onClick={(e)=>(e.preventDefault(),setActiveTab(threads[0]),setShowNewThread(false))}>

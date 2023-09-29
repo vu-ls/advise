@@ -186,13 +186,13 @@ const CaseStatusTable = () => {
 
 	return (
 	    <>
-                <Button variant="btn-icon px-1" onClick={(e)=>editStatusNow(component, vul)}>
+                <Button variant="btn-icon px-1 edit-status-btn" onClick={(e)=>editStatusNow(component, vul)}>
                     <i className="fas fa-edit"></i>
                 </Button>
-                <Button variant="btn-icon px-1" onClick={(e)=>viewStatusDetails(component, vul)}>
+                <Button variant="btn-icon px-1 view-status-btn" onClick={(e)=>viewStatusDetails(component, vul)}>
                     <i className="fas fa-search-plus"></i>
                 </Button>
-                <Button variant="btn-icon px-1" onClick={(e)=>removeStatus(vul.id)}>
+                <Button variant="btn-icon px-1 rm-status-btn" onClick={(e)=>removeStatus(vul.id)}>
                     <i className="fas fa-trash"></i>
                 </Button>
 

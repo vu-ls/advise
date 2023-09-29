@@ -230,7 +230,7 @@ const EditVulModal = (props) => {
 		    </Row>
 		</Modal.Body>
 		<Modal.Footer>
-		    <Button variant="outline-secondary" type="cancel" onClick={(e)=>(e.preventDefault(), props.hideModal())}>Cancel</Button>
+		    <Button variant="outline-secondary" data-testid="cancel-editvul" type="cancel" onClick={(e)=>(e.preventDefault(), props.hideModal())}>Cancel</Button>
 		    <Button type="submit" variant="primary"><i className="fas fa-plus"></i> Save Vulnerability </Button>
 		</Modal.Footer>
 	    </Form>

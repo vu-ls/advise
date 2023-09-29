@@ -212,7 +212,7 @@ const ScoreModal = ({ showModal, hideModal, vul }) => {
     return (
         <Modal show={showModal} onHide={hideModal} size="lg" centered backdrop="static">
         <Modal.Header closeButton>
-            <Modal.Title>Score your vul</Modal.Title>
+            <Modal.Title>Score the vulnerability</Modal.Title>
         </Modal.Header>
             <Modal.Body>
 		<Tabs
@@ -245,7 +245,7 @@ const ScoreModal = ({ showModal, hideModal, vul }) => {
 					 <Button variant="secondary" onClick={hideModal}>
 					     Cancel
 					 </Button>
-					 <Button variant="primary" type="submit">
+					 <Button variant="primary" type="submit" data-testid="score-submit">
 					 Submit</Button>
 				     </div>
 				 </div>

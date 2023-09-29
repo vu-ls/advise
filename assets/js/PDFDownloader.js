@@ -48,10 +48,12 @@ const PDFDownloader = (props) => {
     }
     
     return (
-	<>
+	data ?
 	    <Dropdown.Item key="pdf" onClick={(e)=>downloadPDF()}>
 		PDF
 	    </Dropdown.Item>
+	:
+	<>
 	</>
     );
 

@@ -8,7 +8,7 @@ const config = {
     transformIgnorePatterns: ['<rootDir>/node_modules/(?!(ics|jspdf))/'],
     //setupFilesAfterEnv: ['@testing-library/react/cleanup-after-each'],
     testEnvironmentOptions: {'url': "http://localhost:8000"},
-    setupFilesAfterEnv: ['<rootDir>/assets/js/setupTests.js', `<rootDir>/jest-shim.js`],
+    setupFilesAfterEnv: ['<rootDir>/assets/js/setupTests.js', `<rootDir>/jest-shim.js`, 'jest-canvas-mock'],
     testEnvironment: "jsdom",
     verbose: true
 };

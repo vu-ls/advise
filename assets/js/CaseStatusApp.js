@@ -574,16 +574,21 @@ const CaseStatusApp = (props) => {
 		    }
 
 		    {props.user.role === "owner" &&
-		    <DropdownButton variant="btn p-0"
+		     <DropdownButton variant="btn p-0"
+				     id="case-status-dropdown"
                                     title={<i className="bx bx-dots-vertical-rounded"></i>}
                     >
-                        <Dropdown.Item eventKey='edit' href="edit/">Edit Details</Dropdown.Item>
-			<Dropdown.Item eventKey='advisory' href="advisory/">Edit Advisory</Dropdown.Item>
-			{caseInfo.advisory_status === "DRAFT SHARED" ?
-			 <Dropdown.Item eventKey='share' onClick={(e)=>shareAdvisory()}>Unshare Advisory</Dropdown.Item>
-			 :
-			 <Dropdown.Item eventKey='share' onClick={(e)=>shareAdvisory()}>Share Latest Advisory</Dropdown.Item>
-			}
+                         <Dropdown.Item eventKey='edit' href={`${caseInfo.case_id}/edit/`}>Edit Details</Dropdown.Item>
+			 <Dropdown.Item eventKey='advisory' href={`${caseInfo.case_id}/advisory/`}>Edit Advisory</Dropdown.Item>
+			 {caseInfo.advisory_status !== "NOT STARTED" &&
+			  <>
+			      {caseInfo.advisory_status === "DRAFT SHARED" ?
+			       <Dropdown.Item eventKey='share' onClick={(e)=>shareAdvisory()}>Unshare Advisory</Dropdown.Item>
+			       :
+			       <Dropdown.Item eventKey='share' onClick={(e)=>shareAdvisory()}>Share Latest Advisory</Dropdown.Item>
+			      }
+			  </>
+			 }
 			<Dropdown.Item eventKey='transfer' onClick={(e)=>setDisplayTransferModal(true)}>Transfer Case</Dropdown.Item>
                     </DropdownButton>
 		    }
@@ -669,7 +674,7 @@ const CaseStatusApp = (props) => {
                         </Col>
                         <Col sm={8}>
 			    {dateDue ?
-			     <>{format(dateDue, 'yyyy-MM-dd')}<OverlayTrigger overlay={<Tooltip>Download Calendar reminder</Tooltip>}><a href="#" onClick={(e)=>downloadCalendar()}><i className="mx-2 fas fa-calendar-plus"></i></a></OverlayTrigger></>
+			     <>{format(dateDue, 'yyyy-MM-dd')}<OverlayTrigger overlay={<Tooltip>Download Calendar reminder</Tooltip>}><a href="#" data-testid="calendar-download" onClick={(e)=>downloadCalendar()}><i className="mx-2 fas fa-calendar-plus"></i></a></OverlayTrigger></>
 			     :
 			     <b>TBD</b>
 			    }

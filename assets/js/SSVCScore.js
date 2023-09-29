@@ -292,9 +292,7 @@ const SSVCScore = (props) => {
 		    /* if we're going through the decision tree, move it forward */
 		    if ((index+2) != data.decision_points.length) {
 			/* that was the last decision point */
-			console.log("GET THE DECSISION");
 			setDecisionPoint(index+1);
-			console.log(decisions);
 		    }
 		} else {
 		    /* this is an update to the decision tree */
@@ -353,7 +351,7 @@ const SSVCScore = (props) => {
     const SSVCPopover = React.forwardRef(
 	({ popper, children, show: _, ...props }, ref) => {
 	    const {label, options} = props;
-	    console.log(options);
+
 	    useEffect(() => {
 		popper.scheduleUpdate();
 	    }, [children, popper]);
@@ -364,7 +362,7 @@ const SSVCScore = (props) => {
 		    <Popover.Body>
 			{options.map((o, index) => {
 			    return (
-				<p>
+				<p key={`${o.label}-${index}`}>
 				    <b>{o.label}</b>:{"  "}
 				    {o.description}
 				</p>
@@ -445,6 +443,7 @@ const SSVCScore = (props) => {
 						     inline
 						     key={`${d.label}-${option.label}`}
 						     label={option.label}
+						     aria-label={option.label}
 						     name={d.label}
 						     value={option.label}
 						     defaultChecked={checked == option.label?true:false}

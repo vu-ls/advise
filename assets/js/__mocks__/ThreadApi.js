@@ -1,5 +1,5 @@
 import MockPromise from "../../testUtils/MockPromise";
-
+import data from "../../testUtils/MockCaseInfo.json";
 
 const mockcasejson = {
     case_id: "312650",
@@ -116,6 +116,9 @@ const mock = jest.fn().mockImplementation(() => {
 	getCase: (case_id) => {
 	    return Promise.resolve(mockcasejson);
 	},
+	createThread: () => {
+	    return Promise.resolve(data['postthreads']);
+	},
 	getUserCaseState: () => {
 	    return Promise.resolve(
 		{
@@ -137,29 +140,7 @@ const mock = jest.fn().mockImplementation(() => {
 	    );
 	},
 	getCaseOwners: () => {
-	    return Promise.resolve(
-		[
-		    {
-			id: 125,
-			name: "emily",
-			participant_type: "user",
-			added_by: "emily",
-			photo: "/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
-			logocolor: "#7FF3AE",
-			  role: "owner",
-			uuid: "54b2bf17-10a1-45aa-91c4-d37bab92f661",
-			added: "2023-09-06T18:49:59.844592Z",
-			notified: "2023-09-06T18:49:59.846409Z",
-			  roles_available: [
-			      "owner",
-			      "supplier",
-			      "reporter",
-			      "observer",
-			      "participant"
-			  ],
-			users: []
-		      }
-		]);
+	    return Promise.resolve(data['owners']);
 	},
 
 	getUserAssignments: () => {
@@ -171,27 +152,56 @@ const mock = jest.fn().mockImplementation(() => {
 
 	getThreads: () => {
 	    return Promise.resolve(
-		[]);
+		data['threads']);
 	},
 
+	getThreadParticipants:() => {
+	    return Promise.resolve(
+		data['caseparticipants']
+	    )
+	},
+	getPinnedPosts: () => {
+	    return Promise.resolve(
+		[]
+	    )
+	},
+	getPosts: jest.fn().mockImplementationOnce(() => {return Promise.resolve(data['posts'])}).mockReturnValue(Promise.resolve(data['addposts'])),
+	searchPosts: jest.fn().mockImplementationOnce(()=> {return Promise.resolve([])}).mockReturnValue(Promise.resolve(data['posts'])),
+	    
 	getCWEs: () => {
 	    return Promise.resolve([])
 	},
-
+	getCaseParticipantSummary: () => {
+	    return Promise.resolve([])
+	},
 	getCaseActivity: () => {
 	    return Promise.resolve({
 		results: []
 	    })
 	},
-
+	deleteThread: () => {
+	    return Promise.resolve([]);
+	},
 	getVuls: () => {
 	    return Promise.resolve([])
 	},
 
+	getArchivedThreads: () => {
+	    return Promise.resolve([])
+	},
 	getArtifacts: () => {
 	    return Promise.resolve([])
 	},
-	
+	addPost: () => {
+	    return Promise.resolve([])
+	},
+	deletePost: () => {
+	    return Promise.resolve([]);
+	},
+	editPost: () => {
+	    return Promise.resolve([])
+	},
+	    
 	
     }
 });

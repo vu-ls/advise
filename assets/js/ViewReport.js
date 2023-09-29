@@ -3,7 +3,7 @@ import {Modal, Card, Alert, DropdownButton, Dropdown, InputGroup, FloatingLabel,
 import '../css/casethread.css';
 import {format, formatDistance} from 'date-fns';
 import CaseThreadAPI from './ThreadAPI';
-
+import {Link} from "react-router-dom";
 
 const threadapi = new CaseThreadAPI();
 
@@ -116,9 +116,10 @@ const ViewReport = ({report, owner, caseid}) => {
 		{owner &&
                  <div className="text-end">
                      <DropdownButton variant="btn p-0"
+				     id="detail-dropdown"
                                      title={<i className="bx bx-dots-vertical-rounded"></i>}
                      >
-                         <Dropdown.Item eventKey="edit" href="report/edit/">Edit Report</Dropdown.Item>
+                         <Dropdown.Item eventKey="edit" href={`${caseid}/report/edit/`}>Edit Report</Dropdown.Item>
 			 {report.copy &&
 			  <Dropdown.Item eventKey="original" onClick={()=>setShowCopyModal(true)}>View Original Report</Dropdown.Item>
 			 }

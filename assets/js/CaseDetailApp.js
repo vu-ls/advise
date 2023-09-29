@@ -101,6 +101,18 @@ const CaseDetailApp = (props) => {
 	});
     }
 
+    const fetchTransfers = async () => {
+	
+        if (['coordinator', 'owner'].includes(props.user.role)) {
+	    await componentapi.getCompStatusUploads(caseInfo).then((response) => {
+		setTransfers(response);
+            }).catch(err => {
+		console.log('Error:', err)
+            })
+	}
+    }
+	
+
     const fetchInitialData = async () => {
 
         await threadapi.getVuls(caseInfo).then((response) => {
@@ -110,19 +122,13 @@ const CaseDetailApp = (props) => {
 	    console.log(err);
 	    setFeedback(<Alert variant="danger">An error occurred: {err.response.data.message}</Alert>);
 	});
-        if (['coordinator', 'owner'].includes(props.user.role)) {
-	    await componentapi.getCompStatusUploads(caseInfo).then((response) => {
-		setTransfers(response);
-            }).catch(err => {
-		console.log('Error:', err)
-            })
-	}
     }
 
     useEffect(() => {
 	if (caseInfo) {
 	    console.log('fetching vuls');
 	    fetchInitialData();
+	    fetchTransfers();
 	    if (caseInfo.report == null) {
 		setActiveTab("addcasedetails");
 	    }
@@ -137,11 +143,11 @@ const CaseDetailApp = (props) => {
 	}
     }, [vuls]);
 
-    const submitDetails = (event) => {
+    const submitDetails = async (event) => {
 	event.preventDefault();
 	const formData = new FormData(event.target),
               formDataObj = Object.fromEntries(formData.entries());
-	threadapi.updateCase(props.caseInfo, formDataObj).then((response) => {
+	await threadapi.updateCase(props.caseInfo, formDataObj).then((response) => {
 	    let f = <Alert variant="success">Got it! Thanks for adding more information!</Alert>;
 	    setFeedback(f);
 	    props.updateStatus();
@@ -279,6 +285,7 @@ const CaseDetailApp = (props) => {
 				  :
 				  <div className="text-end">
 				      <DropdownButton variant="btn p-0"
+						      id="detail-dropdown"
 						      title={<i className="bx bx-dots-vertical-rounded"></i>}
 				      >
 					  <Dropdown.Item eventKey="addreport" onClick={()=>(setAddReport(true), setActiveTab("report"))}>Add Report</Dropdown.Item>

@@ -68,7 +68,7 @@ export default class CaseThreadAPI{
     
     getThreads(c) {
 	console.log(c);
-        const url = `${API_URL}/api/case/${c.case}/threads`;
+        const url = `${API_URL}/api/case/${c.case}/threads/`;
         return axios.get(url).then(response => response.data);
     }
 
@@ -176,6 +176,12 @@ export default class CaseThreadAPI{
         const url = `${API_URL}/api/case/thread/post/${post.id}/`;
         return axios.patch(url, data).then(response=>response.data);
     }
+    addPost(data, thread) {
+	console.log("IN Add POST");
+        const url = `${API_URL}/api/case/thread/${thread.id}/posts/`;
+        return axios.post(url, data).then(response=>response.data);
+    }
+    
     getPostsHTML(c) {
 	console.log("IN GETPOSTSHTML");
 	const url = `${API_URL}/case/thread/posts/${c.id}/`;

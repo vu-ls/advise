@@ -62,6 +62,9 @@ const VulAddForm = (props) => {
     }
 
     const submitVul = async (event, newcve) => {
+
+	console.log("IN SUBMITVUL");
+	
 	if (event) {
 	    event.preventDefault();
 	}
@@ -77,6 +80,7 @@ const VulAddForm = (props) => {
 	} else {
 	    setInvalidDescription(false);
 	}
+
 	if (error == false) {
 	    /* else submit form */
 	    if (editVul) {
@@ -89,7 +93,9 @@ const VulAddForm = (props) => {
 		});
 
 	    } else {
+		console.log(formData);
 		let res = threadapi.addVul(caseInfo, formData).then(function(response) {
+		    
 		    addVul();
 		    setShowForm(false);
 		    props.updateVuls();
@@ -338,6 +344,7 @@ const VulAddForm = (props) => {
 		     <>
 			 {vuls.length > 0 ?
 			  <DropdownButton variant="btn p-0"
+					  id="vul-dropdown"
 					  title={<i className="bx bx-dots-vertical-rounded"></i>}
 			  >
                               <Dropdown.Item eventKey='add' onClick={()=>(addVul(), setShowForm(true))} >Add Vulnerability</Dropdown.Item>
@@ -518,7 +525,7 @@ const VulAddForm = (props) => {
 			     </Form.Group>
 			     <Form.Group className="mb-3" controlId="_type">
 				 <Form.Label>Vulnerability Description <span className="required">*</span></Form.Label>
-				 <Form.Control name="description" as="textarea" rows={3} isInvalid={invalidDescription} value={vulDescription} onChange={(e)=>setVulDescription(e.target.value)}/>
+				 <Form.Control name="description" as="textarea" rows={3} isInvalid={invalidDescription} data-testid="vuldescription" value={vulDescription} onChange={(e)=>setVulDescription(e.target.value)}/>
 				 {invalidDescription &&
 				  <Form.Text className="error">
 				      This field is required.
@@ -527,10 +534,10 @@ const VulAddForm = (props) => {
 			     </Form.Group>
 			     <Row>
 				 <Col lg={6}>
-				     <Button className="m-2" type="Cancel" variant="secondary" onClick={(e)=>(e.preventDefault(), setReserveMessage(null), setShowForm(false), setEditVul(null), setVulDescription(""), setVulCVE(""))}>
+				     <Button className="m-2" type="Cancel" data-testid="cancel-add-vul" variant="secondary" onClick={(e)=>(e.preventDefault(), setReserveMessage(null), setShowForm(false), setEditVul(null), setVulDescription(""), setVulCVE(""))}>
 					 Cancel
 				     </Button>
-				     <Button variant="primary" type="submit" disabled={buttonDisabled}>
+				     <Button variant="primary" data-testid="submit-vul" type="submit" disabled={buttonDisabled}>
 					 Submit
 				     </Button>
 				 </Col>

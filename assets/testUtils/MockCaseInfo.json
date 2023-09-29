@@ -1,0 +1,899 @@
+{
+	"caseparticipants": [
+		{
+			"id": 177,
+			"participant": {
+				"id": 126,
+				"name": "emily",
+				"participant_type": "user",
+				"added_by": "emily",
+				"photo": "/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
+				"logocolor": "#7FF3AE",
+				"role": "owner",
+				"uuid": "54b2bf17-10a1-45aa-91c4-d37bab92f661",
+				"added": "2023-09-21T15:39:24.430711Z",
+				"notified": "2023-09-21T15:39:24.432068Z",
+				"roles_available": [
+					"owner",
+					"supplier",
+					"reporter",
+					"observer",
+					"participant"
+				],
+				"users": []
+			},
+			"thread": "149"
+		},
+		{
+			"id": 178,
+			"participant": {
+				"id": 127,
+				"name": "Analygence",
+				"participant_type": "group",
+				"added_by": "emily",
+				"photo": "/media/group/4529b950-1f5f-4560-824c-41a674cd8307/farmhouse-bathroom-victor-smith-img_80410564_tNjOJco.jpeg",
+				"logocolor": "#4a7563",
+				"role": "supplier",
+				"uuid": "4529b950-1f5f-4560-824c-41a674cd8307",
+				"added": "2023-09-21T15:39:34.198125Z",
+				"notified": null,
+				"roles_available": [
+					"supplier",
+					"reporter",
+					"observer",
+					"participant"
+				],
+				"users": []
+			},
+			"thread": "149"
+		}
+	],
+	"owners": [
+		{
+			"id": 125,
+			"name": "emily",
+			"participant_type": "user",
+			"added_by": "emily",
+            "photo": "/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
+			"logocolor": "#7FF3AE",
+			  "role": "owner",
+			"uuid": "54b2bf17-10a1-45aa-91c4-d37bab92f661",
+			"added": "2023-09-06T18:49:59.844592Z",
+			"notified": "2023-09-06T18:49:59.846409Z",
+			  "roles_available": [
+				"owner",
+				"supplier",
+				"reporter",
+				"observer",
+				"participant"
+			],
+			"users": []
+		}
+	],
+	"usercasestate":
+	{
+		"user": {
+			"id": 1,
+			"name": "emily",
+			"org": "",
+			"photo": "http://localhost:8000/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
+			"logocolor": "#7FF3AE",
+			"title": "",
+			"contact": "54b2bf17-10a1-45aa-91c4-d37bab92f661"
+		},
+		"contact": "54b2bf17-10a1-45aa-91c4-d37bab92f661",
+		"last_viewed": "2023-09-28T18:30:55.227760Z",
+		"delete_perm": true,
+		"role": "owner",
+		"status_needed": false
+	},
+"case": {
+	"case_id": "310363",
+	"case_identifier": "CASE#310363",
+	"owners": [
+		{
+			"id": 1,
+			"name": "emily",
+			"org": "",
+			"photo": "/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
+			"logocolor": "#7FF3AE",
+			"title": "",
+			"contact": "54b2bf17-10a1-45aa-91c4-d37bab92f661"
+		}
+	],
+	"created_by": "Anonymous",
+	"created": "2023-08-29T14:31:09.418460Z",
+	"modified": "2023-09-21T15:59:46.195991Z",
+	"status": "Active",
+	"title": "Vulnerability Report form entry",
+	"summary": null,
+	"report": {
+		"received": "2023-08-29T14:31:09.412721Z",
+		"title": "Vulnerability Report",
+		"case_url": "",
+		"source": null,
+		"submitter": "emily",
+		"report": [
+			{
+				"priv": false,
+				"answer": [
+					"No"
+				],
+				"question": "Have you tried to contact the vendor?"
+			},
+			{
+				"priv": false,
+				"answer": "1.2.3",
+				"question": "What is the name of the affect product or software?"
+			},
+			{
+				"priv": false,
+				"answer": "sdjflsjdf",
+				"question": "What version number of the product or software is affected?"
+			},
+			{
+				"priv": true,
+				"answer": "slkdjflksjflkj",
+				"question": "What is the vulnerability. Please describe in detail."
+			},
+			{
+				"priv": false,
+				"answer": [
+					"test1"
+				],
+				"question": "Here is a select question."
+			},
+			{
+				"priv": false,
+				"answer": "skdljflsdjf",
+				"question": "How was the vulnerability discovered?"
+			},
+			{
+				"priv": false,
+				"answer": "emily_picture.jpg",
+				"question": "Add a file to prove your point"
+			}
+		],
+		"status": "Active",
+		"copy": false,
+		"transfer": false
+	},
+	"public_date": null,
+	"due_date": "2023-10-13T14:31:09.429309Z",
+	"advisory_status": "NOT STARTED",
+	"resolution": null
+},
+
+"caseresults": {
+	"count": 1,
+	"results": {
+		"case_id": "310363",
+		"case_identifier": "CASE#310363",
+		"owners": [
+			{
+				"id": 1,
+				"name": "emily",
+				"org": "",
+				"photo": "/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
+				"logocolor": "#7FF3AE",
+				"title": "",
+				"contact": "54b2bf17-10a1-45aa-91c4-d37bab92f661"
+			}
+		],
+		"created_by": "Anonymous",
+		"created": "2023-08-29T14:31:09.418460Z",
+		"modified": "2023-09-21T15:59:46.195991Z",
+		"status": "Active",
+		"title": "Vulnerability Report form entry",
+		"summary": null,
+		"report": {
+			"received": "2023-08-29T14:31:09.412721Z",
+			"title": "Vulnerability Report",
+			"case_url": "",
+			"source": null,
+			"submitter": "emily",
+			"report": [
+				{
+					"priv": false,
+					"answer": [
+						"No"
+					],
+					"question": "Have you tried to contact the vendor?"
+				},
+				{
+					"priv": false,
+					"answer": "1.2.3",
+					"question": "What is the name of the affect product or software?"
+				},
+				{
+					"priv": false,
+					"answer": "sdjflsjdf",
+					"question": "What version number of the product or software is affected?"
+				},
+				{
+					"priv": true,
+					"answer": "slkdjflksjflkj",
+					"question": "What is the vulnerability. Please describe in detail."
+				},
+				{
+					"priv": false,
+					"answer": [
+						"test1"
+					],
+					"question": "Here is a select question."
+				},
+				{
+					"priv": false,
+					"answer": "skdljflsdjf",
+					"question": "How was the vulnerability discovered?"
+				},
+				{
+					"priv": false,
+					"answer": "emily_picture.jpg",
+					"question": "Add a file to prove your point"
+				}
+			],
+			"status": "Active",
+			"copy": false,
+			"transfer": false
+		},
+		"public_date": null,
+		"due_date": "2023-10-13T14:31:09.429309Z",
+		"advisory_status": "NOT STARTED",
+		"resolution": null
+	}
+},
+"users": {
+	"users": [
+		{
+			"id": 38,
+			"name": "Joe Smith",
+			"org": null,
+			"photo": null,
+			"logocolor": "#7C2497",
+			"title": null,
+			"contact": "02787a5b-0f2c-46c4-8586-7c02e8e7529b"
+		},
+		{
+			"id": 1,
+			"name": "emily",
+			"org": "",
+			"photo": "/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
+			"logocolor": "#7FF3AE",
+			"title": "",
+			"contact": "54b2bf17-10a1-45aa-91c4-d37bab92f661"
+		}
+	],
+	"roles": [
+		"Cool People"
+	]
+},
+"threads": [
+	{
+		"id": 149,
+		"case": "310363",
+		"created": "2023-08-29T14:31:09.427862Z",
+		"subject": "Official Case Thread",
+		"official": true,
+		"archived": false
+	}
+],
+"postthreads": {
+	"id": 150,
+	"case": "310363",
+	"created": "2023-08-31T14:31:09.427862Z",
+	"subject": "New Thread",
+	"official": false,
+	"archived": false
+},
+"posts": {
+	"next": null,
+	"previous": null,
+	"count": 1,
+	"results": [
+		{
+			"id": 218,
+			"created": "2023-09-25T14:50:42.959438Z",
+			"author": {
+				"id": 1,
+				"name": "emily",
+				"org": "",
+				"photo": "/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
+				"logocolor": "#7FF3AE",
+				"title": "",
+				"contact": "54b2bf17-10a1-45aa-91c4-d37bab92f661"
+			},
+			"author_role": "owner",
+			"pinned": false,
+			"group": {
+				"id": 10,
+				"name": "Vullabs",
+				"type": "Group",
+				"url": "/advise/groups/10/",
+				"photo": null,
+				"logocolor": "#9c2c97",
+				"uuid": "773d5eb0-fe79-4cb3-9573-929e10e25b12",
+				"support_email": null,
+				"support_phone": null,
+				"website": null,
+				"mailing_address": null
+			},
+			"content": "<p>Hello, world!</p>\n<p><br></p>",
+			"revisions": 0,
+			"revision_id": "256",
+			"replies": []
+		}
+	]
+},
+"editpost": {
+	"id": 218,
+	"created": "2023-09-25T14:50:42.959438Z",
+	"author": {
+		"id": 1,
+		"name": "emily",
+		"org": "",
+		"photo": "/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
+		"logocolor": "#7FF3AE",
+		"title": "",
+		"contact": "54b2bf17-10a1-45aa-91c4-d37bab92f661"
+	},
+	"author_role": "owner",
+	"pinned": false,
+	"group": {
+		"id": 10,
+		"name": "Vullabs",
+		"type": "Group",
+		"url": "/advise/groups/10/",
+		"photo": null,
+		"logocolor": "#9c2c97",
+		"uuid": "773d5eb0-fe79-4cb3-9573-929e10e25b12",
+		"support_email": null,
+		"support_phone": null,
+		"website": null,
+		"mailing_address": null
+	},
+	"content": "<p>Boooyah!</p>\n<p><br></p>",
+	"revisions": 1,
+	"revision_id": "256",
+	"replies": []
+
+},
+"vuls":
+[
+    {
+        "id": 107,
+        "cve": "9999-21127",
+        "description": "Vul1",
+        "vul": "CVE-9999-21127",
+        "date_added": "2023-08-09T14:44:06.087675Z",
+        "date_public": null,
+        "problem_types": [
+            "CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')"
+        ],
+        "references": [
+            "https://www.setandclick.gov"
+        ],
+        "tags": [],
+        "cvss_vector": null,
+        "cvss_severity": null,
+        "cvss_score": null,
+        "ssvc_vector": null,
+        "ssvc_decision": null,
+        "ssvc_decision_tree": null,
+        "affected_products": [
+            {
+                "vendor": "",
+                "product": "dsftklsjdf",
+                "version": "1.3.2",
+                "version_affected": null,
+                "end_version_range": ""
+            },
+            {
+                "vendor": "",
+                "product": "something",
+                "version": "1.2.3",
+                "version_affected": null,
+                "end_version_range": ""
+            }
+        ],
+        "case": "CASE#312650",
+        "url": "/advise/cases/312650"
+    },
+    {
+        "id": 109,
+        "cve": "9999-21128",
+        "description": "this is a new one!",
+        "vul": "CVE-9999-21128",
+        "date_added": "2023-08-09T15:19:28.304762Z",
+        "date_public": null,
+        "problem_types": null,
+        "references": null,
+        "tags": [],
+        "cvss_vector": null,
+        "cvss_severity": null,
+        "cvss_score": null,
+        "ssvc_vector": null,
+        "ssvc_decision": null,
+        "ssvc_decision_tree": null,
+        "affected_products": [],
+        "case": "CASE#312650",
+        "url": "/advise/cases/312650"
+    }
+],
+"cveaccounts": [
+{
+	"id": 1,
+    "org_name": "orgname",
+    "email": "email@email.com",
+    "active": true,
+    "server": "something",
+    "server_type": "something",
+    "api_key":  "klsjdflkjsdfklj0294034"
+}
+],
+"addposts": {
+	"next": null,
+	"previous": null,
+	"count": 2,
+	"results": [
+		{
+			"id": 218,
+			"created": "2023-09-25T14:50:42.959438Z",
+			"author": {
+				"id": 1,
+				"name": "emily",
+				"org": "",
+				"photo": "/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
+				"logocolor": "#7FF3AE",
+				"title": "",
+				"contact": "54b2bf17-10a1-45aa-91c4-d37bab92f661"
+			},
+			"author_role": "owner",
+			"pinned": false,
+			"group": {
+				"id": 10,
+				"name": "Vullabs",
+				"type": "Group",
+				"url": "/advise/groups/10/",
+				"photo": null,
+				"logocolor": "#9c2c97",
+				"uuid": "773d5eb0-fe79-4cb3-9573-929e10e25b12",
+				"support_email": null,
+				"support_phone": null,
+				"website": null,
+				"mailing_address": null
+			},
+			"content": "<p>Hello, world!</p>\n<p><br></p>",
+			"revisions": 0,
+			"revision_id": "256",
+			"replies": []
+		},
+		{
+			"id": 219,
+			"created": "2023-09-26T14:50:42.959438Z",
+			"author": {
+				"id": 1,
+				"name": "emily",
+				"org": "",
+				"photo": "/media/user_logos/54b2bf17-10a1-45aa-91c4-d37bab92f661/vu.ls.png",
+				"logocolor": "#7FF3AE",
+				"title": "",
+				"contact": "54b2bf17-10a1-45aa-91c4-d37bab92f661"
+			},
+			"author_role": "owner",
+			"pinned": false,
+			"group": {
+				"id": 10,
+				"name": "Vullabs",
+				"type": "Group",
+				"url": "/advise/groups/10/",
+				"photo": null,
+				"logocolor": "#9c2c97",
+				"uuid": "773d5eb0-fe79-4cb3-9573-929e10e25b12",
+				"support_email": null,
+				"support_phone": null,
+				"website": null,
+				"mailing_address": null
+			},
+			"content": "<p>Boooooo!/p>\n<p><br></p>",
+			"revisions": 0,
+			"revision_id": "266",
+			"replies": []
+		}
+	]
+},
+"ssvc": [
+    {
+        "label": "Exploitation",
+        "value": "none"
+    },
+    {
+        "label": "Automatable",
+        "value": "yes"
+    },
+    {
+        "label": "Technical Impact",
+        "value": "partial"
+    },
+    {
+        "label": "Public Well-being Impact",
+        "value": "Material"
+    },
+    {
+        "label": "Mission Prevalence",
+        "value": "Support"
+    },
+    {
+        "label": "Mission & Well-being",
+        "value": "medium"
+    },
+    {
+        "label": "Decision",
+        "value": "Track"
+    },
+    {
+        "label": "date_scored",
+        "value": "2023-10-03T13:11:25.895677Z"
+    }
+],
+"getCVE": {
+    "dataType": "CVE_RECORD",
+    "dataVersion": "5.0",
+    "cveMetadata": {
+        "state": "PUBLISHED",
+        "cveId": "CVE-9999-21128",
+        "assignerOrgId": "baff130e-b8d5-4e15-b3d3-c3cf5d5545c6",
+        "assignerShortName": "fakethis",
+        "dateUpdated": "2023-06-15T00:00:00",
+        "dateReserved": "2022-11-03T00:00:00",
+        "datePublished": "2023-06-15T00:00:00"
+    },
+    "containers": {
+        "cna": {
+            "providerMetadata": {
+                "orgId": "ABCKDJFDKD12345332",
+                "shortName": "fakethis",
+                "dateUpdated": "2023-06-15T00:00:00"
+            },
+            "descriptions": [
+                {
+                    "lang": "en",
+                    "value": "In various functions of AppStandbyController.java, there is a possible way to break manageability scenarios due to a logic error in the code. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation.Product: AndroidVersions: Android-11 Android-12 Android-12L Android-13Android ID: A-272042183"
+                }
+            ],
+            "affected": [
+                {
+                    "vendor": "n/a",
+                    "product": "Android",
+                    "versions": [
+                        {
+                            "version": "Android-11 Android-12 Android-12L Android-13",
+                            "status": "affected"
+                        }
+                    ]
+                }
+            ],
+            "references": [
+                {
+                    "url": "https://blahblahblah.com"
+                }
+            ],
+            "problemTypes": [
+                {
+                    "descriptions": [
+                        {
+                            "type": "text",
+                            "lang": "en",
+                            "description": "Elevation of privilege"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+},
+"compstatus": [
+    {
+        "id": 80,
+        "summary": [
+            {
+                "status": "Affected",
+                "count": 1
+            }
+        ],
+        "component": {
+            "id": 2314,
+            "name": "dsftklsjdf",
+            "owner": "",
+            "component_type": "Application",
+            "version": "1.3.2",
+            "supplier": null,
+            "source": null,
+            "homepage": null,
+            "checksum": null,
+            "external_ids": null,
+            "comment": null,
+            "products": [],
+            "dependencies": []
+        },
+        "affected_vuls": [
+            {
+                "id": 80,
+                "status": "Affected",
+                "version": "1.3.2",
+                "version_end_range": "",
+                "version_range": null,
+                "user": "bing",
+                "statement": "Something",
+                "vul": {
+                    "id": 107,
+                    "cve": "1111-21127",
+                    "description": "Placeholder for Airpods Vuldfsfsdfsdf",
+                    "vul": "CVE-1111-21127",
+                    "date_added": "2023-08-09T14:44:06.087675Z",
+                    "date_public": null,
+                    "problem_types": [
+                        "CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')"
+                    ],
+                    "references": [
+                        "https://www.setandclick.gov"
+                    ],
+                    "tags": [],
+                    "cvss_vector": null,
+                    "cvss_severity": null,
+                    "cvss_score": null,
+                    "ssvc_vector": null,
+                    "ssvc_decision": null,
+                    "ssvc_decision_tree": null,
+                    "affected_products": [],
+                    "case": "CASE#312650",
+                    "url": "/advise/cases/312650"
+                },
+                "revisions": 0,
+                "revision_number": "0",
+                "created": "2023-09-06T14:30:05.396584Z",
+                "modified": "2023-09-06T14:30:05.396573Z",
+                "share": false,
+                "justification": null
+            }
+        ],
+        "unaffected_vuls": [],
+        "fixed_vuls": [],
+        "investigating_vuls": []
+    },
+    {
+        "id": 71,
+        "summary": [
+            {
+                "status": "Fixed",
+                "count": 1
+            }
+        ],
+        "component": {
+            "id": 9,
+            "name": "libx",
+            "owner": "",
+            "component_type": "Other",
+            "version": "2.0.6",
+            "supplier": "SEI",
+            "source": "",
+            "homepage": null,
+            "checksum": "1234",
+            "external_ids": null,
+            "comment": "cool beans",
+            "products": [],
+            "dependencies": [
+                "Expo"
+            ]
+        },
+        "affected_vuls": [],
+        "unaffected_vuls": [],
+        "fixed_vuls": [
+            {
+                "id": 71,
+                "status": "Fixed",
+                "version": "2.0.6",
+                "version_end_range": "",
+                "version_range": "",
+                "user": "emily",
+                "statement": "sdfsdf",
+                "vul": {
+                    "id": 109,
+                    "cve": "2023-21128",
+                    "description": "this is a new description.",
+                    "vul": "CVE-2023-21128",
+                    "date_added": "2023-08-09T15:19:28.304762Z",
+                    "date_public": null,
+                    "problem_types": [],
+                    "references": [],
+                    "tags": [],
+                    "cvss_vector": "CVSS:3.1/AV:A/AC:H/PR:N/UI:N/S:C/C:L/I:H/A:L",
+                    "cvss_severity": "High",
+                    "cvss_score": 7.5,
+                    "ssvc_vector": "SSVC/v2/E:N/A:Y/T:P/B:A/P:S/M:M/D:T/2023-10-03T13:11:24Z/",
+                    "ssvc_decision": "Track",
+                    "ssvc_decision_tree": [
+                        {
+                            "label": "Exploitation",
+                            "value": "none"
+                        },
+                        {
+                            "label": "Automatable",
+                            "value": "yes"
+                        },
+                        {
+                            "label": "Technical Impact",
+                            "value": "partial"
+                        },
+                        {
+                            "label": "Public Well-being Impact",
+                            "value": "Material"
+                        },
+                        {
+                            "label": "Mission Prevalence",
+                            "value": "Support"
+                        },
+                        {
+                            "label": "Mission & Well-being",
+                            "value": "medium"
+                        },
+                        {
+                            "label": "Decision",
+                            "value": "Track"
+                        },
+                        {
+                            "label": "date_scored",
+                            "value": "2023-10-03T13:11:25.895677Z"
+                        }
+                    ],
+                    "affected_products": [],
+                    "case": "CASE#312650",
+                    "url": "/advise/cases/312650"
+                },
+                "revisions": 2,
+                "revision_number": "2",
+                "created": "2023-09-01T15:44:10.657032Z",
+                "modified": "2023-09-01T15:44:10.656976Z",
+                "share": false,
+                "justification": null
+            }
+        ],
+        "investigating_vuls": []
+    },
+    {
+        "id": 81,
+        "summary": [
+            {
+                "status": "Affected",
+                "count": 1
+            }
+        ],
+        "component": {
+            "id": 2315,
+            "name": "something",
+            "owner": "",
+            "component_type": "Application",
+            "version": "1.2.3",
+            "supplier": null,
+            "source": null,
+            "homepage": null,
+            "checksum": null,
+            "external_ids": null,
+            "comment": null,
+            "products": [],
+            "dependencies": []
+        },
+        "affected_vuls": [
+            {
+                "id": 81,
+                "status": "Affected",
+                "version": "1.2.3",
+                "version_end_range": "",
+                "version_range": null,
+                "user": "bing",
+                "statement": "",
+                "vul": {
+                    "id": 107,
+                    "cve": "2023-21127",
+                    "description": "Placeholder for Airpods Vuldfsfsdfsdf",
+                    "vul": "CVE-2023-21127",
+                    "date_added": "2023-08-09T14:44:06.087675Z",
+                    "date_public": null,
+                    "problem_types": [
+                        "CWE-74 Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')"
+                    ],
+                    "references": [
+                        "https://www.setandclick.gov"
+                    ],
+                    "tags": [],
+                    "cvss_vector": null,
+                    "cvss_severity": null,
+                    "cvss_score": null,
+                    "ssvc_vector": null,
+                    "ssvc_decision": null,
+                    "ssvc_decision_tree": null,
+                    "affected_products": [],
+                    "case": "CASE#312650",
+                    "url": "/advise/cases/312650"
+                },
+                "revisions": 0,
+                "revision_number": "0",
+                "created": "2023-09-07T16:06:21.822472Z",
+                "modified": "2023-09-07T16:06:21.822450Z",
+                "share": false,
+                "justification": null
+            }
+        ],
+        "unaffected_vuls": [],
+        "fixed_vuls": [],
+        "investigating_vuls": []
+    }
+],
+"unassigned_case": {
+	"case_id": "310363",
+	"case_identifier": "CASE#310363",
+	"owners": [],
+	"created_by": "Anonymous",
+	"created": "2023-08-29T14:31:09.418460Z",
+	"modified": "2023-09-21T15:59:46.195991Z",
+	"status": "Pending",
+	"title": "Vulnerability Report form entry",
+	"summary": null,
+	"report": {
+		"received": "2023-08-29T14:31:09.412721Z",
+		"title": "Vulnerability Report",
+		"case_url": "",
+		"source": null,
+		"submitter": "emily",
+		"report": [
+			{
+				"priv": false,
+				"answer": [
+					"No"
+				],
+				"question": "Have you tried to contact the vendor?"
+			},
+			{
+				"priv": false,
+				"answer": "1.2.3",
+				"question": "What is the name of the affect product or software?"
+			},
+			{
+				"priv": false,
+				"answer": "sdjflsjdf",
+				"question": "What version number of the product or software is affected?"
+			},
+			{
+				"priv": true,
+				"answer": "slkdjflksjflkj",
+				"question": "What is the vulnerability. Please describe in detail."
+			},
+			{
+				"priv": false,
+				"answer": [
+					"test1"
+				],
+				"question": "Here is a select question."
+			},
+			{
+				"priv": false,
+				"answer": "skdljflsdjf",
+				"question": "How was the vulnerability discovered?"
+			},
+			{
+				"priv": false,
+				"answer": "emily_picture.jpg",
+				"question": "Add a file to prove your point"
+			}
+		],
+		"status": "Active",
+		"copy": false,
+		"transfer": false
+	},
+	"public_date": null,
+	"due_date": "2023-10-13T14:31:09.429309Z",
+	"advisory_status": "NOT STARTED",
+	"resolution": null
+}
+
+}

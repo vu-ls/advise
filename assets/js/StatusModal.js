@@ -261,7 +261,7 @@ const StatusModal = ({showModal, hideModal, comp, status}) => {
 		{activeTab == "vex" ?
 		 <Button variant="outline-primary" href={`data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(vex, null, 2))}`} download={`vex_${component.component.name.replace(/ /g, "_")}.json`}><i className="fas fa-download"></i> Download</Button>
 		 :
-		 <Button variant="primary" onClick={hideModal}>Close</Button>
+		 <Button variant="primary" data-testid="close-status-modal" onClick={hideModal}>Close</Button>
 		}
 	    </Modal.Footer>
 	    

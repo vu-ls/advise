@@ -445,13 +445,13 @@ const StatusAddForm = (props) => {
 	return (
 	    //user.role === "owner" ?
 	     <td>
-                 <Button variant="btn-icon px-1" onClick={(e)=>editStatusNow(component, vul)}>
+                 <Button variant="btn-icon px-1 edit-status-btn" onClick={(e)=>editStatusNow(component, vul)}>
 		     <i className="fas fa-edit"></i>
                  </Button>
-		 <Button variant="btn-icon px-1" onClick={(e)=>viewStatusDetails(component, vul)}>
+		 <Button variant="btn-icon px-1 view-status-btn" onClick={(e)=>viewStatusDetails(component, vul)}>
 		     <i className="fas fa-search-plus"></i>
                  </Button>
-                 <Button variant="btn-icon px-1" onClick={(e)=>removeStatus(vul.id)}>
+                 <Button variant="btn-icon px-1 rm-status-btn" onClick={(e)=>removeStatus(vul.id)}>
 		     <i className="fas fa-trash"></i>
                  </Button>
 
@@ -475,13 +475,14 @@ const StatusAddForm = (props) => {
 		      <>
 			  {caseComponents.length > 0 ?
 			   <DropdownButton variant="btn p-0"
+					   id="status-dropdown"
                                            title={<i className="bx bx-dots-vertical-rounded"></i>}
                            >
 			       <Dropdown.Item eventKey='add' onClick={()=>(addStatus(), setShowForm(true))} >Add Status</Dropdown.Item>
 			       <Dropdown.Item as={Link} to="status">View All</Dropdown.Item>
 			   </DropdownButton>
 			   :
-			   <Button type="button" className="btn btn-primary" onClick={()=>(addStatus(), setShowForm(true))}>
+			   <Button type="button" id="status-dropdown" className="btn btn-primary" onClick={()=>(addStatus(), setShowForm(true))}>
 			       Add Status
 			   </Button>
 			  }
@@ -732,6 +733,7 @@ const StatusAddForm = (props) => {
 				     key = {`vul-${vul.id}`}
                                      label={vul.vul}
                                      name="vuls"
+				     aria-label={vul.vul}
 				     value = {vul.id}
 				     defaultChecked = {checkedVuls.includes(vul.id) ? true: false}
                                      type="checkbox"
@@ -752,6 +754,7 @@ const StatusAddForm = (props) => {
 				     <Form.Check
 					 inline
 					 label={type.desc}
+					 aria-label={type.desc}
 					 isInvalid={invalidVuls}
 					 key={`status-${type.desc}`}
 					 name="status"
@@ -777,6 +780,7 @@ const StatusAddForm = (props) => {
 				  <Form.Check
                                       label={type.desc}
                                       isInvalid={invalidVuls}
+				      aria-label={type.desc}
                                       key={`status-${type.desc}`}
                                       name="justification"
                                       checked = {justification === type.val ? true : false }
@@ -844,10 +848,10 @@ const StatusAddForm = (props) => {
 				 ))}
 			     </ButtonGroup>
 			 </Form.Group>
-			 <Button className="m-2" type="Cancel" variant="secondary" onClick={(e)=>(e.preventDefault(), setShowForm(false))}>
+			 <Button className="m-2" type="Cancel" data-testid="status-cancel" variant="secondary" onClick={(e)=>(e.preventDefault(), setShowForm(false))}>
                              Cancel
                          </Button>
-                         <Button variant="primary" type="submit">
+                         <Button variant="primary" type="submit" data-testid="submit-status">
                              Submit
                          </Button>
 		     </Form>
