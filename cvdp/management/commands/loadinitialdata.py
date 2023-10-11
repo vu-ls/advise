@@ -30,5 +30,10 @@ class Command(BaseCommand):
             call_command('loadcwe', 'cvdp/fixtures/cwe_regular.json')
             logger.info("Done loading CWE Info")
 
+        """
+        if "adscore" in settings.INSTALLED_APPS:
 
-    
+            logger.info("Loading CVEs")
+            call_command('loadcves')
+            logger.info("Done loading CVEs")
+        """

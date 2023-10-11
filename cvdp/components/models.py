@@ -186,6 +186,7 @@ VUL_STATUS_CHOICES = (
     (1, _('Affected')),
     (2, _('Fixed')),
     (3, _('Under Investigation')),
+    (4, _('Unknown')),
 )
 
 VERSION_RANGE_CHOICES = (

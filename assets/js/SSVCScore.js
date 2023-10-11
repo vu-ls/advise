@@ -21,8 +21,10 @@ const SSVCScore = (props) => {
     const [shortKeys, setShortKeys] = useState([]);
     const [disabledButton, setDisabledButton] = useState(false);
     const [doUpdate, setDoUpdate] = useState(false);
+    const [showNotes, setShowNotes] = useState([]);
+    const [justifications, setJustifications] = useState({})
 
-
+	
     useEffect(() => {
 
 	switch(finalDecision) {
@@ -83,15 +85,17 @@ const SSVCScore = (props) => {
 	setShortKeys(short_keys);
 	setChildren(ischild);
 
-
 	/* if we already have a score!!! */
-	if (props.vul.ssvc_decision) {
+	if (props.vul && props.vul.ssvc_decision) {
 	    /* TODO: make sure apples 2 apples with the same decision tree name */
 	    setFinalDecision(props.vul.ssvc_decision);
 	    let dec_tree = props.vul.ssvc_decision_tree.filter(item => item.label != "date_scored");
 	    setDecisions(dec_tree);
 	    setDecisionPoint(data.decision_points.length-1);
 	    setVector(props.vul.ssvc_vector);
+	    if (props.vul.ssvc_justifications) {
+		setJustifications(props.vul.ssvc_justifications);
+	    }
 	}
 
 
@@ -112,12 +116,14 @@ const SSVCScore = (props) => {
 
     useEffect(() => {
 	if (data.decision_points) {
+	    console.log("LOAD DECISION POINT")
 	    load_ssvc(data);
 	}
     }, [data])
 
 
     useEffect(() => {
+	
 	fetchInitialData();
     }, []);
 
@@ -336,16 +342,11 @@ const SSVCScore = (props) => {
     };
 
     const removeScore = () => {
-        try {
-            threadapi.removeSSVCDecision(props.vul).then((response) => {
-		setDecisionPoint(0);
-		setFinalDecision("");
-		setDecisions([]);
-		setVector("");
-	    })
-	} catch (err) {
-            console.log(err);
-        }
+	props.remove();
+	setDecisionPoint(0);
+	setFinalDecision("");
+	setDecisions([]);
+	setVector("");
     }
     
     const SSVCPopover = React.forwardRef(
@@ -374,33 +375,39 @@ const SSVCScore = (props) => {
 	}
     )
 
-
+    const showDecisionNotes = (label) => {
+	console.log(label);
+	console.log(justifications);
+	if (showNotes.includes(label)) {
+	    /* remove it */
+	    setShowNotes((item) => item.filter((select) => select != label))
+	} else {
+	    setShowNotes(showNotes => [...showNotes, label])
+	}
+    }
+    
+    const handleAddDecisionNotes = (e) => {
+	const key = e.target.name;
+	const value = e.target.value;
+	setJustifications({
+	    ...justifications,
+	    [key]:value
+	}
+			 );
+    }
+    
+    
     const saveScore = async () => {
 	setDisabledButton(true);
 	const formData = {};
+	formData['justifications'] = justifications;
 	formData['decision_tree'] = decisions;
 	formData['tree_type'] = decisionTreeName;
 	formData['final_decision'] = finalDecision;
 	formData['vector'] = vector;
 	console.log(formData);
-
-	try {
-	    if (props.vul.ssvc_vector) {
-		threadapi.updateSSVCDecision(props.vul, formData).then((response) => {
-		    props.hideModal();
-		});
-	    } else {
-		threadapi.addSSVCDecision(props.vul, formData).then((response) => {
-		    props.hideModal();
-		});
-	    }
-	} catch (err) {
-	    console.log(err);
-	}
+	props.save(formData);
     }
-
-
-
 
     return (
 	<Row>
@@ -414,45 +421,69 @@ const SSVCScore = (props) => {
 
 			     if ((d.decision_type == "simple") && (index != data.decision_points.length - 1)) {
 				 let checked = "";
-				 if (props.vul.ssvc_decision_tree) {
+				 if (props.vul && props.vul.ssvc_decision_tree) {
 				     let old = props.vul.ssvc_decision_tree.filter((b) => b.label == d.label)
 				     if (old.length > 0) {
 					 checked = old[0]['value']
 				     }
 				 }
-
+				     {/*<div key={`${d.label}-${index}`} className="mb-3 d-flex align-start gap-5">*/}
 				 return (
-				     <div key={`${d.label}-${index}`} className="mb-3 d-flex justify-content-between">
-					 <OverlayTrigger
-					     trigger="click"
-					     rootClose
-					     placement="right"
-					     overlay={<SSVCPopover
-							  label={d.label}
-							  options={d.options}
-						      />}
-					     >
-					     <Button>
-						 {d.label}
-					     </Button>
-					 </OverlayTrigger>
-					 {d.options.map((option, index) => {
-					     return (
-						 <Form.Check
-						     type="radio"
-						     inline
-						     key={`${d.label}-${option.label}`}
-						     label={option.label}
-						     aria-label={option.label}
-						     name={d.label}
-						     value={option.label}
-						     defaultChecked={checked == option.label?true:false}
-						     onChange={(e)=>(moveDecisionPoint(d.label, e))}
-						 />
-					     )
-					 })
+				     <React.Fragment key={`${d.label}-${index}`}>
+					 <Row className="pb-3">
+					     <Col lg={4} className="d-grid">
+						 <OverlayTrigger
+						     trigger="click"
+						     rootClose
+						     placement="right"
+						     overlay={<SSVCPopover
+								  label={d.label}
+								  options={d.options}
+							      />}
+						 >
+						     <Button
+							 variant="primary">
+							 {d.label}
+						     </Button>
+						 </OverlayTrigger>
+					     </Col>
+					     <Col lg={6}>
+						 {d.options.map((option, index) => {
+						     return (
+							 <Form.Check
+							     type="radio"
+							     inline
+							     key={`${d.label}-${option.label}`}
+							     label={option.label}
+							     aria-label={option.label}
+							     name={d.label}
+							     value={option.label}
+							     defaultChecked={checked == option.label?true:false}
+							     onChange={(e)=>(moveDecisionPoint(d.label, e))}
+							 />
+						     )
+						 })
+						 }
+					     </Col>
+					     <Col lg={2} className="text-end">
+						 <Button variant="btn-icon p-0 text-nowrap" onClick={() => showDecisionNotes(d.label)}><i className="fas fa-plus"></i>
+						     {Object.keys(justifications).includes(d.label) ?
+						      ` View Notes`
+						      :
+						      ` Add Notes`
+						     }
+						 </Button>
+					     </Col>
+					 </Row>
+					 {showNotes.includes(d.label) &&
+					  <Row className="pb-3">
+					      <Col lg={12}>
+						  <Form.Label>{d.label} Decision Justification:</Form.Label>
+						  <Form.Control name={d.label} as="textarea" rows={3} value={justifications[d.label]} onChange={handleAddDecisionNotes} />
+					      </Col>
+					  </Row>
 					 }
-				     </div>
+				     </React.Fragment>
 				 )
 			     } else if (index != data.decision_points.length - 1) {
 				 return (
@@ -475,7 +506,7 @@ const SSVCScore = (props) => {
 		     SSVC Vector: {vector}</Alert>
 
 		     <div className="d-flex justify-content-between mt-3">
-                         {props.vul.ssvc_vector ?
+                         {props.vul && props.vul.ssvc_vector ?
 			  
                           <Button variant="danger" onClick={(e)=>removeScore(e)}>
                               Delete Score

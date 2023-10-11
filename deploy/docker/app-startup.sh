@@ -40,6 +40,7 @@ python manage.py makemigrations --noinput
 python manage.py migrate --noinput
 python manage.py createsuperuser --noinput
 python manage.py loadinitialdata
+
 if [ "X${NOCLEAR}" = "X" ]; then
     python manage.py collectstatic --noinput --clear
 else

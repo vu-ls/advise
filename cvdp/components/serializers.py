@@ -140,6 +140,8 @@ class StatusChoiceField(serializers.ChoiceField):
             data = "Not Affected"
         elif data == "affected":
             data = "Affected"
+        elif data == "unknown":
+            data = "Unknown"
             
         for key, val in self._choices.items():
             if val == data:

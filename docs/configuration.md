@@ -7,43 +7,76 @@ Any settings not listed below should probably not be changed without expectation
 of system failure.
 
 ## Environment Variables
-
-#### DEPLOYMENT_TYPE (='local')
-   This is the type of deployment and will determine some of other variables
-   that will need to be set.
-
-#### SECRET_KEY
-   This will is not set by default, you need to set this in your environment
-   variables before doing anything else. If you forget, Django will immediately
-   remind you.
+### Deployment Settings
+#### ALLOWED_HOSTS (=['127.0.0.1', 'localhost'])
+   A list of strings representing the host/domains names that this site can serve.
+   See [ALLOWED_HOSTS](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts)
+   for more information on this setting.
 
 #### API_HASH_SALT (=SECRET_KEY)
    It is recommended to set this for API token generation.  By default, the
    SECRET_KEY environment variable will be used, but if it contains the '$'
    character, Django will throw an error.
 
-#### ALLOWED_HOSTS (=['127.0.0.1', 'localhost'])
-   A list of strings representing the host/domains names that this site can serve.
-   See [ALLOWED_HOSTS](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts)
-   for more information on this setting.
+#### CORS_ALLOWED_ORIGINS (=['http://localhost:3000'])
+   Is a list of origins authorized to make requests. In a dev setup, this is the
+   webpack dev server.
 
+#### DB_HOST (='localhost')
+   This is the hostname that is running the PSQL database.
+
+#### DB_NAME (='advise')
+   This is the name of the database that is storing AdVISE data.
+
+#### DB_PASS (='advise')
+   Set this to the password for the AdVISE database.
+
+#### DB_PORT (='5432')
+   This is the access port for the PSQL database.
+
+#### DB_USER (='advise')
+   AdVISE uses a PostgresSQL database backend. Set this to the user that
+   has access to the AdVISE database.
+
+#### DEBUG (=False)
+   Set to True to enable DEBUG testing and logging. Not recommended for production use.
+
+#### DEPLOYMENT_TYPE (='local')
+   This is the type of deployment and will determine some of the other variables
+   that will need to be set.
+
+#### INSTALLED_APPS_EXTRAS
+   Set to a space-separated list of additional apps to include in INSTALLED_APPS.
+
+#### ORG_NAME (='Test')
+   The name of your organization.  This will be used in the footer of the site
+   and on automated email communications coming from AdVISE.
+
+#### RECAPTCHA_SECRET_KEY
+   Set to the value of the ReCAPTCHA secret key for this installation. 
+
+#### RECAPTCHA_SITE_KEY
+   Set to the value of the ReCAPTCHA site key for this installation. 
+
+#### SECRET_KEY
+   This will is not set by default, you need to set this in your environment
+   variables before doing anything else. If you forget, Django will immediately
+   remind you.
+
+
+### CVE Settings
+#### CVE_SERVICES_API (='test')
+   The CVE Services API to use if you are planning to reserve, publish new
+   CVEs.  More information about the CVE Services can be found on the (CVE project homepage)
+   [https://cveproject.github.io/automation-cve-services]
+
+### Authentication and Account Settings
 #### ACCOUNT_EMAIL_VERIFICATION (='mandatory')
    Available options are "mandatory", "optional", or "none".  Mandatory is the default
    and will require users must verify their email through a link sent through email
    before login is permitted.  "Optional" still sends the verification email but allows
    user to login without verifying. Setting this to "None" will prevent the system from
    sending verification emails and users can login immediately.
-
-#### REQUIRE_ACCOUNT_APPROVAL (=False)
-   If set to True, users will be put in a "pending" state and will not be able
-   to access anything except submit a vulnerability report. Coordinator approval for
-   each user is required.  Coordinators can approve pending users in the Triage view.
-   If set to False, users will not be set to "pending" and users will have access
-   immediately after registration.
-
-#### CORS_ALLOWED_ORIGINS (=['http://localhost:3000'])
-   Is a list of origins authorized to make requests. In a dev setup, this is the
-   webpack dev server.
 
 #### OAUTH_SERVER_BASEURL (='http://localhost:8080')
    If using the OAuth2 provider provided with AdVISE, this is the URL to the
@@ -55,31 +88,15 @@ of system failure.
    might not be unreachable by the application service.  In this case, set the
    internal URL to the address that the application service can reach.
 
-#### DB_USER (='advise')
-   AdVISE uses a PostgresSQL database backend. Set this to the user that
-   has access to the AdVISE database.
+#### REQUIRE_ACCOUNT_APPROVAL (=False)
+   If set to True, users will be put in a "pending" state and will not be able
+   to access anything except submit a vulnerability report. Coordinator approval for
+   each user is required.  Coordinators can approve pending users in the Triage view.
+   If set to False, users will not be set to "pending" and users will have access
+   immediately after registration.
 
-#### DB_PASS (='advise')
-   Set this to the password for the AdVISE database.
 
-#### DB_HOST (='localhost')
-   This is the hostname that is running the PSQL database.
-
-#### DB_PORT (='5432')
-   This is the access port for the PSQL database.
-
-#### DB_NAME (='advise')
-   This is the name of the database that is storing AdVISE data.
-
-#### CVE_SERVICES_API (='test')
-   The CVE Services API to use if you are planning to reserve, publish new
-   CVEs.  More information about the CVE Services can be found on the (CVE project homepage)
-   [https://cveproject.github.io/automation-cve-services]
-
-#### ORG_NAME (='Test')
-   The name of your organization.  This will be used in the footer of the site
-   and on automated email communications coming from AdVISE.
-
+### Email Settings
 #### CONTACT_EMAIL (='')
    The email that will be used when sending automated emails from AdVISE.
 
@@ -102,32 +119,19 @@ of system failure.
    * AWS_SES_REGION_NAME
    * AWS_SES_REGION_ENDPOINT
 
-#### DEBUG (=False)
-   Set to True to enable DEBUG testing and logging. Not recommended for production use.
-
-
-#### RECAPTCHA_SITE_KEY
-   Set to the value of the ReCAPTCHA site key for this installation. 
-
-#### RECAPTCHA_SECRET_KEY
-   Set to the value of the ReCAPTCHA secret key for this installation. 
-## Other settings:
-
 #### EMAIL_HEADERS (={})
    Optionally, append additional email headers when sending email notifications from AdVISE.
 
-#### DISCLOSURE_POLICY_LINK (="")
-   Optional link to your disclosure policy that can be found in the footer of AdVISE.
-
+### Other settings:
 #### CASE_IDENTIFER (="CASE#")
    The Case identifier that is prepended to the random 6-digit identifier that is given to
    every new case.
 
-### Two-factor Authentication (2FA)
+#### DISCLOSURE_POLICY_LINK (="")
+   Optional link to your disclosure policy that can be found in the footer of AdVISE.
+
+## Two-factor Authentication (2FA)
 
    By default, AdVISE requires all local users to enable 2FA upon registering with the
    application.  If you do not wish to require 2FA, remove 'authapp.middleware.Require2FAMiddleware'
    from the MIDDLEWARE setting in advise/settings.py
-
-
-

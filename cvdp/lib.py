@@ -19,6 +19,15 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+def generate_case_id():
+    while (1):
+        cid = randint(100000, 999999)
+        #check if already used                                                                                                                                               
+        case = Case.objects.filter(case_id=cid).first()
+        if case == None:
+            return cid
+
+
 def validate_recaptcha(token):
     data = {
         "secret": settings.RECAPTCHA_PRIVATE_KEY,
@@ -153,7 +162,7 @@ def setup_new_case(case):
     if case.created_by:
         #add case assignment
         cp, created = CaseParticipant.objects.update_or_create(case=case,
-                                                               contact = case.created_by.user,
+                                                               contact = case.created_by.contact,
                                                                defaults = {
                                                                 'user':case.created_by,
                                                                 'role': 'owner',

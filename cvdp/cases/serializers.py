@@ -674,13 +674,14 @@ class VulSerializer(serializers.ModelSerializer):
     ssvc_vector = serializers.SerializerMethodField()
     ssvc_decision = serializers.SerializerMethodField()
     ssvc_decision_tree = serializers.SerializerMethodField()
+    ssvc_justifications = serializers.SerializerMethodField()
     affected_products = serializers.SerializerMethodField()
     case = serializers.CharField(source='case.caseid')
     url = serializers.SerializerMethodField()
     
     class Meta:
         model = Vulnerability
-        fields = ('id', 'cve', 'description', 'vul', 'date_added', 'date_public', 'problem_types', 'references', 'tags', 'cvss_vector', 'cvss_severity', 'cvss_score', 'ssvc_vector', 'ssvc_decision', 'ssvc_decision_tree', 'affected_products', 'case', 'url')
+        fields = ('id', 'cve', 'description', 'vul', 'date_added', 'date_public', 'problem_types', 'references', 'tags', 'cvss_vector', 'cvss_severity', 'cvss_score', 'ssvc_vector', 'ssvc_decision', 'ssvc_decision_tree', 'ssvc_justifications', 'affected_products', 'case', 'url')
 
     def to_internal_value(self, data):
         if data.get('date_public') == '':
@@ -749,6 +750,13 @@ class VulSerializer(serializers.ModelSerializer):
         except VulSSVC.DoesNotExist:
             return None
 
+    def get_ssvc_justifications(self, obj):
+        try:
+            if obj.vulssvc:
+                return obj.vulssvc.justifications
+        except VulSSVC.DoesNotExist:
+            return None
+        
     def get_affected_products(self, obj):
         #get all *Affected* status related to this vul
         user = self.context.get('user')
@@ -831,7 +839,7 @@ class SSVCSerializer(serializers.ModelSerializer):
     
     class Meta:
         model=VulSSVC
-        fields = ('decision_tree', 'tree_type', 'final_decision', 'vector', 'user', 'last_edit')
+        fields = ('decision_tree', 'tree_type', 'final_decision', 'vector', 'user', 'last_edit', 'justifications')
 
 class AdvisorySerializer(serializers.ModelSerializer):
     references = serializers.CharField(required=False, allow_blank=True, allow_null=True)

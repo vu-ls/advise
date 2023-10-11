@@ -1733,6 +1733,11 @@ class VulSSVC(models.Model):
     vector = models.CharField(
         max_length=100)
 
+    justifications = models.JSONField(
+        _('SSVC Decision Justifications'),
+        blank=True,
+        null=True)
+
     user = models.ForeignKey(
 	settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

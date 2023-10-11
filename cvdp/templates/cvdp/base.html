@@ -145,15 +145,23 @@
                 <i class="menu-icon tf-icons fas fa-file-alt"></i>
                 <div data-i18n="Analytics">Report a Vulnerability</div>
               </a>
-            </li
->	    <!-- Vul Reports -->
+            </li>
+	    <!-- Vul Reports -->
             <li class="menu-item {% if myreportspage %}active {% endif %}">
               <a href="{% url 'cvdp:reports' %}" class="menu-link">
                 <i class="menu-icon tf-icons fas fa-archive"></i>
                 <div data-i18n="Analytics">My Reports</div>
               </a>
             </li>
-
+	    {% if ADSCORE %}
+	    <!-- Scoring app -->
+            <li class="menu-item {% if scoringpage %}active {% endif %}">
+              <a href="{% url 'adscore:index' %}" class="menu-link">
+                <i class="menu-icon tf-icons fas fa-star"></i>
+                <div data-i18n="Analytics">Scoring</div>
+              </a>
+            </li>
+	    {% endif %}
             {% if user.is_coordinator %}
 	    <li class="menu-item">
               <a href="javascript:void(0);" class="menu-link menu-toggle">

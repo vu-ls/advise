@@ -6,7 +6,6 @@ import SSVCScore from './SSVCScore';
 
 const threadapi = new ThreadAPI();
 
-
 const CVSSVersionIdentifier = "CVSS:3.1";
 const exploitabilityCoefficient = 8.22;
 const scopeCoefficient = 1.08;
@@ -159,12 +158,38 @@ const ScoreModal = ({ showModal, hideModal, vul }) => {
             }
 	} catch (err) {
             console.log(err);
+	    setError(`Error updating CVSS Score: ${err.message}`);
         }
 
 
 
     }
 
+    const submitSSVCScore = (formData) => {
+	try {
+            if (vul.ssvc_vector) {
+                threadapi.updateSSVCDecision(vul, formData).then((response) => {
+	            hideModal();
+                });
+            } else {
+                threadapi.addSSVCDecision(vul, formData).then((response) => {
+                    hideModal();
+	        });
+            }
+        } catch (err) {
+            console.log(err);
+	    setError(`Error updating SSVC Score: ${err.message}`);
+        }
+    }
+
+    const removeSSVCScore = async () => {
+        await threadapi.removeSSVCDecision(vul).then((response) => {
+        }).catch(err => {
+            console.log(err);
+        });
+    }
+    
+    
     const removeScore = () => {
 	try {
             threadapi.removeCVSSScore(vul).then((response) => {
@@ -267,6 +292,8 @@ const ScoreModal = ({ showModal, hideModal, vul }) => {
 			<SSVCScore
 			    vul={vul}
 			    hideModal = {hideModal}
+			    save = {submitSSVCScore}
+			    remove = {removeSSVCScore}
 			/>
 		    </Tab>
 

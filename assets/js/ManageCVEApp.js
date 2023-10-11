@@ -11,6 +11,7 @@ import DeleteConfirmation from "./DeleteConfirmation";
 import SearchFilter from "./SearchFilter";
 import AddCVEUserModal from "./AddCVEUserModal";
 import ReserveCVEModal from './ReserveCVEModal';
+import CVEAccountPicker from './CVEAccountPicker';
 
 import '../css/casethread.css';
 import 'react-bootstrap-typeahead/css/Typeahead.bs5.css';
@@ -502,17 +503,11 @@ const ManageCVEApp = () => {
 		     <Card.Header>
 			 <Row>
 			     <Col lg={4}>
-				 <Form.Group>
-				     <Form.Label>Choose CVE Account</Form.Label>
-				     <Form.Select value={selectedAccount.id} onChange={(e)=>makeSelect(e)}>
-					 {accounts.map((a, index) => {
-					     return (
-						 <option key={index} value={a.id}>{a.org_name}</option>
-					     )
-					 })
-					 }
-				     </Form.Select>
-				 </Form.Group>
+				 <CVEAccountPicker
+				     accounts = {accounts}
+				     selectedAccount = {selectedAccount}
+				     onSelect = {makeSelect}
+				 />
 			     </Col>
 			     <Col lg={2}>
 				 <Button size="sm" onClick={(e)=>confirmRemoveAccount()} id="rmcve" variant="danger">Remove this account</Button>

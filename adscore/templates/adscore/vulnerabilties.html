@@ -1,0 +1,16 @@
+{% extends CVDP_BASE_TEMPLATE %}
+{% load i18n user_tags crispy_forms_tags %}
+<!-- site-title  -->
+{% load render_bundle from webpack_loader %}
+{% block cvdp_title %}{% trans "Vulnerabilities" %}{% endblock %}
+{% load static %}
+{% block content %}
+{% load widget_tweaks %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+
+  <div id="app"></div>
+</div>
+
+{% render_bundle 'adscore' %}
+{% endblock %}

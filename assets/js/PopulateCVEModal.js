@@ -25,27 +25,34 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
 	let axiosArray = [];
 
 	affected.map(item => {
-	    item.versions.map(v => {
+	    if (item.versions) {
+		item.versions.map(v => {
+		    let data = {'vuls': [vul],
+				'component': item.product,
+				'supplier': item.vendor,
+				'status': v.status,
+				'version': v.version}
+		    axiosArray.push(componentapi.addStatus(caseInfo, data));
+		});
+	    } else {
 		let data = {'vuls': [vul],
-			    'component': item.product,
-			    'supplier': item.vendor,
-			    'status': v.status,
-			    'version': v.version}
+                            'component': item.product,
+                            'supplier': item.vendor,
+                            'status': item.defaultStatus,
+                            'version': item.packageName ? item.packageName: "default"}
 		axiosArray.push(componentapi.addStatus(caseInfo, data));
-		
-		
-	    });
+	    }
 	});
-	
+
 	try {
 	    await axios.all(axiosArray);
 	    updateVuls();
 	    hideModal();
 	} catch(err) {
 	    setApiError(`Error adding component and status: ${err.message}`);
-	}	
+	}
     }
-    
+
     const testSubmit = async () => {
 
 	const formData = {'description': description,
@@ -64,7 +71,7 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
 	    }).catch(err => {
 		setApiError(`Error updating vulnerability information: ${err.message}`);
 	    });
-	    
+
 	} else {
 	    await threadapi.addVul(caseInfo, formData).then((response) => {
 		if (affected) {
@@ -86,7 +93,7 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
 	let cveAPI = new CVEAPI();
 	if (cveAccount) {
 	    cveAPI = new CVEAPI(cveAccount.org_name, cveAccount.email, cveAccount.api_key, cveAccount.server);
-	} 
+	}
         await cveAPI.getCVE(vul).then((response) => {
 	    setCveInfo(response);
 	    console.log(response);
@@ -150,7 +157,12 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
                      fill
                  >
 		     <Tab eventKey='addData' title='Confirm Additions'>
-			 <p className="lead">This record was <b>{cveInfo.cveMetadata.state}</b> by <b>{cveInfo.cveMetadata.assignerShortName}</b> on {format(new Date(cveInfo.cveMetadata.datePublished), 'yyyy-MM-dd')} and last updated on {format(new Date(cveInfo.cveMetadata.dateUpdated), 'yyyy-MM-dd')}</p>
+			 <p className="lead">This record was <b>{cveInfo.cveMetadata.state}</b> by <b>{cveInfo.cveMetadata.assignerShortName}</b> on {format(new Date(cveInfo.cveMetadata.datePublished), 'yyyy-MM-dd')}
+			     {cveInfo.cveMetadata.dateUpdated &&
+			      <span> and last updated on {format(new Date(cveInfo.cveMetadata.dateUpdated), 'yyyy-MM-dd')}
+			      </span>
+			     }
+			 </p>
 			 <Alert variant="warning">Confirm adding the following information to your case. <b>This may overwrite any information you have already added to this vulnerability</b>:</Alert>
 			 <div className="mb-3"><b>Description:</b><br/>
 			     {description}
@@ -190,6 +202,7 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
 
                                      {affected.map((t, index) => {
 					 return (
+					     t.versions ?
 					     <React.Fragment key={`affected-${index}`}>
 						 {t.versions.map((v, ind) => {
 						     return (
@@ -202,11 +215,20 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
 						     )
 						 })}
 					     </React.Fragment>
+					     :
+					     <React.Fragment key={`affected=${index}`}>
+                                                 <tr>
+                                                     <td>{t.product}</td>
+                                                     <td>{t.vendor}</td>
+                                                     <td></td>
+                                                     <td>{t.defaultStatus}</td>
+                                                 </tr>
+                                             </React.Fragment>
 					 )
 				     })}
 				 </tbody>
 			     </table>
-				
+
                          </div>
 		     </Tab>
 		     <Tab eventKey="json" title="Full JSON record">

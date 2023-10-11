@@ -58,6 +58,11 @@ urlpatterns = [
 
 ]
 
+if "adscore" in settings.INSTALLED_APPS:
+    urlpatterns.append(path('advise/score/', include(('adscore.urls', 'adscore'), namespace="adscore")))
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.ATTACHMENTS_URL, document_root=settings.ATTACHMENTS_ROOT)
+
+    

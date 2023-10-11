@@ -263,3 +263,7 @@ pre.cvejson {
 #component-modal .tab-content {
     background-color: #FFF;
 }
+
+.modal-body ul li {
+    word-wrap: break-word;
+}

@@ -255,6 +255,60 @@ export default class AdminAPI{
     }
 
 
+    getVulsToScore(page) {
+	let url = `${API_URL}/score/api/vuls/`;
+	if (page) {
+	    url = page;
+	}
+	return axios.get(url).then(response=>response.data);
+    }
+
+    queryVuls(query) {
+	let url = `${API_URL}/score/api/vuls/?${query}`;
+        return axios.get(url).then(response=>response.data);
+    }
     
+    scoreVul(cve, form) {
+	const url = `${API_URL}/score/api/vuls/${cve}/score/`;
+	return axios.patch(url, form).then(response=>response.data);
+    }
+
+    getVulScore(cve) {
+        const url = `${API_URL}/score/api/vuls/${cve}/score/`;
+	return axios.get(url).then(response=>response.data);
+    }
+
+    getVul(cve) {
+	let url = `${API_URL}/score/api/vuls/${cve}/`;
+        return axios.get(url).then(response=>response.data);
+    }
+    
+    removeScore(cve) {
+	const url = `${API_URL}/score/api/vuls/${cve}/score/`;
+	return axios.delete(url).then(response => response.data);
+    }
+
+    loadOlderVuls() {
+	const url = `${API_URL}/score/api/vuls/load/`;
+	return axios.get(url).then(response => response.data);
+    }
+
+    lockVulToScore(cve) {
+	const data = {'lock': '1'}
+	const url = `${API_URL}/score/api/vuls/${cve}/`;
+        return axios.patch(url, data).then(response=>response.data);
+    }
+
+    unlockVul(cve) {
+	const data = {'unlock': '1'}
+        const url = `${API_URL}/score/api/vuls/${cve}/`;
+	return axios.patch(url, data).then(response=>response.data);
+    }
+
+    createCaseFromVul(cve) {
+	const data = {'something': 'something'}
+        const url = `${API_URL}/score/api/vuls/${cve}/`;
+	return axios.post(url, data).then(response=>response.data);
+    }
     
 }

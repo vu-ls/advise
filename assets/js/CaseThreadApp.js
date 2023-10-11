@@ -240,7 +240,7 @@ const CaseThreadApp = () => {
 		     :
 		     <>
 			 {caseInfo.owners.length == 0 && caseInfo.status=="Pending" ?
-			  <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Triage /</span> <Link to={"/advise/triage/"}>Unasiggned Cases</Link> /  {caseInfo.case_identifier} {caseInfo.title}</h4>    
+			  <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Triage /</span> <Link to={"/advise/triage/"}>Unassigned Cases</Link> /  {caseInfo.case_identifier} {caseInfo.title}</h4>    
 			  :
 			  <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Cases /</span> {caseInfo.case_identifier} {caseInfo.title}</h4> 
 			 }

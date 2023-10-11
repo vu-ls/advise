@@ -4,7 +4,7 @@ import {Button, Form, Row, Col} from "react-bootstrap";
 import { useTable, useSortBy, useExpanded, usePagination } from 'react-table';
 import InfiniteScroll from "react-infinite-scroll-component";
 
-const CVETable = ({columns, data, update, hasMore, showRowExpansion, cveAPI}) => {
+const CVETable = ({columns, data, update, hasMore, showRowExpansion, cveAPI, onClickFunction}) => {
 
 
     const {
@@ -23,6 +23,14 @@ const CVETable = ({columns, data, update, hasMore, showRowExpansion, cveAPI}) =>
 	useExpanded,
     )
 
+
+    const onClickRow = (row) => {
+	if (onClickFunction) {
+	    onClickFunction(row);
+	}
+    }
+	
+
     return (
 	    <InfiniteScroll
 		dataLength = {rows.length}
@@ -36,7 +44,7 @@ const CVETable = ({columns, data, update, hasMore, showRowExpansion, cveAPI}) =>
 			    <tr {...headerGroup.getHeaderGroupProps()}>
 				{headerGroup.headers.map(column => (
 				    <th
-					{...column.getHeaderProps(column.getSortByToggleProps())}
+					{...column.getHeaderProps(column.getSortByToggleProps(), {style: {minWidth: column.minWidth, maxWidth: column.maxWidth}})}
 				    >
 					{column.render('Header')}
 					{/* Add a sort direction indicator */}
@@ -60,11 +68,11 @@ const CVETable = ({columns, data, update, hasMore, showRowExpansion, cveAPI}) =>
 			    const rowProps = row.getRowProps();
 			    return (
 				<React.Fragment key={i}>
-				    <tr  {...row.getRowProps()}>
+				    <tr  {...row.getRowProps()} onClick={() => onClickRow(row)}>
 					{row.cells.map(cell => {
 					    return (
 						<td
-						    {...cell.getCellProps()}>{cell.render('Cell')}</td>
+						    {...cell.getCellProps({style: {minWidth:cell.column.minWidth, maxWidth: cell.column.maxWidth}})}>{cell.render('Cell')}</td>
 					    )
 					})}
 				    </tr>

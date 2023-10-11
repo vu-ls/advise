@@ -14,6 +14,8 @@ import os
 import logging.config
 import environ
 import json
+import copy
+from celery.schedules import crontab
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -94,7 +96,7 @@ LOGIN_URL = 'authapp:login'
 
 # Application definition
 
-INSTALLED_APPS = [
+DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.sites',
@@ -104,9 +106,16 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.postgres',
     'django.contrib.humanize',
+]
+
+LOCAL_APPS = [
     'authapp',
-    'qr_code',
     'cvdp',
+    'adscore',
+]
+
+THIRD_PARTY_APPS = [
+    'qr_code',
     'django_filters',
     'allauth',
     'allauth.account',
@@ -125,7 +134,14 @@ INSTALLED_APPS = [
     'drf_yasg',
 ]
 
+INSTALLED_APPS_EXTRAS = os.environ.get('INSTALLED_APPS_EXTRAS')
+if INSTALLED_APPS_EXTRAS:
+    for app in INSTALLED_APPS_EXTRAS.split():
+        LOCAL_APPS.append(app)
 
+#append to LOCAL_APPS so they get added to logging (see below)
+
+INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
 #OAUTH2 - ALLAUTH  SETTINGS
 ACCOUNT_ADAPTER = 'allauth_2fa.adapter.OTPAdapter'
@@ -402,6 +418,11 @@ if DEPLOYMENT_TYPE == 'AWS':
 
     LOGGER_HANDLER = 'watchtower'
 
+local_logger_conf = {
+    'handlers': [LOGGER_HANDLER],
+    'level': LOGLEVEL,
+}
+    
 logging_dict = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -418,22 +439,11 @@ logging_dict = {
         },
     },
     'loggers': {
-        # root logger                                                           
-        'cvdp': {
-            'level': LOGLEVEL,
-            'handlers': [LOGGER_HANDLER],
-        },
-        'django': {
-            'level': LOGLEVEL,
-            'handlers': [LOGGER_HANDLER],
-        },
-        'authapp': {
-            'level': LOGLEVEL,
-            'handlers': [LOGGER_HANDLER],
-            }
-        }
+        app: copy.deepcopy(local_logger_conf) for app in LOCAL_APPS
     }
+}
 
+logging_dict['loggers']['django'] = local_logger_conf
 
 logging.config.dictConfig(logging_dict)
 
@@ -566,6 +576,8 @@ SERVER_NAME = f'{ACCOUNT_DEFAULT_HTTP_PROTOCOL}://{SERVER_NAME}'
 RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_SITE_KEY')
 RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_SECRET_KEY')
 RECAPTCHA_SUCCESS_SCORE = os.environ.get('RECAPTCHA_SUCCESS_SCORE', 0.5)
+
+ADSCORE_NVD_API_KEY = os.environ.get('NVD_API_KEY')
 
 # staging swagger settings to specify endpoints needing auth [JDW]
 #SWAGGER_SETTINGS = {

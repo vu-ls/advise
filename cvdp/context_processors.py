@@ -14,5 +14,7 @@ def advise_version(request):
     context_vars['LOGIN_URL'] = getattr(settings, reverse(settings.LOGIN_URL), reverse("authapp:login"))
     context_vars['DEV_BANNER'] = settings.DEV_BANNER
     context_vars['ENVIRONMENT_NAME'] = settings.ENVIRONMENT_NAME
+    if "adscore" in settings.INSTALLED_APPS:
+        context_vars['ADSCORE'] = True
     return context_vars
                                         

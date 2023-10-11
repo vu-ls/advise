@@ -64,7 +64,7 @@ export default class CVEAPI{
 	let url = `${this.url}cve-id?cve_id_year=${year}`;
         return axios.get(url, this.headers).then(response => response.data);
     }
-
+    
     addUser(data) {
 	let url = `${this.url}org/${this.org_name}/user`;
 	return axios.post(url, data, this.headers).then(response=>response.data);

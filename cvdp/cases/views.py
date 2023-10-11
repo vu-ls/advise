@@ -135,13 +135,6 @@ def assign_case(request, caseid):
     create_case_change(action, "owner", old_value, user.screen_name)
     return JsonResponse({'status':'success'}, status=200)
 
-def generate_case_id():
-    while (1):
-        cid = randint(100000, 999999)
-        #check if already used
-        case = Case.objects.filter(case_id=cid).first()
-        if case == None:
-            return cid
 
 class StandardResultsPagination(PageNumberPagination):
     page_size = 10
@@ -1343,7 +1336,6 @@ class StatusTransferAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, CaseTransferAccessPermission)
 
     def create(self, request, *args, **kwargs):
-        print("DSIOFJLSDKFJLSKDJFLSJF")
         logger.debug(f"{self.__class__.__name__} post: {self.request.data}")
         logger.debug("IN STATUS TRANSFER VIEW")
         case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
@@ -1609,7 +1601,7 @@ class SSVCVulView(viewsets.ModelViewSet):
             action.save()
 
             if olddecision != x.final_decision:
-                create_case_change(action, "final_decision", olddecision, newdecision)
+                create_case_change(action, "final_decision", olddecision, x.final_decision)
             x.user = self.request.user
             x.last_edit = timezone.now()
             x.save()
