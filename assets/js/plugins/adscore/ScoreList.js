@@ -1,16 +1,20 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Alert, Dropdown, Card, Row, Col, DropdownButton, InputGroup, Form, Button } from "react-bootstrap";
-import CVEAPI from './CVEAPI';
-import AdminAPI from './AdminAPI';
-import CVETable from "./CVETable";
+import CVEAPI from 'Components/CVEAPI';
+import AdminAPI from 'Components/AdminAPI';
+import CVETable from "Components/CVETable";
 import {format} from 'date-fns';
 import ScoreCVEModal from './ScoreCVEModal';
-import '../css/casethread.css';
+import axios from 'axios';
+import 'Styles/casethread.css';
 
 const adminapi = new AdminAPI();
 
 const ScoreList = () => {
 
+    const { id } = useParams();
+    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [accounts, setAccounts] = useState([]);
@@ -23,8 +27,10 @@ const ScoreList = () => {
     const [searchVal, setSearchVal] = useState("");
     const [searchYear, setSearchYear] = useState("Year");
     const [searchState, setSearchState] = useState("State");
+    const [urlStr, setUrlStr] = useState(null);
     const [buttonText, setButtonText] = useState("Load More");
     const [score, setScore] = useState([]);
+    const [controller, setController] = useState(null);
     
     const cveColumns = useMemo(
 	() => [
@@ -110,7 +116,12 @@ const ScoreList = () => {
 		console.log(err);
             })
 	}
-	updateSingleVul();
+	if (id == scoreVul.original.cve) {
+	    /* we don't have the index of this vul */
+	    navigate('../');
+	} else {
+	    updateSingleVul();
+	}
 
 	/* update the score */
 	/* updateSingleVul(); */
@@ -130,14 +141,21 @@ const ScoreList = () => {
     }
 
     const filterData = async (value) => {
-        if (value === "") {
+	if (value == null || value === "") {
             /* get full data set back */
             fetchInitialData();
         } else {
 	    /* do something to filter */
-	    await adminapi.queryVuls(value).then((response) => {
+	    if (controller) {
+		controller.abort();
+	    }
+	    const newcontrol = new AbortController();
+	    setController(newcontrol);
+	    await adminapi.queryVuls(value, newcontrol.signal).then((response) => {
+		setIsLoading(false);
 		setCVEData(response.results);
 		setCVEResponse(response);
+		console.log(response);
 	    }).catch(err => {
 		console.log(err);
 	    });
@@ -160,18 +178,18 @@ const ScoreList = () => {
 	    urlstr = urlstr.concat(`&year=${searchYear}`);
 	}
 
-	console.log(score);
-	
 	if (score.length > 0) {
 	    score.map((item) => urlstr = urlstr.concat(`&score=${item}`));
 	}
-
-	console.log(urlstr);
-	filterData(urlstr);
+	
+	setUrlStr(urlstr);
 
     }, [searchVal, searchState, searchYear, score]);
 
-
+    useEffect(() => {
+	setIsLoading(true);
+	filterData(urlStr);
+    }, [urlStr]);
 
     const fetchData = () => {
         console.log("loading more...");
@@ -214,28 +232,25 @@ const ScoreList = () => {
 
     }
 
-    const loadMoreVuls = async () => {
-	setButtonText('loading...')
-	await adminapi.loadOlderVuls().then((response) => {
-	    fetchInitialData();
-	    setButtonText('Load More')
-	});
-    }
-
     useEffect(() => {
+
         fetchInitialData();
+
+	if (id) {
+	    console.log(`ID IS ${id}`);
+	    setScoreVul({'original': {'cve': id}})
+	    setViewScoreModal(true);
+	}
+	
     }, []);
 
 
     return (
         <>
             <Row>
-                <Col lg={8}>
+                <Col lg={12}>
                     <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Scoring /</span> Vulnerabilities</h4>
                 </Col>
-		<Col lg={4} className="text-end">
-		    <Button variant="primary" onClick={loadMoreVuls}>{buttonText}</Button>
-		</Col>
             </Row>
 	    {error && <Alert variant="danger">{error}</Alert>}
             <Card>

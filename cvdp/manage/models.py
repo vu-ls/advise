@@ -429,5 +429,67 @@ class AdVISEConnection(models.Model):
     disabled = models.BooleanField(
         default=False)
     
-        
-        
+
+class AdviseTask(models.Model):
+
+    created = models.DateTimeField(
+        default=timezone.now)
+
+
+    task_type = models.IntegerField(
+        default=0)
+
+
+    task_info = models.JSONField(
+        help_text=_('Information needed to perform task')
+    )
+
+    completed = models.DateTimeField(
+        blank=True,
+        null=True)
+
+    running = models.BooleanField(
+        help_text=_('Needed for longer tasks so multiple workers do not pick it up'),
+        default=False)
+    
+class AdviseScheduledTask(models.Model):
+
+    task = models.CharField(
+        _('Task name'),
+        max_length=200,
+    )
+
+    enabled = models.BooleanField(
+        default=True
+    )
+
+    running = models.BooleanField(
+        help_text=_('Needed for longer tasks so multiple workers do not pick it up'),
+        default=False)
+    
+    period = models.FloatField(
+        _('Periodicity of job in seconds')
+    )
+
+    last_run = models.DateTimeField(
+        blank=True,
+        null=True)
+
+    next_run = models.DateTimeField(
+        blank=True,
+        null=True)
+
+    run_at_time = models.TimeField(
+        help_text=_('Optional time at which this job runs'),
+        blank=True,
+        null=True
+    )
+
+    task_info = models.JSONField(
+        blank=True,
+        null=True,
+        help_text=_('Optional Additional information needed to perform task')
+    )
+
+    def __str__(self):
+        return self.task

@@ -15,7 +15,28 @@
 .card-wrapper {
     display: flex;
     justify-content: space-between;
-    height: 1000px;
+}
+
+.card-wrapper .group-app {
+    height: auto !important;
+}
+
+.card-wrapper .card {
+    height: 100%;
+}
+
+.inbox-app .card{
+    height: 100%;
+}
+
+.new-message-app {
+    height: auto !important;
+}
+
+.messages-wrapper {
+    display: flex;
+    justify-content: space-between;
+    min-height: 100vh;
 }
 
 .assignment_dropdown > button > div > span {
@@ -53,6 +74,28 @@
     width: 30%;
     padding: 15px;
 }
+
+.thread-messages-preview {
+    padding: 15px;
+}
+
+.thread-messages {
+    /*padding: 15px;*/
+    /*max-height: 1000px;*/
+}
+/*
+.chat-messenger {
+    position: relative;
+    bottom: 0;
+}
+*/
+
+.chat-content {
+    min-height: 300px;
+    max-height: 650px;
+}
+
+
 
 .rbt-token .btn-close {
     background-color: transparent !important;
@@ -145,6 +188,10 @@ pre.cvejson {
 
 .dropdown-toggle::after{
     display: none; 
+}
+
+.chat-dropdown::after {
+    display:inline-block;
 }
 
 #allposts .card{

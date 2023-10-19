@@ -66,7 +66,7 @@ const Messenger = React.forwardRef((props, ref) => {
 
 	<ReactQuill
             style={{
-                height: '35vh',
+                height: '25vh',
                 fontSize: '18px',
                 marginBottom: '20px',
 		paddingBottom: '40px',

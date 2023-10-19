@@ -41,10 +41,12 @@ python manage.py migrate --noinput
 python manage.py createsuperuser --noinput
 python manage.py loadinitialdata
 
-if [ "X${NOCLEAR}" = "X" ]; then
-    python manage.py collectstatic --noinput --clear
-else
-    python manage.py collectstatic --noinput
+if [ "X${IS_WORKER_APP}" = "X" ]; then
+    if [ "X${NOCLEAR}" = "X" ]; then
+        python manage.py collectstatic --noinput --clear
+    else
+        python manage.py collectstatic --noinput
+    fi
 fi
 
 if [ "X${RUN_TESTS_ONLY}" = "X${WSGI_APP}" ]; then
@@ -52,5 +54,12 @@ if [ "X${RUN_TESTS_ONLY}" = "X${WSGI_APP}" ]; then
     python manage.py test
 else
     # start the app!
-    gunicorn ${WSGI_APP}:application --bind 0.0.0.0:8000 --workers=4 --forwarded-allow-ips "*"
+    if [ "X${IS_WORKER_APP}" != "X" ]; then
+        python3 manage.py runworker
+    else
+        if [ "X${CONTAINER_PORT}" = "X" ]; then
+            export CONTAINER_PORT=8000
+        fi
+        gunicorn ${WSGI_APP}:application --bind 0.0.0.0:${CONTAINER_PORT} --workers=4 --forwarded-allow-ips "*"
+    fi
 fi

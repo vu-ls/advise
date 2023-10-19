@@ -26,7 +26,7 @@ module.exports = {
 	myreports: './assets/js/myreports',
 	contactapp: './assets/js/contact',
 	sysadmin: './assets/js/sysadmin',
-	adscore: './assets/js/adscore',
+	adscore: './assets/js/plugins/adscore/adscore',
     },
 
     output: {
@@ -91,6 +91,10 @@ module.exports = {
     },
     
     resolve: {
+	alias: {
+	    Components: path.resolve(__dirname, 'assets/js/'),
+	    Styles: path.resolve(__dirname, 'assets/css/')	    
+	},
 	modules: ['node_modules'],
 	extensions: ['.js', '.jsx',]
     },

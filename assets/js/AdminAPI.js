@@ -255,6 +255,8 @@ export default class AdminAPI{
     }
 
 
+    /* these are scoring-specific API calls */
+
     getVulsToScore(page) {
 	let url = `${API_URL}/score/api/vuls/`;
 	if (page) {
@@ -263,9 +265,9 @@ export default class AdminAPI{
 	return axios.get(url).then(response=>response.data);
     }
 
-    queryVuls(query) {
+    queryVuls(query, cancel) {
 	let url = `${API_URL}/score/api/vuls/?${query}`;
-        return axios.get(url).then(response=>response.data);
+        return axios.get(url, {signal: cancel}).then(response=>response.data);
     }
     
     scoreVul(cve, form) {
@@ -282,15 +284,16 @@ export default class AdminAPI{
 	let url = `${API_URL}/score/api/vuls/${cve}/`;
         return axios.get(url).then(response=>response.data);
     }
+
+    getVulScoreActivity(cve) {
+	let url = `${API_URL}/score/api/${cve}/activity/`;
+        return axios.get(url).then(response=>response.data);
+    }
+
     
     removeScore(cve) {
 	const url = `${API_URL}/score/api/vuls/${cve}/score/`;
 	return axios.delete(url).then(response => response.data);
-    }
-
-    loadOlderVuls() {
-	const url = `${API_URL}/score/api/vuls/load/`;
-	return axios.get(url).then(response => response.data);
     }
 
     lockVulToScore(cve) {

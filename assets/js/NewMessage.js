@@ -197,7 +197,7 @@ const NewMessage = (props) => {
     };
 
     return (
-	<Card>
+	<Card className="new-message-app">
             <Card.Header>
 		<div className="d-flex justify-content-between">
 		    <Card.Title>

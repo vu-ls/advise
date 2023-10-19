@@ -179,7 +179,7 @@ const ResizableTable = ({columns, data, setSelectedRows, update, showRowExpansio
 		    </div>
 		    {/* Loop through columns data to create checkbox */}
 		    {allColumns.map((column) => (
-			<>
+			<React.Fragment key={`checkbox-${column.id}`}> 
 			{column.canResize &&
 			<div className="cb action" key={column.id}>
 			    <label>
@@ -188,21 +188,21 @@ const ResizableTable = ({columns, data, setSelectedRows, update, showRowExpansio
 			    </label>
 			</div>
 			}
-			</>
+			</React.Fragment>
 		    ))}
 		    <br />
 		</div>
 	    </>
 	    <div className="tableWrap">
 	    <InfiniteScroll
-	    dataLength={rows.length}
-	    next={update}
-	    hasMore={hasMore}
-	    loader={<h5 className="mt-3">Loading more...</h5>}
-	>
+		dataLength={rows.length}
+		next={update}
+		hasMore={hasMore}
+		loader={<h5 className="mt-3">Loading more...</h5>}
+	    >
 		<BTable className="table" hover {...getTableProps()}>
-		<thead>
-                {headerGroups.map(headerGroup => (
+		    <thead>
+			{headerGroups.map(headerGroup => (
                     <tr {...headerGroup.getHeaderGroupProps()}>
                         {headerGroup.headers.map(column => (
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Alert, ListGroup, Card } from "react-bootstrap";
+import { Row, Col, Alert, ListGroup, Card } from "react-bootstrap";
 import CaseThreadAPI from "./ThreadAPI";
 import CaseList from "./CaseList.js";
 import Searchbar from "./Searchbar.js";
@@ -123,42 +123,45 @@ const DashboardList = () => {
     return (
         <>
             {error && <Alert variant="danger">{error}</Alert>}
-            <div className="card-wrapper d-flex gap-4">
-                <Card className="dashboard-card-1">
-                    <Card.Header>
-                        <div className="d-flex align-items-start justify-content-between mt-2 gap-5">
-                            <Searchbar onChange={onSearchbarChange} />
-                        </div>
-                    </Card.Header>
-                    <Card.Body>
-                        {isLoading ? (
-                            <div className="text-center">
-                                <div className="lds-spinner">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
+            <Row className="card-wrapper">
+		<Col lg={8} md={6} sm={12}>
+		    <Card>
+			<Card.Header>
+                            <div className="d-flex align-items-start justify-content-between mt-2 gap-5">
+				<Searchbar onChange={onSearchbarChange} />
                             </div>
-                        ) : (
-                            <CaseList
-                                cases={cases}
-                                count={itemsCount}
-                                page={currentPage}
-                                setCurrentPage={setCurrentPage}
-                                emptymessage="You have no active cases"
-                                crumbs={["Dashboard", "My Cases"]}
-                                crumb_link="/advise/dashboard"
-                            />
-                        )}
-                    </Card.Body>
-                </Card>
-                <Card className="dashboard-card-2">
-                    <Card.Header>
-                        <Card.Title>Recent Activity</Card.Title>
-                    </Card.Header>
-                    <Card.Body className="p-0">
-                        {activityLoading ? (
-                            <div className="text-center">
+			</Card.Header>
+			<Card.Body>
+                            {isLoading ? (
+				<div className="text-center">
+                                    <div className="lds-spinner">
+					<div></div>
+					<div></div>
+					<div></div>
+                                    </div>
+				</div>
+                            ) : (
+				<CaseList
+                                    cases={cases}
+                                    count={itemsCount}
+                                    page={currentPage}
+                                    setCurrentPage={setCurrentPage}
+                                    emptymessage="You have no active cases"
+                                    crumbs={["Dashboard", "My Cases"]}
+                                    crumb_link="/advise/dashboard"
+				/>
+                            )}
+			</Card.Body>
+                    </Card>
+		</Col>
+		<Col lg={4} md={6} className="d-none d-md-block"> 
+                    <Card>
+			<Card.Header className="pb-1">
+                            <Card.Title>Recent Activity</Card.Title>
+			</Card.Header>
+			<Card.Body className="p-2">
+                            {activityLoading ? (
+				<div className="text-center">
                                 <div className="lds-spinner">
                                     <div></div>
                                     <div></div>
@@ -207,8 +210,9 @@ const DashboardList = () => {
                             </div>
                         )}
                     </Card.Body>
-                </Card>
-            </div>
+                    </Card>
+		</Col>
+	    </Row>
         </>
     );
 };

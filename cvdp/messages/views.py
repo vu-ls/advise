@@ -211,7 +211,6 @@ class MessageAPIView(viewsets.ModelViewSet):
         if getattr(self, 'swagger_fake_view', False):
             return Message.objects.none()
         thread = get_object_or_404(MessageThread, id=self.kwargs['pk'])
-        logger.debug("HEYEHEYEHEY")
         if not UserThread.objects.filter(thread=thread, user=self.request.user).exists():
             my_groups = self.request.user.groups.values_list('id', flat=True)
             gt = GroupThread.objects.filter(thread=thread, group__in=my_groups).first()

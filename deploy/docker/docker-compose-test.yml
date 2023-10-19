@@ -29,9 +29,38 @@ services:
       #CORS_ALLOWED_ORIGINS: '["http://localhost:8080", "http://localhost:8081"]'
       CORS_ALLOWED_ORIGINS: '["http://app.advise.test:8000"]'
       ALLOWED_HOSTS: '["localhost", "127.0.0.1", "app.advise.test", "auth.advise.test"]'
+      JOB_MANAGER: cvdp.appcomms.async.AdviseWorker_Communicator
     depends_on:
       db:
         condition: service_healthy
+
+  advise_worker:
+    image: advise
+    volumes:
+      - static_data:/home/advise/app/staticfiles-worker
+    command: app-startup.sh
+    networks:
+      advise_auth: {}
+      advise_db: {}
+    expose:
+      - 8001
+    env_file:
+      - ../../.env.test.local
+    environment:
+      WSGI_APP: advise.wsgi
+      IS_WORKER_APP: True
+      WORKDIR: .
+      DB_NAME: advise
+      JOB_MANAGER: cvdp.appcomms.async.AdviseWorker_Communicator
+      ALLOWED_HOSTS: '["localhost", "127.0.0.1", "app.advise.test", "auth.advise.test"]'
+    depends_on:
+      db:
+        condition: service_healthy
+      # I don't know if we need this, but we want to wait until we have the
+      # most recent image of the advise container build before starting the
+      # provider.
+      advise:
+        condition: service_started
 
   oauth2provider:
     image: advise

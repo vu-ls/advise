@@ -2,6 +2,38 @@
 
 All notable changes to AdVISE will be documented in this file.
 
+## [1.4.0] - 2023-11-02
+
+### Added
+
+- Option to add component owner from component detail view
+- Use the production CVE API by default if no CVE accounts exist
+- Prompt user with case resolution when changing case status from active to inactive
+- Allow users to configure case resolutions
+- Allow file input as question type for forms
+- Add react testing suite for testing react front-end components,
+- Add worker framework to perform certain tasks asynchronously
+- Add ability to add scheduled tasks through admin app
+- Add ability to provide justifications for SSVC decisions
+- Add pagination to groups view
+- Auto generate logging config based on installed apps
+
+### Changed
+
+- Use React Router for front-end navigation to replace unnecessary django views
+- Move CVE API settings into settings.py
+- Use HTTP options request to populate certain drop-down forms.
+- Upgrade dependencies: cryptography, certifi, quill-mention, urllib3, postcss, traverse
+
+### Fixed
+
+- Bug in CVE publishing modal
+- Issue with status badges when components have long names
+- Issue in component edit modal
+- Remove unused cvelib
+- Fix SBOM download error due to download location
+- Fix inbox app scrolling issue
+
 ## [1.3.0] - 2023-08-01
 
 ### Added

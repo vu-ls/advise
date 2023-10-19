@@ -24,6 +24,7 @@ const CVETable = ({columns, data, update, hasMore, showRowExpansion, cveAPI, onC
     )
 
 
+
     const onClickRow = (row) => {
 	if (onClickFunction) {
 	    onClickFunction(row);

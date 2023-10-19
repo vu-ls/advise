@@ -318,26 +318,27 @@ const ComponentTable = (props) => {
 	}
     }
 
-   const submitDependencies = async () =>{
-       const axiosArray = []
-
-       setError(null);
-       
-       selectedRows.map(item => {
-	   let data = {'dependency': item.original.id}
-	   axiosArray.push(componentapi.addOneDependency(product.id, data));
-       });
-
-       try {
-	   await axios.all(axiosArray);
-	   setProduct(null)
-	   setSelectedRows([]);
-	   setSearchVal(null);
-	   fetchInitialData(searchVal);
-       } catch(err) {
-	   setError(`Error adding dependency: ${err.response.data.detail}`);
-       };
-   }
+    const submitDependencies = async () =>{
+	const axiosArray = []
+	
+	setError(null);
+	
+	selectedRows.map(item => {
+	    let data = {'dependency': item.original.id}
+	    axiosArray.push(componentapi.addOneDependency(product.id, data));
+	});
+	
+	try {
+	    await axios.all(axiosArray);
+	    setProduct(null)
+	    setSelectedRows([]);
+	    setSearchVal(null);
+	    fetchInitialData(searchVal);
+	} catch(err) {
+	    setError(`Error adding dependency: ${err.response.data.detail}`);
+	};
+    }
+    
     // Async Fetch
     const fetchInitialData = async (searchParam) => {
         console.log("fetching components");

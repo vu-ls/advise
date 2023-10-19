@@ -38,7 +38,8 @@ const InboxApp = (props) => {
     const [sendMsgContact, setSendMsgContact] = useState(null);
     const [feedback, setFeedback] = useState(null);
     const [sentMessage, setSentMessage] = useState(false);
-
+    const [scrollBarRef, setScrollBarRef] = useState(null);
+    
     const globalRef = React.createRef(null);
 
     const uploadFiles = async(formData, filename) => {
@@ -49,7 +50,7 @@ const InboxApp = (props) => {
         return results['image_url'];
 
     };
-    
+
     const fetchInitialData = async (msg) => {
 	if (msg) {
 	    setFeedback(msg);
@@ -176,6 +177,7 @@ const InboxApp = (props) => {
 	} else {
 	    setFeedback(null);
 	}
+
 	if (curThread) {
 	    /* user must have changed their mind about sending a msg */
 	    setSendMsgContact(null);
@@ -195,9 +197,20 @@ const InboxApp = (props) => {
 		return item
 	    });
 	    setThreads(newList);
+	    /*if (scrollBarRef?.current) {
+		scrollBarRef.current.updateScroll();
+
+	    }*/
 	}
     }, [curThread]);
 
+    useEffect(() => {
+	if(scrollBarRef) {
+	    scrollBarRef.scrollTop = scrollBarRef.scrollHeight;
+	}
+
+    }, [scrollBarRef])
+    
     const submitMessage = async (e) => {
 	e.preventDefault();
 
@@ -241,15 +254,13 @@ const InboxApp = (props) => {
     };
 
     return (
-	<Row>
-	    <Col md={6} lg={5} className="messages-scroll">
-		<h5 className="font-weight-bold mb-3 text-center text-lg-start">
-		</h5>
-		<Card>
-		    <Card.Body>
+	<Row className="inbox-app">
+            <Col lg={4} md={4} sm={12}>
+		<Card className="thread-messages-preview">  
+		    <Card.Body className="px-0">
 			<div className="d-flex justify-content-between mb-3">
 			    <Card.Title>
-
+				
 			    Your messages</Card.Title>
 			    <Button className="btn btn-icon" onClick={(e)=>setNewMessage(true)}>
 				<i className="far fa-edit"></i>
@@ -263,70 +274,64 @@ const InboxApp = (props) => {
 				onChange={(e)=>setSearch(e.target.value)}
 			    />
 			    <Button
-                                type="submit"
-                                variant="outline-primary"
+				type="submit"
+				variant="outline-primary"
                             ><i className="fas fa-search"></i></Button>
 			</InputGroup>
-			<PerfectScrollbar>
-			    <ul className="list-unstyled mb-0 thread-preview-list">
-				{threads.length > 0 ?
-				 <>
-				     {threads.map((thread, inbox) => {
-					 let date = new Date(thread.last_message.created);
-					 let timeago = formatDistance(date, new Date(), {addSuffix: true});
-					 
-					 return (
-					     <li className="p-2 border-bottom" id={`inbox-${thread.id}`} key={`inbox-${thread.id}`} style={{ backgroundColor: (curThread && curThread.id == thread.id) ? "#eee" : 'inherit'}}>
-					<a href="#" onClick={(e)=>setCurThread(thread)} className="d-flex justify-content-between">
-					    <div className="d-flex flex-row gap-2">
-						<DisplayLogo
-						    name={thread.last_message.sender.name}
-						    photo={thread.last_message.sender.photo}
-						    color={thread.last_message.sender.logocolor}
-						/>
-						<div className="pt-1">
-						    <p className="fw-bold mb-0">{thread.last_message.sender.name}</p>
-						    <div className="small text-muted text-break" dangerouslySetInnerHTML={{__html: thread.last_message.content}} />
-
-						</div>
-					    </div>
-					    <div className="pt-1 text-end">
-						<p className="small text-muted mb-1">{timeago}</p>
-						{thread.unread && <span className="badge bg-danger float-end">1</span>}
-					    </div>
-					</a>
-				    </li>
-				)
-
-			    })}
-				     <div className="justify-content-center text-center mt-4">
-					 {itemsCount > 0 &&
-					  <StandardPagination
-					      itemsCount={itemsCount}
-					      itemsPerPage="10"
-					      currentPage={currentPage}
-					      setCurrentPage={setCurrentPage}
-					  />
-					 }
-				     </div>
-				 </>
+			<ul className="list-unstyled mb-0 thread-preview-list">
+			    {threads.length > 0 ?
+			     <>
+				 {threads.map((thread, inbox) => {
+				     let date = new Date(thread.last_message.created);
+				     let timeago = formatDistance(date, new Date(), {addSuffix: true});
+				     
+				     return (
+					 <li className="p-2 border-bottom" id={`inbox-${thread.id}`} key={`inbox-${thread.id}`} style={{ backgroundColor: (curThread && curThread.id == thread.id) ? "#eee" : 'inherit'}}>
+					     <a href="#" onClick={(e)=>setCurThread(thread)} className="d-flex justify-content-between">
+						 <div className="d-flex flex-row gap-2">
+						     <DisplayLogo
+							 name={thread.last_message.sender.name}
+							 photo={thread.last_message.sender.photo}
+							 color={thread.last_message.sender.logocolor}
+						     />
+						     <div className="pt-1">
+							 <p className="fw-bold mb-0">{thread.last_message.sender.name}</p>
+							 <div className="small text-muted text-break" dangerouslySetInnerHTML={{__html: thread.last_message.content.trim().substring(0, 50)}} />
+							 
+						     </div>
+						 </div>
+						 <div className="pt-1 text-end">
+						     <p className="small text-muted mb-1">{timeago}</p>
+						     {thread.unread && <span className="badge bg-danger float-end">1</span>}
+						 </div>
+					     </a>
+					 </li>
+				     )
+				     
+				 })}
+			     </>
 				 :
-				 <li className="p-2 border-bottom text-center lead">No threads available</li>
-
-				}
+			     <li className="p-2 border-bottom text-center lead">No threads available</li>
+			     
+			    }
 			</ul>
-			</PerfectScrollbar>
-		    </Card.Body>
+		    <div className="justify-content-center text-center mt-4">
+			{itemsCount > 0 &&
+			 <StandardPagination
+			     itemsCount={itemsCount}
+			     itemsPerPage="10"
+			     currentPage={currentPage}
+			     setCurrentPage={setCurrentPage}
+			 />
+			}
+		    </div>
+		</Card.Body>
 		</Card>
 	    </Col>
-
-	    <Col lg={7} md={6} className="messages-scroll">
+            <Col lg={8} md={8} sm={12} className="thread-messages">  
 		{feedback &&
 		 <Alert variant="success">{feedback}</Alert>
 		}
-		<PerfectScrollbar
-		    style={{ position: "relative" }}
-		>
 		    {newMessage ?
 		     <NewMessage
 			 cancelMessage={closeMessage}
@@ -345,110 +350,117 @@ const InboxApp = (props) => {
 			  :
 			  (
 			      <>
-			      {curThread ?
-			       <>
-				   <div className="d-flex justify-content-center gap-1">
-				   {curThread.users.map((user, index) => {
-				       return (
-					   <DisplayLogo
-					       name={user.name}
-					       photo={user.photo}
-					       color={user.logocolor}
-					       key={`logo-${index}`}
-					   />
-				       )
-				   })}
-				       <>
-					   {curThread.groups.map((group, index) => {
+				  {curThread ?
+				   <>
+				       <div className="d-flex justify-content-center gap-1">
+					   {curThread.users.map((user, index) => {
 					       return (
 						   <DisplayLogo
-						       name={group.name}
-						       photo={group.photo}
-						       color={group.logocolor}
-						       key={`glogo-${index}`}
+						       name={user.name}
+						       photo={user.photo}
+						       color={user.logocolor}
+						       key={`logo-${index}`}
 						   />
 					       )
 					   })}
-				       </>
-			       </div>
-			       <div className="d-flex justify-content-center mb-3">
+					   <>
+					       {curThread.groups.map((group, index) => {
+						   return (
+						       <DisplayLogo
+							   name={group.name}
+							   photo={group.photo}
+							   color={group.logocolor}
+							   key={`glogo-${index}`}
+						       />
+						   )
+					       })}
+					   </>
+				       </div>
+				       <div className="d-flex justify-content-center mb-3">
+					   <Dropdown>
+					       <Dropdown.Toggle className="p-1 mt-1 chat-dropdown" variant="light">
+						   {curThread.users.length + curThread.groups.length > 1 ?
+						    <span>{curThread.users.length+curThread.groups.length} people</span>
+						    
+						    :
+						    <>1 person</>
+						   }
+					       </Dropdown.Toggle>
+					       <Dropdown.Menu>
+						   {curThread.users.map((user, index) => {
+						       return (
+							   <Dropdown.Item key={`threadusers-${index}`} className="d-flex flex-row gap-2 mb-2"> 
+							       <DisplayLogo
+								   name={user.name}
+								   photo={user.photo}
+								   color={user.logocolor}
+							       />
+							       <p className="pt-1">{user.name}</p>
+							   </Dropdown.Item>
+						       )
+						   })}
+						   <>
+						       {curThread.groups.map((group, index)	=> {
+                                     			   return (
+							       <Dropdown.Item key={`threadgroups-${index}`} className="d-flex flex-row gap-2 mb-2">
+								   <DisplayLogo
+								       name={group.name}
+								       photo={group.photo}
+								       color={group.logocolor}
+								   />
+								   <p className="pt-1">{group.name}</p>
+							       </Dropdown.Item>
+							   )
+						       })}
+						   </>
+					       </Dropdown.Menu>
+					   </Dropdown>
+				       </div>
+				       
+				   <PerfectScrollbar
+				       style={{ position: "relative", height: "auto" }}
+				       className="chat-scrollbar mb-1"
+				       containerRef={setScrollBarRef}
+				   >
+				       <ul className="list-unstyled chat-content">
+					   {messages.map((message, index) => {
+					       let msgdate = new Date(message.created);
+					       let timeago = formatDistance(msgdate, new Date(), {addSuffix: true});
+					       
+					       return (
+						   <li className="d-flex align-items-start gap-2 mb-4" key={`msg-${message.id}`}>
+						       <div className="align-self-start">
+							   <DisplayLogo
+							       name = {message.sender.name}
+							       photo = {message.sender.photo}
+							       color = {message.sender.logocolor}
+							   />
+						       </div>
+						       <Card className="w-100 mx-3">
+							   <Card.Header className="d-flex justify-content-between p-3 border-bottom">
+							       <p className="fw-bold mb-0">{message.sender.name}</p>
+							       
+							       <p className="text-muted small mb-0">
+								   <i className="fas fa-clock" />{' '}{timeago}
+							       </p>
+							   </Card.Header>
+							   <Card.Body className="pt-3">
+							       <div className="mb-0" dangerouslySetInnerHTML={{__html: message.content}} />
+							   </Card.Body>
+						       </Card>
+						   </li>
+					       )})
 
-				   {curThread.users.length + curThread.groups.length > 1?
-				    <a href="#" onClick={(e)=>toggleExpandUsers()}>{curThread.users.length+curThread.groups.length} people <i className="fas fa-greater-than"></i> </a>
-				    :
-				    <>1 person</>
-				   }
-			       </div>
-			       {expandUsers &&
-				<div className="d-flex justify-content-center">
-				    <div>
-					{curThread.users.map((user, index) => {
-					    return (
-						<div key={`threadusers-${index}`} className="d-flex flex-row gap-2 mb-2">
-						    <DisplayLogo
-							name={user.name}
-							photo={user.photo}
-							color={user.logocolor}
-						    />
-						    <p className="pt-1">{user.name}</p>
-						</div>
-					    )
-					})}
-					<>
-					    {curThread.groups.map((group, index)	=> {
-                                     		return (
-						    <div key={`threadgroups-${index}`} className="d-flex flex-row gap-2 mb-2">
-							<DisplayLogo
-							    name={group.name}
-							    photo={group.photo}
-							    color={group.logocolor}
-							/>
-							<p className="pt-1">{group.name}</p>
-                                                    </div>
-						)
-                                            })}                                                                                                                      </>
-				    </div>
-				</div>
-			       }
+					   }
+				       </ul>
 
-			       <ul className="list-unstyled">
-				   {messages.map((message, index) => {
-				       let msgdate = new Date(message.created);
-				       let timeago = formatDistance(msgdate, new Date(), {addSuffix: true});
-
-				       return (
-					   <li className="d-flex align-items-start gap-2 mb-4" key={`msg-${message.id}`}>
-					       <div className="align-self-start">
-						   <DisplayLogo
-						       name = {message.sender.name}
-						       photo = {message.sender.photo}
-						       color = {message.sender.logocolor}
-						   />
-					       </div>
-					       <Card className="w-100 mx-3">
-						   <Card.Header className="d-flex justify-content-between p-3 border-bottom">
-						       <p className="fw-bold mb-0">{message.sender.name}</p>
-
-						       <p className="text-muted small mb-0">
-							   <i className="fas fa-clock" />{' '}{timeago}
-						       </p>
-						   </Card.Header>
-						   <Card.Body className="pt-3">
-						       <div className="mb-0" dangerouslySetInnerHTML={{__html: message.content}} />
-						   </Card.Body>
-					       </Card>
-					   </li>
-				       )})
-				   }
-
-				   <li className="bg-white">
-				       <form>
-
-				       <Card className="w-100">
+				   </PerfectScrollbar>
+				   <form>
+				       <Card className="w-100 chat-messenger mt-1">
 					   {error &&
-					     <Alert variant="danger"> {error}</Alert>
-					    }
-
+					    <Alert variant="danger"> {error}</Alert>
+					   }
+					   
 					   <Card.Body>
 					       <Messenger
 						   placeholder="Write a new message to continue the thread"
@@ -464,7 +476,7 @@ const InboxApp = (props) => {
 						    sitekey={RECAPTCHA_SITE_KEY}
 						/>
 					       }
-
+					       
 					   </Card.Body>
 					   <Card.Footer>
 					       <Button
@@ -476,11 +488,7 @@ const InboxApp = (props) => {
 					       </Button>
 					   </Card.Footer>
 				       </Card>
-				       </form>
-
-				   </li>
-
-			       </ul>
+				   </form>
 			       </>
 
 			       :
@@ -490,7 +498,6 @@ const InboxApp = (props) => {
 			  )}
 		     </>
 		    }
-		</PerfectScrollbar>
 	    </Col>
 	</Row>
     )

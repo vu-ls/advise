@@ -1,13 +1,13 @@
 import React from 'react'
 import { useState, useEffect} from 'react';
-import { Modal,Tab, Tabs, Alert, Form, Button } from "react-bootstrap";
-import AdminAPI from './AdminAPI';
+import { Modal, ListGroup, Tab, Tabs, Alert, Form, Button } from "react-bootstrap";
+import AdminAPI from 'Components/AdminAPI';
 import {format, formatDistance} from 'date-fns';
-import SSVCScore from './SSVCScore';
-import CVEAPI from './CVEAPI';
-import DeleteConfirmation from './DeleteConfirmation';
-
-import '../css/casethread.css';
+import SSVCScore from 'Components/SSVCScore';
+import CVEAPI from 'Components/CVEAPI';
+import DeleteConfirmation from 'Components/DeleteConfirmation';
+import ScoreActivityApp from './ScoreActivityApp.js';
+import 'Styles/casethread.css';
 
 const adminapi = new AdminAPI();
 
@@ -32,12 +32,12 @@ const ScoreCVEModal = (props) => {
     const [lock, setLock] = useState(false);
     const [displayConfirmationModal, setDisplayConfirmationModal] = useState(false);
     const [deleteMessage, setDeleteMessage] = useState(null);
-
+    const [scoreActivity, setScoreActivity] = useState([]);
 
     const hideConfirmationModal = () => {
 	setDisplayConfirmationModal(false);
     }
-    
+
     const saveSSVCScore = async (formData) => {
 	console.log(formData);
 	/* need to change names */
@@ -51,7 +51,7 @@ const ScoreCVEModal = (props) => {
 	    props.hideModal();
 	}).catch(err => {
 	    console.log(err);
-	    setApiError(`Error updating score: ${err.message} ${err.response.data}`);
+	    setApiError(`Error updating score: ${err.message} ${JSON.stringify(err.response.data)}`);
 	});
     }
 
@@ -73,17 +73,27 @@ const ScoreCVEModal = (props) => {
 	    }
 	    setDisabledButton(false);
 	});
-	
+
 
     }
 
-    
+
     const removeScore = async () => {
 	await adminapi.removeScore(vul.cve).then((response) => {
 	}).catch(err => {
 	    console.log(err);
 	    setApiError(`Error removing score: ${err.response.data.error}`);
 	});
+    }
+
+    const fetchScoreActivity = async () => {
+	if (vul.ssvcscore) {
+	    await adminapi.getVulScoreActivity(vul.cve).then((response) => {
+		setScoreActivity(response);
+	    }).catch(err => {
+		console.log(err);
+	    })
+	}
     }
 
     // Async Fetch
@@ -93,6 +103,7 @@ const ScoreCVEModal = (props) => {
             setCveInfo(response);
             console.log(response);
 	    setLoading(false);
+	    fetchScoreActivity();
         }).catch(err => {
             console.log(err);
             if (err.response.status == 400) {
@@ -165,11 +176,19 @@ const ScoreCVEModal = (props) => {
 	setVul(props.vul);
     }, [props.vul]);
 
+    useEffect(() => {
+	if (props.showModal && vul) {
+	    /* in case you re-open the vul you just scored */
+	    fetchScoreActivity();
+	}
+    }, [props.showModal])
+    
     return (
-	vul ?
-            <Modal show={props.showModal} onHide={props.hideModal} size="lg" centered backdrop="static">
-		<Modal.Header closeButton>
-		    <Modal.Title>Score vulnerability {vul && <b>{vul.cve}</b>}</Modal.Title>
+        <Modal show={props.showModal} onHide={props.hideModal} size="lg" centered backdrop="static">
+	    {vul ?
+	    <>
+	    <Modal.Header closeButton>
+		<Modal.Title>Score vulnerability {vul && <b>{vul.cve}</b>}</Modal.Title>
 		</Modal.Header>
 		<Modal.Body>
 		    {apiError &&
@@ -276,7 +295,7 @@ const ScoreCVEModal = (props) => {
 					 buttonText={"Create Case"}
 				     />
 				 </div>
-				 
+
 			     </>
 			     :
 			     <>
@@ -300,13 +319,34 @@ const ScoreCVEModal = (props) => {
 			     <Alert variant="danger">Someone is already scoring this vulnerability. Check back later</Alert>
 			    }
 			</Tab>
+			{vul.ssvcscore &&
+			<Tab eventKey="activity" title="Scoring Activity">
+			    <ListGroup variant="flush">
+                            {scoreActivity.length == 0 &&
+                             <ListGroup.Item>No activity</ListGroup.Item>
+			    }
+				{scoreActivity.map((a, index) => {
+                                    return (
+                                    <ListGroup.Item className="p-2 border-bottom" key={`activity-${index}`}>
+                                        <ScoreActivityApp
+                                            activity = {a}
+                                        />
+				    </ListGroup.Item>
+                                )
+                            })}
+                        </ListGroup>
+			</Tab>
+			}
 		    </Tabs>
 		</Modal.Body>
-	    </Modal>
-	:
-	<div className="text-center">
-            <div className="lds-spinner"><div></div><div></div><div></div></div>
-        </div>
+	    </>
+	    :
+	    <div className="text-center">
+		<div className="lds-spinner"><div></div><div></div><div></div></div>
+            </div>
+	    }
+	</Modal>
+
     )
 }
 

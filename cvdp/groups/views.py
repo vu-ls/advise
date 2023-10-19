@@ -233,8 +233,8 @@ class GroupAPIView(APIView):
         logger.debug(request.query_params)
         # kind of hacky but will work for now
         # -----------------------------------------------------------
-        page_number = request.query_params.get('page_number ', 1)
-        page_size = request.query_params.get('page_size ', 10)
+        page_number = request.query_params.get('page', 1)
+        page_size = request.query_params.get('page_size', 20)
         # -----------------------------------------------------------
         search_term = self.request.GET.get('name', None)
         search_type = self.request.GET.get('type', "All").lower()
@@ -249,24 +249,28 @@ class GroupAPIView(APIView):
             gp = Paginator(groups, page_size)
             groups_serializer = GroupSerializer(gp.page(page_number), many=True)
             data = groups_serializer.data
+            total_count = gp.count
         elif search_type == "contacts":
             cp = Paginator(contacts, page_size)
             contacts_serializer = ContactSerializer(cp.page(page_number), many=True)
             data = contacts_serializer.data
+            total_count = cp.count
         elif search_type == "users":
             contacts = contacts.exclude(user__isnull=True).exclude(user__api_account=True)
             cp = Paginator(contacts, page_size)
             contacts_serializer = ContactSerializer(cp.page(page_number), many=True)
             data = contacts_serializer.data
+            total_count = cp.count
         else:
-            gp = Paginator(groups, page_size)
-            cp = Paginator(contacts, page_size)
+            gp = Paginator(groups, page_size/2)
+            cp = Paginator(contacts, page_size/2)
+            total_count = gp.count+cp.count
 
             groups_serializer = GroupSerializer(gp.page(page_number), many=True)
             contacts_serializer = ContactSerializer(cp.page(page_number), many=True)
             data = groups_serializer.data + contacts_serializer.data
 
-        return Response(data)
+        return Response({'results': data, 'count': total_count})
 
 
 #this is a slightly different view from above because it will be called by

@@ -1,7 +1,7 @@
 ##############################################################################
 ## node artifact build
 ##############################################################################
-FROM node:16 as build-node
+FROM node:21 as build-node
 
 #RUN addgroup -S advise && \
 #    adduser -S advise -G advise && \

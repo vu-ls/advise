@@ -339,13 +339,15 @@ class PostTests(APITestCase):
         valid_payload = {
             'content' : '<b>HERE IS SOME NOTIFIED CONTENT</b>'
         }
-        response = self.api_client.post(
-            reverse('cvdp:postlistapi', args=[thread.id]),
-            data = json.dumps(valid_payload),
-            content_type='application/json')
+        with self.settings(JOB_MANAGER=None):
+            # we need this to be synchronous or it doesn't work
+            response = self.api_client.post(
+                reverse('cvdp:postlistapi', args=[thread.id]),
+                data = json.dumps(valid_payload),
+                content_type='application/json')
 
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        self.assertEqual(len(mail.outbox), 1)
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+            self.assertEqual(len(mail.outbox), 1)
 
     def test_reporter_get_posts(self):
         self.api_client.force_authenticate(user=self.reporter_user)

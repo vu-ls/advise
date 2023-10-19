@@ -87,6 +87,7 @@ const SSVCScore = (props) => {
 
 	/* if we already have a score!!! */
 	if (props.vul && props.vul.ssvc_decision) {
+	    console.log(props.vul)
 	    /* TODO: make sure apples 2 apples with the same decision tree name */
 	    setFinalDecision(props.vul.ssvc_decision);
 	    let dec_tree = props.vul.ssvc_decision_tree.filter(item => item.label != "date_scored");
@@ -458,7 +459,7 @@ const SSVCScore = (props) => {
 							     aria-label={option.label}
 							     name={d.label}
 							     value={option.label}
-							     defaultChecked={checked == option.label?true:false}
+							     defaultChecked={checked.toLowerCase() === option.label.toLowerCase() ? true : false}
 							     onChange={(e)=>(moveDecisionPoint(d.label, e))}
 							 />
 						     )

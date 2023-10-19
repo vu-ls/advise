@@ -15,6 +15,14 @@ export default class ContactAPI{
         return axios.get(url).then(response => response.data);
     }
 
+    getGroupsByPage(urlstr, page) {
+	let url = `${API_URL}/api/groups/?page=${page}`;
+	if (urlstr) {
+	    url = `${API_URL}/api/groups/?${urlstr}&page=${page}`;
+	}
+        return axios.get(url).then(response => response.data);
+    }
+
     getGroupContacts(c) {
 	const url = `${API_URL}/api/groups/${c}/contacts/?verified=True`;
 	return axios.get(url);

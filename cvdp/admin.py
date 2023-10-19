@@ -9,7 +9,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from cvdp.models import UserProfile, GroupProfile, Contact, CaseThreadParticipant, CaseParticipant, EmailTemplate, Case, AssignmentRole, UserAssignmentWeight, CaseReport, GlobalSettings, MessageThread, UserThread, CaseThread, Vulnerability, CaseResolutionOptions
-from cvdp.manage.models import AdVISEConnection
+from cvdp.manage.models import AdVISEConnection, AdviseTask, AdviseScheduledTask
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
@@ -147,3 +147,6 @@ admin.site.register(UserThread)
 admin.site.register(AdVISEConnection, ConnectionAdmin)
 admin.site.register(CaseThread)
 admin.site.register(Vulnerability, VulAdmin)
+admin.site.register(AdviseTask)
+admin.site.register(AdviseScheduledTask)
+

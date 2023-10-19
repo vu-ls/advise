@@ -82,6 +82,81 @@ of system failure.
    If using the OAuth2 provider provided with AdVISE, this is the URL to the
    running OAuth2 server.
 
+#### DB_PASS (='advise')
+   Set this to the password for the AdVISE database.
+
+#### DB_PORT (='5432')
+   This is the access port for the PSQL database.
+
+#### DB_USER (='advise')
+   AdVISE uses a PostgresSQL database backend. Set this to the user that
+   has access to the AdVISE database.
+
+#### DEBUG (=False)
+   Set to True to enable DEBUG testing and logging. Not recommended for production use.
+
+#### DEPLOYMENT_TYPE (='local')
+   This is the type of deployment and will determine some of the other variables
+   that will need to be set.
+
+#### INSTALLED_APPS_EXTRAS
+   Set to a space-separated list of additional apps to include in INSTALLED_APPS.
+
+<<<<<<< HEAD
+#### JOB_MANAGER
+   Not required but recommended for production deployments so that long-running
+   and scheduled tasks are offloaded to a worker application.  If JOB_MANAGER is not set,
+   all tasks will be run by the AdVISE Application.  Other options are:
+
+   - cvdp.appcomms.async.AdviseWorker_Communicator
+   - cvdp.appcomms.celery.CeleryRedis_Communicator
+
+   The AdVISE worker option is the preferred option and can be used
+   in cloud deployments. [See additional documentation]
+
+   If the Celery option is chosen, a number of other variables must be set:
+
+   * CELERY_BROKER_URL
+   * CELERY_RESULT_BACKEND
+   * CELERY_BEAT_SCHEDULE (for scheduled tasks)
+
+   
+
+
+#### ORG_NAME (='Test')
+   The name of your organization.  This will be used in the footer of the site
+   and on automated email communications coming from AdVISE.
+
+#### RECAPTCHA_SECRET_KEY
+   Set to the value of the ReCAPTCHA secret key for this installation. 
+
+#### RECAPTCHA_SITE_KEY
+   Set to the value of the ReCAPTCHA site key for this installation. 
+
+#### SECRET_KEY
+   This will is not set by default, you need to set this in your environment
+   variables before doing anything else. If you forget, Django will immediately
+   remind you.
+
+
+### CVE Settings
+#### CVE_SERVICES_API (='test')
+   The CVE Services API to use if you are planning to reserve, publish new
+   CVEs.  More information about the CVE Services can be found on the (CVE project homepage)
+   [https://cveproject.github.io/automation-cve-services]
+
+### Authentication and Account Settings
+#### ACCOUNT_EMAIL_VERIFICATION (='mandatory')
+   Available options are "mandatory", "optional", or "none".  Mandatory is the default
+   and will require users must verify their email through a link sent through email
+   before login is permitted.  "Optional" still sends the verification email but allows
+   user to login without verifying. Setting this to "None" will prevent the system from
+   sending verification emails and users can login immediately.
+
+#### OAUTH_SERVER_BASEURL (='http://localhost:8080')
+   If using the OAuth2 provider provided with AdVISE, this is the URL to the
+   running OAuth2 server.
+
 #### OAUTH_SERVER_INTERNAL_URL (=OAUTH_SERVER_BASEURL)
    In some cases, the OAuth2 provider might have an intenral address that is
    different form the outside-facing address, or the outside-facing address
@@ -94,7 +169,6 @@ of system failure.
    each user is required.  Coordinators can approve pending users in the Triage view.
    If set to False, users will not be set to "pending" and users will have access
    immediately after registration.
-
 
 ### Email Settings
 #### CONTACT_EMAIL (='')
@@ -118,6 +192,7 @@ of system failure.
 
    * AWS_SES_REGION_NAME
    * AWS_SES_REGION_ENDPOINT
+
 
 #### EMAIL_HEADERS (={})
    Optionally, append additional email headers when sending email notifications from AdVISE.
