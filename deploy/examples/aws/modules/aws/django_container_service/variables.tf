@@ -45,6 +45,12 @@ variable "proxy_log_group_name" {
   default     = null
 }
 
+variable "worker_log_group_name" {
+  description = "log group for awslogs for the worker (default from name prefix)"
+  type        = string
+  default     = null
+}
+
 variable "desired_count" {
   description = "Number of tasks to execute"
   type        = number
@@ -102,10 +108,30 @@ variable "proxy_env_vars" {
   }))
 }
 
+variable "worker_env_vars" {
+  description = "List of name/value pairs to specify worker container environment"
+  type = list(object({
+    name  = string
+    value = string
+  }))
+  default = []
+}
+
+variable "enable_worker" {
+  description = "Set true to enable worker container in task"
+  type        = bool
+  default     = false
+}
 variable "log_retention_days" {
   description = "Number of days to retain logs (default: 0 (never expire))"
   type        = number
   default     = 0
+}
+
+variable "app_comms_use_sns" {
+  description = "Enable to instruct app and worker to use SNS for communication"
+  type        = bool
+  default     = false
 }
 
 variable "rotation_key" {
@@ -141,9 +167,10 @@ resource "random_id" "id" {
 }
 
 locals {
-  unique_id            = random_id.id.hex
-  app_log_group_name   = var.app_log_group_name != null ? var.app_log_group_name : "/ecs/${var.name_prefix}-app-${local.unique_id}"
-  proxy_log_group_name = var.proxy_log_group_name != null ? var.proxy_log_group_name : "/ecs/${var.name_prefix}-proxy-${local.unique_id}"
+  unique_id             = random_id.id.hex
+  app_log_group_name    = var.app_log_group_name != null ? var.app_log_group_name : "/ecs/${var.name_prefix}-app-${local.unique_id}"
+  proxy_log_group_name  = var.proxy_log_group_name != null ? var.proxy_log_group_name : "/ecs/${var.name_prefix}-proxy-${local.unique_id}"
+  worker_log_group_name = var.worker_log_group_name != null ? var.worker_log_group_name : "/ecs/${var.name_prefix}-worker-${local.unique_id}"
   cf_protection_header = {
     http_header_name  = "X-${substr(var.name_prefix, 0, 10)}-cf-prot-${random_id.cf_protection_header.hex}"
     http_header_value = random_id.cf_protection_header.b64_url

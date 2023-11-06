@@ -146,6 +146,18 @@ variable "advise_recaptcha_secret_key" {
   default     = null
 }
 
+variable "advise_nvd_api_key" {
+  description = "NVD API key for AdVISE"
+  type        = string
+  default     = null
+}
+
+variable "advise_installed_apps_extras" {
+  description = "INSTALLED_APPS extras for AdVISE"
+  type        = string
+  default     = null
+}
+
 variable "oauth_email_backend" {
   description = "OAuth Django email backend (defaults to console)"
   type        = string
@@ -165,6 +177,12 @@ variable "oauth_default_from_email" {
 
 variable "oauth_reply_to_email" {
   description = "Default reply-to email address (defaults to oauth_contact_address)"
+  type        = string
+  default     = null
+}
+
+variable "oauth_installed_apps_extras" {
+  description = "INSTALLED_APPS extras for OAuth"
   type        = string
   default     = null
 }
