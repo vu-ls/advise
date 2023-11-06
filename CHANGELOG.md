@@ -1,8 +1,8 @@
-#Changelog
+AA#Changelog
 
 All notable changes to AdVISE will be documented in this file.
 
-## [1.4.0] - 2023-11-02
+## [1.4.0] - 2023-11-06
 
 ### Added
 
@@ -24,6 +24,7 @@ All notable changes to AdVISE will be documented in this file.
 - Move CVE API settings into settings.py
 - Use HTTP options request to populate certain drop-down forms.
 - Upgrade dependencies: cryptography, certifi, quill-mention, urllib3, postcss, traverse
+- Improvements to UI
 
 ### Fixed
 

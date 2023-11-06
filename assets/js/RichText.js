@@ -20,6 +20,7 @@ var globalref = null;
 const mention = {
     allowedChars: /^[A-Za-z\sÅÄÖåäö]*$/,
     mentionDenotationChars: ["@"],
+    positioningStrategy: "fixed",
     spaceAfterInsert: true,
     source: function(searchTerm, renderList, mentionChar) {
         let values;
@@ -42,7 +43,8 @@ const mention = {
                     matches.push(values[i]);
             renderList(matches, searchTerm);
         }
-    }
+    },
+    dataAttributes: ['id', 'value', 'denotationChar'],
 }
 
 const RichText = React.forwardRef((props, ref) => {
