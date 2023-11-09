@@ -21,9 +21,9 @@ class GroupTests(TestCase):
 
     def setUp(self):
         self.api_client = APIClient()
-        self.coord_user = User.objects.create(email='coordinator', password='Pas$w0rd', is_coordinator=True)
-        self.reporter_user = User.objects.create(email='reporter', password='Pas$w0rd')
-        self.vendor_user = User.objects.create(email='vendor', password='Pas$w0rd')
+        self.coord_user = User.objects.create(email='coordinator', password='Pas$w0rd', screen_name="coordinator", is_coordinator=True)
+        self.reporter_user = User.objects.create(email='reporter', password='Pas$w0rd', screen_name="reporter")
+        self.vendor_user = User.objects.create(email='vendor', password='Pas$w0rd', screen_name="vendor")
         contact = Contact.objects.filter(user=self.vendor_user).first()
         group = Group.objects.create(name='vendor')
         GroupProfile.objects.create(group=group)

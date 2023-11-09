@@ -829,7 +829,47 @@
         "investigating_vuls": []
     }
 ],
-"unassigned_case": {
+    "groups": {
+	"count": 3,
+	"results": [
+	    {
+		"id": 24,
+		"name": "Crazy Horse",
+		"type": "Group",
+		"url": "/advise/groups/24/",
+		"photo": null,
+		"logocolor": "#842DE9",
+		"uuid": "9e30cddf-7096-4472-9ad5-9141a84a1444",
+		"support_email": null,
+		"support_phone": null,
+		"website": null,
+		"mailing_address": null
+	    },
+	    {
+		"id": 30,
+		"name": "Bright Lights",
+		"type": "Group",
+		"url": "/advise/groups/30/",
+		"photo": null,
+		"logocolor": "#7CC212",
+		"uuid": "efc742f7-d937-470c-b115-ea67245c1a6e",
+		"support_email": null,
+		"support_phone": null,
+		"website": null,
+		"mailing_address": null
+	    },
+	    {
+		"email": "test@gmail.com",
+		"phone": null,
+		"name": "",
+		"type": "Contact/User",
+		"user_name": "test",
+		"url": "/advise/contact/7d081ad7-12f2-41bb-9b57-895138204665/",
+		"uuid": "7d081ad7-12f2-41bb-9b57-895138204665"
+	    }
+	]
+    },
+    "unassigned_case": {
 	"case_id": "310363",
 	"case_identifier": "CASE#310363",
 	"owners": [],
@@ -894,6 +934,22 @@
 	"due_date": "2023-10-13T14:31:09.429309Z",
 	"advisory_status": "NOT STARTED",
 	"resolution": null
-}
+    },
+    "group": {
+	"active": true,
+	"group": {
+	    "id": 24,
+	    "name": "Crazy Horse",
+	    "type": "Group",
+	    "url": "/advise/groups/24/",
+	    "photo": null,
+	    "logocolor": "#842DE9",
+	    "uuid": "9e30cddf-7096-4472-9ad5-9141a84a1444",
+	    "support_email": null,
+	    "support_phone": null,
+	    "website": null,
+	    "mailing_address": null
+	}
+    }
 
 }

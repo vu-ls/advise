@@ -6,6 +6,7 @@ import 'react-quill/dist/quill.snow.css';
 import { format, formatDistance } from 'date-fns'
 import ContactAPI from './ContactAPI';
 import '../css/casethread.css';
+import {Link, useLocation} from "react-router-dom"
 import AddGroupModal from './AddGroupModal';
 import InfiniteScroll from 'react-infinite-scroll-component'
 import ActivityApp from './ActivityApp.js';
@@ -41,20 +42,30 @@ const SearchGroupsApp = () => {
 
 	}catch (err) {
             console.log('Error: ', err)
-	    setError(err.response.data.message);
+	    if (err.response?.data) {
+		setError(err.response.data.message);
+	    } else{
+		setError("Error fetching groups data.");
+	    }
         }
 
 	try {
 	    let results = await contactapi.getActivity();
 	    let data = await results.data;
-	    setActivity(data.results);
+	    if (data?.results) {
+		setActivity(data.results);
+	    }
 	    setActivityNext(data.next);
 	    if (data.next) {
 		setActivityHasMore(true);
 	    }
 	    setActivityLoading(false);
 	} catch(err) {
-	    setError(err.response.data.message);
+	    if (err.response?.data) {
+		setError(err.response.data.message);
+	    } else {
+		setError("Error fetching group activity data.");
+	    }
 	}
     };
 
@@ -188,7 +199,7 @@ const SearchGroupsApp = () => {
 				    </div>
 				</nav>
 				
-				<DropdownButton variant="btn p-0"
+				<DropdownButton variant="btn p-0 groupactions"
 						title={<i className="bx bx-dots-vertical-rounded"></i>}
 				>
 				    <Dropdown.Item eventKey='group' onClick={(e)=>setAddGroupModal(true)}>Add Group</Dropdown.Item>
@@ -229,10 +240,18 @@ const SearchGroupsApp = () => {
 					     {results.map((group, index) => {
 						 return(
 						     <tr key={`result-${group.type}-${index}`}>
-							 <td><a href={`${group.url}`}>{group.name ?
+							 <td>{group.id ? 
+							     <Link to={`${group.id}`}>{group.name ?
 										       `${group.name}` :
 										       `${group.email}`
-										      }</a></td>
+										      }</Link>
+							      :
+							      <a href={`${group.url}`}>{group.name ?
+											`${group.name}` :
+											`${group.email}`
+										       }</a>
+							     }
+							      </td>
 							 <td>{group.user_name}</td>
 							 <td>{group.type}</td>
 						     </tr>
@@ -277,11 +296,11 @@ const SearchGroupsApp = () => {
                              :
 			     <div id="scrollableDiv">
 				 <InfiniteScroll
-                                     dataLength={activity.length}
+                                     dataLength={activity ? activity.length : 0}
                                      next={fetchMoreActivity}
                                      hasMore={activityHasMore}
                                      loader={<div className="text-center"><div className="lds-spinner"><div></div><div></div><div></div></div></div>}
-                                     endMessage={<div className="text-center">No more activity updates</div>}
+                                     endMessage={<div className="text-center mt-3">No more activity updates</div>}
                                      scrollableTarget="scrollableDiv"
                                  >                                                     
                                      

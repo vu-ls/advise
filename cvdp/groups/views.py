@@ -178,7 +178,7 @@ class GroupSearchView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView)
         thread = self.request.POST.get('thread')
         case = self.request.POST.get('case')
         groups = Group.objects.filter(name__icontains=search).exclude(groupprofile__active=False).exclude(groupprofile__isnull=True)
-        contacts = Contact.objects.filter(Q(name__icontains=search)|Q(email__icontains=search)|Q(user__screen_name__icontains=search)).exclude(user__api_account=True).exclude(user__is_active=False)
+        contacts = Contact.objects.filter(Q(name__icontains=search)|Q(email__icontains=search)|Q(user__screen_name__icontains=search)).exclude(user__api_account=True).exclude(user__is_active=False).exclude(user__screen_name__isnull=True)
         results = []
         if case:
             cp = CaseParticipant.objects.filter(case__case_id=case).values_list('group__groupprofile__uuid', flat=True)
@@ -240,10 +240,10 @@ class GroupAPIView(APIView):
         search_type = self.request.GET.get('type', "All").lower()
         if (search_term):
             groups = Group.objects.filter(name__icontains=search_term).order_by('-groupprofile__created')
-            contacts = Contact.objects.filter(Q(name__icontains=search_term)|Q(email__icontains=search_term)|Q(user__screen_name__icontains=search_term)).exclude(user__api_account=True).order_by('-created')
+            contacts = Contact.objects.filter(Q(name__icontains=search_term)|Q(email__icontains=search_term)|Q(user__screen_name__icontains=search_term)).exclude(user__api_account=True).exclude(user__screen_name__isnull=True).order_by('-created')
         else:
             groups = Group.objects.all().order_by('-groupprofile__created')
-            contacts = Contact.objects.all().exclude(user__api_account=True).order_by('-created')
+            contacts = Contact.objects.all().exclude(user__api_account=True).exclude(user__screen_name__isnull=True).order_by('-created')
 
         if search_type == 'groups':
             gp = Paginator(groups, page_size)

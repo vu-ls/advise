@@ -9,6 +9,14 @@
 
 <div class="container-xxl flex-grow-1 container-p-y">
 
+  {% for message in messages %}
+  {% if message.tags == "error" %}
+  <div class="alert alert-danger">{{ message }}</div>
+  {% else %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endif %}
+  {% endfor %}
+  
   <div id="app"></div>
 </div>
 

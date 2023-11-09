@@ -15,6 +15,7 @@ const AddComponentModal = ({showModal, hideModal, addNewGroup}) => {
     const fetchInitialData = async () => {
         try {
 	    await contactapi.getGroupForm().then((response) => {
+		console.log(response);
                 setFormContent(response);
                 setIsLoading(false);
 	    })
@@ -25,11 +26,10 @@ const AddComponentModal = ({showModal, hideModal, addNewGroup}) => {
     }
 
     useEffect(() => {
-        fetchInitialData();
-    }, []);
-
-    useEffect(() => {
 	setError("");
+	if (showModal) {
+	    fetchInitialData();
+	}
     }, [showModal]);
 
 

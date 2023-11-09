@@ -378,7 +378,7 @@ const GroupAdminApp = () => {
 	setTableLoading(true);
 	setUpdate(false);
 	api.getGroupContacts(group.id).then((response) => {
-	    setContacts(response.data);
+	    setContacts(response);
 	    setTableLoading(false);
 	})
 	    .catch(err => {
@@ -392,7 +392,7 @@ const GroupAdminApp = () => {
         setUnverifiedTableLoading(true);
         setUnverifiedUpdate(false);
         api.getUnverifiedContacts(group.id).then((response) => {
-	    setUnverifiedContacts(response.data);
+	    setUnverifiedContacts(response);
 	    setUnverifiedTableLoading(false);
         })
 	    .catch(err => {
@@ -413,10 +413,11 @@ const GroupAdminApp = () => {
 	try {
             contactapi.getGroup(id).then((response) => {
 		console.log("GETTING GROUP!")
-		console.log(response);
                 setGroups([response.data]);
                 setIsLoading(false);
-                setSelectedGroup(response.data.group);
+		if (response.data?.group) {
+                    setSelectedGroup(response.data.group);
+		}
             });
         } catch (err) {
             setApiError(err);
@@ -487,14 +488,22 @@ const GroupAdminApp = () => {
             let data = await results.data;
 	    console.log("IN ACTIVITY");
 	    console.log(data);
-            setActivity(data.results);
-            setActivityNext(data.next);
-            if (data.next) {
-                setActivityHasMore(true);
-            }
+	    if (data?.results) {
+		setActivity(data.results);
+	    }
+	    if (data) {
+		setActivityNext(data.next);
+		if (data.next) {
+                    setActivityHasMore(true);
+		}
+	    }
             setActivityLoading(false);
         } catch(err) {
-            setApiError(err.response.data.message);
+	    if (err.response?.data?.message) {
+		setApiError(err.response.data.message);
+	    } else {
+		setApiError("Error retrieving group activity");
+	    }
         }
     };
 
@@ -502,7 +511,6 @@ const GroupAdminApp = () => {
         try {
             let results = await contactapi.getGroupActivity(selectedGroup.uuid, activityNext);
             let data = await results.data;
-            console.log(data);
             setActivity(activity.concat(data.results));
             setActivityNext(data.next);
             if (data.next) {
@@ -615,6 +623,8 @@ const GroupAdminApp = () => {
 		{id &&
 		 <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Groups /</span> <Link to="/advise/groups/">Group Search</Link> / Group Detail</h4>
 		}
+
+		{ selectedGroup ?
 		<Tab.Container
 		    defaultActiveKey="group"
 		    activeKey = {activeTab}
@@ -943,6 +953,9 @@ const GroupAdminApp = () => {
 
 		    </Tab.Content>
 		</Tab.Container>
+		  :
+		  <div className="alert alert-danger">No group selected.</div>
+		}
 	    <Card className="mt-4">
 		<Card.Header>
 		    <Card.Title>Recent Activity</Card.Title>
@@ -955,7 +968,7 @@ const GroupAdminApp = () => {
                      :
 		     <div id="scrollableDiv">
                          <InfiniteScroll
-                             dataLength={activity.length}
+                             dataLength={activity ? activity.length : 0}
                              next={fetchMoreActivity}
                              hasMore={activityHasMore}
                              loader={<div className="text-center"><div className="lds-spinner"><div></div><div></div><div></div></div></div>}

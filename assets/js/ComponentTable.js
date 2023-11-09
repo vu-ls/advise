@@ -249,7 +249,9 @@ const ComponentTable = (props) => {
 	    /* stash full data set in filtered data */
 	    if (props.group) {
 		componentapi.getGroupComponents(props.group, query).then((response) => {
-                    setData(response.results);
+		    if (response.results) {
+			setData(response.results);
+		    }
 		    setCount(response.count);
                     setNextUrl(response.next);
                 }).catch(err => {
@@ -258,7 +260,9 @@ const ComponentTable = (props) => {
 	    } else {
 		componentapi.getComponents(query).then((response) => {
 		    console.log(response);
-		    setData(response.results);
+		    if (response.results) {
+			setData(response.results);
+		    }
 		    setCount(response.count);
                     setNextUrl(response.next);
 		    
@@ -347,7 +351,9 @@ const ComponentTable = (props) => {
 	    if ('group' in props) {
 		await componentapi.getGroupComponents(props.group).then((response) => {
 		    console.log(response);
-		    setData(response.results);
+		    if (response.results) {
+			setData(response.results);
+		    }
 		    setCount(response.count);
 		    setNextUrl(response.next);
                     setIsLoading(false);
@@ -359,7 +365,9 @@ const ComponentTable = (props) => {
 	    } else {
 		await componentapi.getComponents().then((response) => {
 		    console.log(response);
-                    setData(response.results);
+		    if (response.results) {
+			setData(response.results);
+		    }
 		    setCount(response.count);
 		    setNextUrl(response.next);
                     setIsLoading(false);
@@ -369,7 +377,11 @@ const ComponentTable = (props) => {
 		})
 	    }
         } catch (err) {
-	    setError(`Error retrieving components: ${err.response.data.detail}`);
+	    if (err.response?.data) {
+		setError(`Error retrieving components: ${err.response.data.detail}`);
+	    } else {
+		setError("Error retrieving components.");
+	    }
             console.log('Error:', err)
         }
     }

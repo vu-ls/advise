@@ -21,7 +21,7 @@ function makeAndHandleRequest(query, page = 1) {
         urlstr = `${urlstr}&name=${query}`;
     }
     return contactapi.searchGroups(urlstr).then((response) => {
-        let items = response;
+        let items = response.results;
         let total_count = items.length;
         const options = items.map((i) => ({
             name: i.name,

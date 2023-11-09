@@ -48,11 +48,15 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
     }
 
     useEffect(() => {
-        fetchInitialData();
-    }, []);
+	if (showModal) {
+            fetchInitialData();
+	}
+    }, [showModal]);
 
     useEffect(() => {
-	fetchInitialData();
+	if (showModal) {
+	    fetchInitialData();
+	}
     }, [edit]);
 
     useEffect(() => {

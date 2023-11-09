@@ -25,12 +25,12 @@ export default class ContactAPI{
 
     getGroupContacts(c) {
 	const url = `${API_URL}/api/groups/${c}/contacts/?verified=True`;
-	return axios.get(url);
+	return axios.get(url).then(response=> response.data);
     }
 
     getUnverifiedContacts(c) {
 	const url = `${API_URL}/api/groups/${c}/contacts/?verified=False`;
-	return axios.get(url);
+	return axios.get(url).then(response => response.data);
     }
 
     updateMyGroup(c, data) {

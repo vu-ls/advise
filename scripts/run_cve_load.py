@@ -1,4 +1,11 @@
-# -*- coding: utf-8 -*-                                                                                                              
+# -*- coding: utf-8 -*-
+
+
+#requirements: psycopg2-binary
+# requests
+# urllib3==1.26.6 if openssl-1.1.1 is not installed, otherwise latest
+
+
 from __future__ import unicode_literals
 import os
 import sys
@@ -88,7 +95,7 @@ class AdScoreCVELoader(object):
             
         else:
             dt = datetime.now(timezone.utc)
-            self.cursor.execute("INSERT INTO adscore_vul(cve, description, last_modified, published, status) VALUES (%s, %s, %s, %s, %s, %s)", (cve, description, last_modified, published, status, dt,))
+            self.cursor.execute("INSERT INTO adscore_vul(cve, description, last_modified, published, status, date_added) VALUES (%s, %s, %s, %s, %s, %s)", (cve, description, last_modified, published, status, dt,))
 
         self.conn.commit()
 
