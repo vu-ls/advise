@@ -214,10 +214,18 @@ class CreateNewCaseView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             return self.form_invalid(form)
 
     def form_valid(self, form):
-        logger.debug("VALID FORM")
+        logger.debug(f"VALID FORM {form.cleaned_data}")
         case = form.save()
         case.created_by = self.request.user
         case.save()
+        
+        if form.cleaned_data.get('auto_assign'):
+            contact = Contact.objects.filter(user=self.request.user).first()
+            thread = CaseThread.objects.filter(case=case, official=True).first()
+            add_new_case_participant(thread, contact.uuid, self.request.user, 'owner')
+            action = create_case_action(f"assigned case to {self.request.user.screen_name}", self.request.user, case)
+            create_case_change(action, "owner", None, self.request.user.screen_name)
+            
         return redirect("cvdp:case", case.case_id)
 
 

@@ -18,14 +18,23 @@ class CreateCaseForm(forms.ModelForm):
         )
 
 
+    auto_assign = forms.BooleanField(
+        required=False,
+        label=_('Assign to myself'),
+        help_text=_('Automatically assign this case to me.')
+    )
+    
     def __init__(self, *args, **kwargs):
         super(CreateCaseForm, self).__init__(*args, **kwargs)
         self.fields['case_id'].widget.attrs['readonly'] = True
         
     class Meta:
         model = Case
-        fields = ('case_id', 'title', 'summary', )
+        fields = ('case_id', 'title', 'auto_assign', 'summary', )
 
+    def __init__(self, *args, **kwargs):
+        super(CreateCaseForm, self).__init__(*args, **kwargs)
+        self.fields['auto_assign'].initial = True
 
 
 class EditCaseForm(forms.ModelForm):

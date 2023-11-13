@@ -157,7 +157,9 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
                      fill
                  >
 		     <Tab eventKey='addData' title='Confirm Additions'>
-			 <p className="lead">This record was <b>{cveInfo.cveMetadata.state}</b> by <b>{cveInfo.cveMetadata.assignerShortName}</b> on {format(new Date(cveInfo.cveMetadata.datePublished), 'yyyy-MM-dd')}
+			 <p className="lead">This record was <b>{cveInfo.cveMetadata.state}</b> by <b>{cveInfo.cveMetadata.assignerShortName}</b>
+			     {cveInfo.cveMetadata.datePublished &&
+			<span> on {format(new Date(cveInfo.cveMetadata.datePublished), 'yyyy-MM-dd')}</span>}
 			     {cveInfo.cveMetadata.dateUpdated &&
 			      <span> and last updated on {format(new Date(cveInfo.cveMetadata.dateUpdated), 'yyyy-MM-dd')}
 			      </span>
@@ -244,7 +246,7 @@ const PopulateCVEModal = ({ showModal, hideModal, cveAccount, vul, caseInfo, edi
 		<Button variant="secondary" onClick={hideModal}>
 		    Cancel
 		</Button>
-		{cveInfo &&
+		{cveInfo && cveInfo.cveMetadata.state == "PUBLISHED" &&
 		 <Button variant="primary" onClick={() => testSubmit()}>
 		     Submit
 		 </Button>
