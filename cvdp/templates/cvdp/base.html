@@ -153,6 +153,7 @@
                 <div data-i18n="Analytics">My Reports</div>
               </a>
             </li>
+            {% if user.is_coordinator %}
 	    {% if ADSCORE %}
 	    <!-- Scoring app -->
             <li class="menu-item {% if scoringpage %}active {% endif %}">
@@ -162,25 +163,23 @@
               </a>
             </li>
 	    {% endif %}
-            {% if user.is_coordinator %}
+
 	    <li class="menu-item">
               <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-dock-top"></i>
                 <div data-i18n="Layouts">Settings</div>
               </a>
 	      <ul class="menu-sub">
-                <li class="menu-item">
-                  <a href="#" class="menu-link">
-                    <div data-i18n="Without menu">Tag Manager</div>
+                <li class="menu-item {% if sysadminpage %}active{% endif %}">
+                  <a href="{% url 'cvdp:system_admin' %}" class="menu-link">
+                    <div data-i18n="Blank">System Settings</div>
                   </a>
                 </li>
-		<li class="menu-item">
+		<!--<li class="menu-item">
                   <a href="#" class="menu-link">
                     <div data-i18n="Fluid">Email Templates</div>
                   </a>
-                </li>
-		
-
+                </li>-->
                 <li class="menu-item {% if manageform %}active{% endif %}">
                   <a href="{% url 'cvdp:manage_forms' %}" class="menu-link">
                     <div data-i18n="Blank">Reporting Form</div>
@@ -198,11 +197,6 @@
                   </a>
                 </li>
 		
-                <li class="menu-item {% if sysadminpage %}active{% endif %}">
-                  <a href="{% url 'cvdp:system_admin' %}" class="menu-link">
-                    <div data-i18n="Blank">System Settings</div>
-                  </a>
-                </li>
               </ul>
             </li>
 	    {% endif %}

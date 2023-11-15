@@ -493,3 +493,47 @@ class AdviseScheduledTask(models.Model):
 
     def __str__(self):
         return self.task
+
+
+class DefinedTag(models.Model):
+
+    TAG_CATEGORY = (
+	(1, _('Vulnerability')),
+        (2, _('Case')),
+        (3, _('Group')),
+        (4, _('Component'))
+    )
+
+    category = models.IntegerField(
+	_('Tag Category'),
+        choices=TAG_CATEGORY,
+        default=1,
+    )
+
+    created = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        blank=True,
+	null=True,
+        help_text=_('User that added this tag.'),
+	verbose_name=_('User'),
+    )
+
+    tag = models.CharField(
+        max_length=100,
+    )
+
+    description = models.CharField(
+	max_length=500,
+	help_text=_('Description of tag'),
+        blank=True,
+        null=True
+    )
+
+    def	__str__(self):
+        return self.tag
+    

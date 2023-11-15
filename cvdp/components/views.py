@@ -141,7 +141,7 @@ class ComponentAPIView(viewsets.ModelViewSet):
             #does component already exist?
             comp = Component.objects.filter(name__iexact=request.data['name'], version=request.data['version']).first()
             if comp:
-                return Response({'detail': 'component already exists'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': 'component (name/version) already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
             component = serializer.save()
             component.added_by = self.request.user
@@ -365,9 +365,13 @@ class ChangeComponentOwnershipView(LoginRequiredMixin, PendingTestMixin, FormVie
                     component = get_object_or_404(Component, id=c)
                     # update product
                     action = create_component_action(f"modified component owner", self.request.user, component, 2)
-                    create_component_change(action, "supplier", component.get_vendor(), group.name)
+                    create_component_change(action, "owner", component.get_vendor(), group.name)
                     p = Product.objects.update_or_create(component=component,
-                                                          defaults={'supplier': group})
+                                                         defaults={'supplier': group})
+                    if not component.supplier:
+                        #if no supplier, add group as supplier
+                        component.supplier=group.name
+                        component.save()
                 return JsonResponse({}, status=status.HTTP_202_ACCEPTED)
             else:
                 raise PermissionDenied()

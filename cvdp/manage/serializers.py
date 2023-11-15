@@ -98,3 +98,28 @@ class ConnectionSerializer(serializers.ModelSerializer):
             return ""
 
         
+class TagSerializer(serializers.ModelSerializer):
+
+    user = UserSerializer()
+    category = ChoiceField(choices = DefinedTag.TAG_CATEGORY)
+    
+    class Meta:
+        model = DefinedTag
+        fields = ('id', 'tag', 'description', 'user', 'created', 'category')
+        read_only_fields = ('id', 'user', 'created')
+
+class TagCategorySerializer(serializers.Serializer):
+
+    category = serializers.SerializerMethodField()
+
+
+    def get_category(self, obj):
+        data = {}
+        for key, val in DefinedTag.TAG_CATEGORY:
+            # get all tags in category
+            tags = DefinedTag.objects.filter(category=key)
+            tag_serializer = TagSerializer(tags, many=True)
+            data[val] = tag_serializer.data
+        return data
+    
+            

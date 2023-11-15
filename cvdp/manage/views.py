@@ -493,3 +493,45 @@ class ResolutionAPIView(viewsets.ModelViewSet):
             raise PermissionDenied
         question.delete()
         return Response({}, status=status.HTTP_202_ACCEPTED)
+
+class TagAPIView(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
+    serializer_class = TagCategorySerializer
+
+    def get_queryset(self):
+        return DefinedTag.objects.all()
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return TagCategorySerializer
+        if self.action == 'create':
+            return TagSerializer
+        return TagSerializer
+    
+    def create(self, request, *args, **kwargs):
+        logger.debug(request.data)
+        serializer = TagSerializer(data=request.data)
+        if (request.data.get('tag') and request.data.get('category')):
+            logger.debug(dict(DefinedTag.TAG_CATEGORY).values())
+            cat_int = list(dict(DefinedTag.TAG_CATEGORY).values()).index(request.data['category'])
+            newtag, created = DefinedTag.objects.update_or_create(tag=request.data['tag'],
+                                                                  category=cat_int+1,
+                                                         defaults = {
+                                                             'user': self.request.user,
+                                                             'description': request.data.get('description')})
+            if created:
+                return Response({'detail': 'Tag successfully created'}, status=status.HTTP_202_ACCEPTED)
+            else:
+                return Response({'detail': 'Tag updated successfully'}, status=status.HTTP_202_ACCEPTED)
+
+        else:
+            return Response({'error': 'Both tag and category are required fields'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        tag = get_object_or_404(DefinedTag, id=self.kwargs['pk'])
+        if not(request.user.is_staff):
+            #only staff members can delete
+            raise PermissionDenied
+        tag.delete()
+        return Response({}, status=status.HTTP_202_ACCEPTED)

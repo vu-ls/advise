@@ -13,6 +13,7 @@ from cvdp.manage.models import AdVISEConnection, AdviseTask, AdviseScheduledTask
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
+
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False

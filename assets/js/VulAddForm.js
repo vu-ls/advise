@@ -100,7 +100,11 @@ const VulAddForm = (props) => {
 		    setShowForm(false);
 		    props.updateVuls();
 		}).catch(function (err) {
-		    setReserveMessage(<Alert variant="danger">Error submitting vulnerability data: {err.message}</Alert>);
+		    if (err.response?.status == 403) {
+			setReserveMessage(<Alert variant="danger">You are not authorized to add a vulnerability to this case. Are you the case owner?</Alert>)
+		    } else {
+			setReserveMessage(<Alert variant="danger">Error submitting vulnerability data: {err.message}</Alert>);
+		    }
 		    console.log(err);
 		});
 	    }
@@ -488,7 +492,7 @@ const VulAddForm = (props) => {
 			      )}
 		</Accordion>
 		{vuls.length == 0 &&
-		 <p>Vulnerabilities coming soon...</p>
+		 <p>No vulnerabilities have been added.</p>
 		}
 
 		<div id="testref" ref={formRef}>&nbsp; </div>

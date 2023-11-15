@@ -254,7 +254,26 @@ export default class AdminAPI{
         return axios.get(url).then(response=>response.data);
     }
 
+    getTags() {
+	const url = `${API_URL}/api/manage/tags/`;
+        return axios.get(url).then(response=>response.data);
+    }
 
+    addTag(data) {
+	const url = `${API_URL}/api/manage/tags/`;
+        return axios.post(url, data).then(response=>response.data);
+    }
+
+    removeTag(id) {
+	const url = `${API_URL}/api/manage/tag/${id}/`;
+        return axios.delete(url).then(response=>response.data);
+    }
+
+    getTagOptions() {
+	const url = `${API_URL}/api/manage/tags/`;
+        return axios.options(url).then(response => response.data);
+    }
+    
     /* these are scoring-specific API calls */
 
     getVulsToScore(page) {

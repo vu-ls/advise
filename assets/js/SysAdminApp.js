@@ -4,8 +4,10 @@ import AdminAPI from './AdminAPI';
 import ContactAPI from './ContactAPI.js';
 import CaseSettings from './CaseSettings.js';
 import ThreadAPI from './ThreadAPI';
+import TagManager from './TagManager';
 import DisplayLogo from "./DisplayLogo";
 import { format, formatDistance } from 'date-fns'
+import {useParams, useNavigate, Link, useLocation} from "react-router-dom"
 import DeleteConfirmation from "./DeleteConfirmation";
 import {AsyncTypeahead} from 'react-bootstrap-typeahead';
 import '../css/casethread.css';
@@ -39,6 +41,10 @@ function makeAndHandleRequest(query, page = 1) {
 }
 
 const SysAdminApp = () => {
+
+    const { id } = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState(null);
     const [apiError, setApiError] = useState(null);
     const [showForm, setShowForm] = useState(false);
@@ -60,6 +66,7 @@ const SysAdminApp = () => {
     const [removeID, setRemoveID] = useState(null);
     const [editConnection, setEditConnection] = useState("");
 
+    
     const submitRemoveConnection = (id) => {
         adminapi.deleteConnection(id).then((response) => {
 	    fetchInitialData();
@@ -86,7 +93,16 @@ const SysAdminApp = () => {
     };
 
     useEffect(() => {
-	setActiveTab("fed")
+	switch(id) {
+	case 'case':
+	    setActiveTab("case");
+	    break;
+	case 'tags':
+	    setActiveTab("tag");
+	    break;
+	default:
+	    setActiveTab("fed");
+	}
 	fetchInitialData();
     }, []);
 
@@ -232,6 +248,9 @@ const SysAdminApp = () => {
 		<Nav.Item key="case">
 		    <Nav.Link eventKey="case">Case Settings</Nav.Link>
 		</Nav.Item>
+		<Nav.Item key="tag">
+		    <Nav.Link eventKey="tag">Tag Manager</Nav.Link>
+		</Nav.Item>
 	    </Nav>
 	    <Tab.Content id="admin-fns" className="p-0">
 		<Tab.Pane eventKey="fed" key="fed">
@@ -327,7 +346,7 @@ const SysAdminApp = () => {
 				    let created = new Date(c.created);
                                     let last_used = c.last_used ? formatDistance(new Date(c.last_used), new Date(), {addSuffix: true}) : "Not used";
 				return (
-				    <Col>
+				    <Col key={`connection-${index}`}>
 					<Card bg={c.disabled ? "danger" : "light"} text={c.disabled ? "white" : "dark"} >
 					    <Card.Header className="d-flex justify-content-between">
 						<Card.Title>
@@ -373,7 +392,9 @@ const SysAdminApp = () => {
 		    <CaseSettings />
 		    
 		</Tab.Pane>
-			
+		<Tab.Pane eventKey="tag" key="tag">
+		    <TagManager />
+		</Tab.Pane>
 		<DeleteConfirmation
                     showModal={displayConfirmationModal}
                     confirmModal={submitRemoveConnection}

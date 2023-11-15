@@ -152,7 +152,7 @@ urlpatterns = [
     re_path('^api/case/vul/(?P<pk>[0-9]+)/cvss/$', caseviews.CVSSVulView.as_view({'get':'retrieve', 'post': 'create', 'patch': 'partial_update', 'delete': 'destroy'}), name='cvssapi'),
     re_path('^api/case/vul/(?P<pk>[0-9]+)/ssvc/$', caseviews.SSVCVulView.as_view({'get': 'retrieve', 'post': 'create', 'patch': 'partial_update', 'delete': 'destroy'}), name='ssvcapi'),
     
-    path('manage/system/', manageviews.SystemAdminView.as_view(), name='system_admin'),
+    re_path('^manage/system/[\w+]?/?', manageviews.SystemAdminView.as_view(), name='system_admin'),
     path('manage/users/', manageviews.UserAdminView.as_view(), name='user_admin'),
     path('api/manage/users/pending/', manageviews.PendingUsersAPI.as_view({'get': 'list'}), name='pendingusers'),
     path('api/manage/users/new/', manageviews.NewUsersAPIView.as_view({'get': 'list'}), name='newusers'),
@@ -183,7 +183,8 @@ urlpatterns = [
     re_path('^api/manage/connection/(?P<pk>\d+)/$', manageviews.ConnectionAPI.as_view({'get': 'retrieve', 'patch': 'partial_update', 'delete':'destroy'}), name='connection_detail_api'),
     path('api/manage/autoassignment/', manageviews.AutoAssignmentAPIView.as_view({'get': 'list', 'post':'create'}), name='autoassign_api'),
     re_path('^api/manage/autoassignment/(?P<pk>\d+)/$', manageviews.AutoAssignmentAPIView.as_view({'delete': 'destroy', 'get': 'list', 'patch':'partial_update'}), name='autoassign_api'),
-    
+    path('api/manage/tags/', manageviews.TagAPIView.as_view({'get': 'list', 'post': 'create'}), name='tag_api'),
+    re_path('^api/manage/tag/(?P<pk>\d+)/$', manageviews.TagAPIView.as_view({'delete': 'destroy'}), name='rm_manage_tag'),
     re_path('^api/case/(?P<caseid>\d+)/assign/$', caseviews.assign_case),
     path('triage/', views.TriageView.as_view(), name='triage'),
     path('api/triage/', views.TriageAPIView.as_view({'get': 'list'}), name='triageapi'),

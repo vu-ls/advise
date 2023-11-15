@@ -64,6 +64,8 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
     }, [hideModal]);
 
     const handleSubmit = async (event) => {
+	console.log("IN SUBMIT!!!");
+	
 	event.preventDefault();
 	const formData = new FormData(event.target),
               formDataObj = Object.fromEntries(formData.entries());
@@ -85,7 +87,12 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 	    await componentapi.addComponent(formDataObj).then((response) => {
 		hideModal();
 	    }).catch(err => {
-		setError(`Error adding component: ${err.response.data.detail}`);
+		console.log(err);
+		if (err.response?.data) {
+		    setError(`Error adding component: ${err.response.data.detail}`);
+		} else {
+		    setError("Unknown error adding component.");
+		}
 	    });
 	}
 
@@ -165,11 +172,11 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
                  >
                      <Tab eventKey="detail" title="Detail">
 			 {formContent ?
-			  <form onSubmit={(e)=>handleSubmit(e)}>
+			  <form className="checkform" onSubmit={(e)=>handleSubmit(e)}>
 			      <div dangerouslySetInnerHTML={{__html: formContent}} />
 
 			      <div className="d-flex justify-content-end gap-2">
-				  <Button variant="outline-secondary" type="cancel" onClick={(e)=>(e.preventDefault(), hideModal())}>Cancel</Button>
+				  <Button variant="outline-secondary" type="button" onClick={(e)=> hideModal()}>Cancel</Button>
 
 				  <Button variant="primary" type="submit">
 				  Submit</Button>
@@ -207,16 +214,16 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 		 :
 		 <>
 		     {formContent ?
-                      <form onSubmit={(e)=>handleSubmit(e)}>
+                      <form onSubmit={(e) => handleSubmit(e)}>
                           <div dangerouslySetInnerHTML={{__html: formContent}} />
 
                           <div className="d-flex justify-content-end gap-2">
-                              <Button variant="outline-secondary" type="cancel" onClick={(e)=>(e.preventDefault(), hideModal())}>Cancel</Button>
+                              <Button variant="outline-secondary" type="button" onClick={(e)=>(hideModal())}>Cancel</Button>
 
                               <Button variant="primary" type="submit">
                               Submit</Button>
                           </div>
-                      </form>
+		      </form>
                       : <p>Loading...</p>
 
                      }
