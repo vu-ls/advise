@@ -3,6 +3,7 @@ import { Modal, OverlayTrigger, Popover, Alert, Badge, FloatingLabel, Button, In
 import { useState, useEffect } from 'react';
 import ThreadAPI from './ThreadAPI';
 import decision_tree from "./CISA-Coordinator-v2.0.3.json";
+import AssignmentDropdownButton from './AssignmentDropdownButton';
 
 const threadapi = new ThreadAPI();
 
@@ -23,8 +24,9 @@ const SSVCScore = (props) => {
     const [doUpdate, setDoUpdate] = useState(false);
     const [showNotes, setShowNotes] = useState([]);
     const [justifications, setJustifications] = useState({})
-
-	
+    const [invalidDecisions, setInvalidDecisions] = useState([]);
+    const [formLocked, setFormLocked] = useState(false);
+    
     useEffect(() => {
 
 	switch(finalDecision) {
@@ -37,14 +39,51 @@ const SSVCScore = (props) => {
 	case "Track*":
 	    setDecisionColor("info");
 	    break;
-	default:
+	case "Track":
 	    setDecisionColor("success");
+	    break;
+	default:
+	    setDecisionColor("danger");
 	}
 
 
 
     }, [finalDecision]);
 
+
+    const toggleFormLock = () => {
+	if (formLocked) {
+	    setFormLocked(false);
+	} else {
+	    setFormLocked(true);
+	}
+    }
+    
+    const validate_dec_tree = (tree) => {
+	/* this validates there isn't totally bogus values for each decision. If we can't validate
+	   the decisions with the provided tree, then we will alert the user and refused to generate
+	   the vector/final decision until values are validated */
+	let this_is_valid = true;
+	data.decision_points.map((d, index) => {
+	    let decision = tree.filter((item) => item.label.localeCompare(d.label, undefined, {sensitivitiy:'base'}) == 0);
+	    if (decision.length > 0) {
+		let valid = d.options.filter((item) => item.label.localeCompare(decision[0]['value'], undefined, {sensitivity: 'base'}) == 0)
+		if (valid.length == 0) {
+		    if (d.label != 'Decision') {
+			setInvalidDecisions(invalidDecisions => [...invalidDecisions, d.label])
+		    }
+		    this_is_valid = false;
+		}
+	    } else {
+		if (d.label != 'Decision') {
+		    setInvalidDecisions(invalidDecisions => [...invalidDecisions, d.label])
+		}
+		this_is_valid = false;
+	    }
+	});
+	return this_is_valid;
+    }
+    
     const load_ssvc = () => {
 	let xkeys = {};
 	let short_keys = {};
@@ -82,6 +121,7 @@ const SSVCScore = (props) => {
 
 	    return x;
 	},{});
+
 	setShortKeys(short_keys);
 	setChildren(ischild);
 
@@ -89,11 +129,17 @@ const SSVCScore = (props) => {
 	if (props.vul && props.vul.ssvc_decision) {
 	    console.log(props.vul)
 	    /* TODO: make sure apples 2 apples with the same decision tree name */
+	    
 	    setFinalDecision(props.vul.ssvc_decision);
 	    let dec_tree = props.vul.ssvc_decision_tree.filter(item => item.label != "date_scored");
+	    if (validate_dec_tree(dec_tree)) {
+		if (props.vul.ssvc_vector) {
+		    setVector(props.vul.ssvc_vector);
+		}
+	    } 
+	    setFormLocked(true);
 	    setDecisions(dec_tree);
 	    setDecisionPoint(data.decision_points.length-1);
-	    setVector(props.vul.ssvc_vector);
 	    if (props.vul.ssvc_justifications) {
 		setJustifications(props.vul.ssvc_justifications);
 	    }
@@ -130,15 +176,28 @@ const SSVCScore = (props) => {
 
 
     function update_decision(label, value) {
-
+	console.log("update decision");
+	let found = false;
 	let updated_decisions = decisions.map(d => {
 	    if (d.label == label) {
+		found=true;
 		return {'label': d.label, 'value': value};
 	    } else {
 		return d
 	    }
 	});
-	setDecisions(updated_decisions);
+	if (found == false) {
+	    /* add this decision */
+            setDecisions(decisions => [...decisions, {'label': label, 'value': value}])
+	} else {
+	    setDecisions(updated_decisions);
+	}
+	if (invalidDecisions.includes(label)) {
+	    const newList = invalidDecisions.filter((item) => item != label);
+	    setInvalidDecisions(newList);
+	}
+	    
+	
     }
 
     const get_combo_decision = (child_decisions) => {
@@ -185,7 +244,7 @@ const SSVCScore = (props) => {
 
     function compare_dictionaries(x, y) {
 	for (const [key, value] of Object.entries(x)) {
-	    if (y[key] !== value) {
+	    if (y[key].localeCompare(value, undefined, {sensitivity: 'base'})) {
 		return false;
 	    }
 	}
@@ -197,6 +256,12 @@ const SSVCScore = (props) => {
 	if (vector && (doUpdate == true)) {
 	    setDoUpdate(false);
 	    get_final_decision();
+	} else if (vector) {
+	    if (!validate_dec_tree(decisions)) {
+		/* invalidDecisions is empty (bc vector) but tree is still not
+		   validating which means Decision has bogus value */
+		get_final_decision();
+	    }
 	}
     }, [vector]);
 
@@ -230,6 +295,10 @@ const SSVCScore = (props) => {
 
 
     const make_vector = () => {
+	if (invalidDecisions.length > 0) {
+	    /*Don't do this*/
+	    return;
+	}
 	var computed = "SSVC/v2/"
 	var vector =  decisions.forEach((d, index) => {
 	    let k = d.label;
@@ -411,10 +480,29 @@ const SSVCScore = (props) => {
     }
 
     return (
+	<>
 	<Row>
 	    <Col lg={12}>
-		<h5>Currently using <b>{decisionTreeName}</b> as Decision Tree</h5>
-		<p>Click decision button to view description of each decision point.</p>
+		<div className="d-flex justify-content-between mb-3 pb-3 border-bottom">
+		    <div>
+			<h5 className="mb-2">Currently using <b>{decisionTreeName}</b> as Decision Tree</h5>
+			<small>Click decision button to view description of each decision point.</small>
+		    </div>
+		    {props.assignment &&
+		     <div>
+			 <Form.Label>Assigned To:</Form.Label>
+			 <AssignmentDropdownButton
+			     options = {props.assignment}
+			     owners = {[]}
+			     assignUser ={props.assignUser}
+			     owners = {props.owner ? [props.owner] : []}
+			 />
+		     </div>
+		    }
+			 
+		</div>
+
+
 		{data.decision_points ?
 		 <>
 		     {data.decision_points.map((d, index) => {
@@ -456,6 +544,7 @@ const SSVCScore = (props) => {
 							     inline
 							     key={`${d.label}-${option.label}`}
 							     label={option.label}
+							     disabled={formLocked}
 							     aria-label={option.label}
 							     name={d.label}
 							     value={option.label}
@@ -467,7 +556,7 @@ const SSVCScore = (props) => {
 						 }
 					     </Col>
 					     <Col lg={2} className="text-end">
-						 <Button variant="btn-icon p-0 text-nowrap" onClick={() => showDecisionNotes(d.label)}><i className="fas fa-plus"></i>
+						 <Button variant="btn-icon p-0 text-nowrap" disabled={formLocked} onClick={() => showDecisionNotes(d.label)}><i className="fas fa-plus"></i>
 						     {Object.keys(justifications).includes(d.label) ?
 						      ` View Notes`
 						      :
@@ -501,38 +590,69 @@ const SSVCScore = (props) => {
 		 :
 		 <p>Loading decision points...</p>
 		}
-		{finalDecision &&
-		 <>
-		     <Alert variant={decisionColor}><div className="text-center">Decision is {finalDecision}</div><br/>
-		     SSVC Vector: {vector}</Alert>
 
-		     <div className="d-flex justify-content-between mt-3">
-                         {props.vul && props.vul.ssvc_vector ?
-			  
-                          <Button variant="danger" onClick={(e)=>removeScore(e)}>
-                              Delete Score
-                          </Button>
-                          :
-                          <div></div>
-                         }
-			 
-			 <div>
-			     <div className="d-flex justify-content-end gap-2">
-				 <Button variant="secondary" onClick={props.hideModal}>
-				     Cancel
-				 </Button>
-				 <Button variant="primary"
-					 disabled={disabledButton ? true: false}
-					 type="submit"
-					 onClick={(e)=>saveScore()}>
-				 {disabledButton ? <>Saving...</>:<>Save Score</>}</Button>
-			     </div>
-			 </div>
+		{invalidDecisions.length > 0 ?
+		 <Alert variant="danger">
+		     <div className="text-center">
+			 This score has {invalidDecisions.length} invalid decisions: {invalidDecisions.join(', ')}
 		     </div>
+		 </Alert>
+		 :
+		 <>
+		     {finalDecision &&
+		      <>
+			  <Alert variant={decisionColor}>
+			      <div className="text-center">Decision is {finalDecision}<br/>
+				  {vector &&
+				   
+				   <span>SSVC Vector: {vector}</span>
+				  }
+			     
+			      </div>
+			  </Alert>
+			  
+			  <div className="d-flex justify-content-between mt-3">
+                              {props.vul && props.vul.ssvc_decision ?
+			       
+                               <Button variant="danger" disabled={formLocked} onClick={(e)=>removeScore(e)}>
+				   Delete Score
+                               </Button>
+                               :
+                               <div></div>
+                              }
+			      
+			      <div>
+				  <div className="d-flex justify-content-end gap-2">
+				      <Button variant="secondary" onClick={props.hideModal}>
+					  Cancel
+				      </Button>
+				      <Button variant="primary"
+					      disabled={formLocked ? true: false}
+					      type="submit"
+					      onClick={(e)=>saveScore()}>
+				      {disabledButton ? <>Saving...</>:<>Save Score</>}</Button>
+				  </div>
+			      </div>
+			  </div>
+		      </>
+		     }
 		 </>
 		}
 	    </Col>
 	</Row>
+	    {props.vul && props.vul.ssvc_decision &&
+	     <Row className="mt-2">
+		 <Col lg={12}>
+		     {formLocked ?
+		      <span><Button onClick={(e)=>toggleFormLock()} variant="btn btn-icon"><i className="fas fa-lock"></i></Button> This vulnerability has already been scored. Click the lock to reassess. </span>
+		      :
+		      <span><Button onClick={(e)=>toggleFormLock()} variant="btn btn-icon"><i className="fas fa-unlock"></i></Button> Click the lock to prevent changes.</span>
+		     }
+		 </Col>
+	     </Row>
+	    }
+	</>
+		 
     )
 
 }

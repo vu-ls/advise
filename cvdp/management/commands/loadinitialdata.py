@@ -30,10 +30,10 @@ class Command(BaseCommand):
             call_command('loadcwe', 'cvdp/fixtures/cwe_regular.json')
             logger.info("Done loading CWE Info")
 
-        """
         if "adscore" in settings.INSTALLED_APPS:
-
-            logger.info("Loading CVEs")
-            call_command('loadcves')
-            logger.info("Done loading CVEs")
-        """
+            from adscore.models import SSVCDecisionTable
+            if SSVCDecisionTable.objects.count() > 0:
+                logger.info("SSVC already loaded")
+            else:
+               call_command('loaddata', 'ssvc_decision.json')
+    

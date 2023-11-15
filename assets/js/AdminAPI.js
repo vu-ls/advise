@@ -309,12 +309,37 @@ export default class AdminAPI{
         return axios.get(url).then(response=>response.data);
     }
 
+    sortVuls(column, direction, urlStr, cancel) {
+	let url = `${API_URL}/score/api/vuls/`;
+	let query = `ordering=-${column}`;
+	if (direction === "none") {
+	    if (urlStr) {
+		url = `${API_URL}/score/api/vuls/?${urlStr}`;
+	    }
+	} else {
+	    if (direction === "ASC") {
+		query = `ordering=${column}`;
+	    }
+	    if (urlStr) {
+		url = `${API_URL}/score/api/vuls/?${urlStr}&${query}`;
+	    } else {
+		url = `${API_URL}/score/api/vuls/?${query}`;
+	    }
+	}
+        return axios.get(url, {signal: cancel}).then(response=>response.data);
+    }
     
     removeScore(cve) {
 	const url = `${API_URL}/score/api/vuls/${cve}/score/`;
 	return axios.delete(url).then(response => response.data);
     }
 
+    reassignVul(cve, assign) {
+	const data = {'assign': assign}
+        const url = `${API_URL}/score/api/vuls/${cve}/`;
+	return axios.patch(url, data).then(response=>response.data);
+    }
+    
     lockVulToScore(cve) {
 	const data = {'lock': '1'}
 	const url = `${API_URL}/score/api/vuls/${cve}/`;
@@ -332,5 +357,9 @@ export default class AdminAPI{
         const url = `${API_URL}/score/api/vuls/${cve}/`;
 	return axios.post(url, data).then(response=>response.data);
     }
-    
+
+    getSSVCUsers() {
+	let url = `${API_URL}/score/api/users/`;
+        return axios.get(url).then(response=>response.data);
+    }
 }

@@ -439,3 +439,7 @@ def get_status_status(case, user):
             return not(components.filter(current_revision__user=user).exists())
     
     return True
+
+
+    
+    
