@@ -198,9 +198,9 @@ const AdminApp = () => {
 	    <Tab.Content id="admin-fns" className="p-0">
 		<Tab.Pane eventKey="roles" key="roles">
 		    <Card className="mb-4">
-			<Card.Header>Manage Auto Assignment of Cases</Card.Header>
+			<Card.Header>Manage Role Auto Assignment</Card.Header>
 			<Card.Body>
-			    <p>Add users to each role.  Roles can be added in <a href="/admin/">Admin</a>. Weight determines probability of user being assigned a case.</p>
+			    <p>Add users to each role.  Roles can be added in <a href="/admin/">Admin</a>. Weight determines probability of user being assigned.</p>
 			    {roles ?
 			     <Row xs={1} md={2} className="g-4">
 				{roles.map((r, index) => {

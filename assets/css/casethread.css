@@ -17,6 +17,11 @@
     justify-content: space-between;
 }
 
+.scorelist-description {
+    height: 70px;
+    overflow: hidden;
+}
+
 .card-wrapper .group-app {
     height: auto !important;
 }

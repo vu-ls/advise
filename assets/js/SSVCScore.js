@@ -1,9 +1,10 @@
 import React from 'react';
 import { Modal, OverlayTrigger, Popover, Alert, Badge, FloatingLabel, Button, InputGroup, Form, Row, Col } from "react-bootstrap";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ThreadAPI from './ThreadAPI';
 import decision_tree from "./CISA-Coordinator-v2.0.3.json";
 import AssignmentDropdownButton from './AssignmentDropdownButton';
+import DeleteConfirmation from 'Components/DeleteConfirmation';
 
 const threadapi = new ThreadAPI();
 
@@ -26,6 +27,14 @@ const SSVCScore = (props) => {
     const [justifications, setJustifications] = useState({})
     const [invalidDecisions, setInvalidDecisions] = useState([]);
     const [formLocked, setFormLocked] = useState(false);
+    const [displayConfirmationModal, setDisplayConfirmationModal] = useState(false);
+    const [showGutMismatch, setShowGutMismatch] = useState(false);
+    const justRef = useRef([]);
+    const mismatchRef = useRef(null);
+    
+    const hideConfirmationModal = () => {
+        setDisplayConfirmationModal(false);
+    }
     
     useEffect(() => {
 
@@ -50,7 +59,6 @@ const SSVCScore = (props) => {
 
     }, [finalDecision]);
 
-
     const toggleFormLock = () => {
 	if (formLocked) {
 	    setFormLocked(false);
@@ -58,6 +66,16 @@ const SSVCScore = (props) => {
 	    setFormLocked(true);
 	}
     }
+
+
+    const showMismatch = () => {
+	if (showGutMismatch) {
+	    setShowGutMismatch(false);
+	} else {
+	    setShowGutMismatch(true);
+	}
+    }
+	
     
     const validate_dec_tree = (tree) => {
 	/* this validates there isn't totally bogus values for each decision. If we can't validate
@@ -142,9 +160,23 @@ const SSVCScore = (props) => {
 	    setDecisionPoint(data.decision_points.length-1);
 	    if (props.vul.ssvc_justifications) {
 		setJustifications(props.vul.ssvc_justifications);
+		if ('assessment_mismatch' in props.vul.ssvc_justifications) {
+		    setShowGutMismatch(true);
+		}
 	    }
+	} else if (props.preScore) {
+	    const dec_tree = [];
+	    data.decision_points.forEach((point) => {
+		if ('options' in point) {
+		    dec_tree.push({'label': point.label, 'value': point.options[0].label})
+		    if (point.label == "Decision") {
+			setFinalDecision(point.options[0].label);
+		    }
+		}
+	    })
+	    setDecisionPoint(data.decision_points.length-1);
+	    setDecisions(dec_tree);
 	}
-
 
     }
 
@@ -176,7 +208,6 @@ const SSVCScore = (props) => {
 
 
     function update_decision(label, value) {
-	console.log("update decision");
 	let found = false;
 	let updated_decisions = decisions.map(d => {
 	    if (d.label == label) {
@@ -322,7 +353,6 @@ const SSVCScore = (props) => {
 
     useEffect(() => {
 	let child_decisions = [];
-
 	try {
 	    if (decisions.length && data.decision_points.length) {
 		if (decisions.length == data.decision_points.length) {
@@ -413,9 +443,11 @@ const SSVCScore = (props) => {
 
     const removeScore = () => {
 	props.remove();
+	hideConfirmationModal();
 	setDecisionPoint(0);
 	setFinalDecision("");
 	setDecisions([]);
+	setJustifications({});
 	setVector("");
     }
     
@@ -446,7 +478,6 @@ const SSVCScore = (props) => {
     )
 
     const showDecisionNotes = (label) => {
-	console.log(label);
 	console.log(justifications);
 	if (showNotes.includes(label)) {
 	    /* remove it */
@@ -470,7 +501,13 @@ const SSVCScore = (props) => {
     const saveScore = async () => {
 	setDisabledButton(true);
 	const formData = {};
-	formData['justifications'] = justifications;
+	justRef.current = justRef.current.slice(0, decisions.length);
+	let new_justifications = {};
+	decisions.map((el, i) => (justRef.current[i] ? new_justifications[el.label] = justRef.current[i].value : ''));
+	if (mismatchRef?.current?.value) {
+	    new_justifications['assessment_mismatch'] = mismatchRef.current.value;
+	}
+	formData['justifications'] = new_justifications;
 	formData['decision_tree'] = decisions;
 	formData['tree_type'] = decisionTreeName;
 	formData['final_decision'] = finalDecision;
@@ -479,6 +516,48 @@ const SSVCScore = (props) => {
 	props.save(formData);
     }
 
+    const SSVCFormOption = (props) => {
+	return (
+	    <>
+		<Col lg={4} className="d-grid">
+		    <OverlayTrigger
+			trigger="click"
+			rootClose
+			placement="right"
+			overlay={<SSVCPopover
+				     label={props.label}
+				     options={props.options}
+				 />}
+		    >
+			<Button
+			    variant="primary">
+			    {props.label}
+			</Button>
+		    </OverlayTrigger>
+		</Col>
+		<Col lg={6}>
+		    {props.options.map((option, index) => {
+			return (
+			    <Form.Check
+				type="radio"
+				inline
+				key={`${props.label}-${option.label}`}
+				label={option.label}
+				disabled={formLocked}
+				aria-label={option.label}
+				name={`ssvc-${props.label}`}
+				value={option.label}
+				defaultChecked={props.checked.toLowerCase() === option.label.toLowerCase() ? true : false}
+				onChange={(e)=>(moveDecisionPoint(props.label, e))}
+			    />
+			)
+		    })
+		    }
+		</Col>
+	    </>
+	)
+    }
+    
     return (
 	<>
 	<Row>
@@ -501,62 +580,34 @@ const SSVCScore = (props) => {
 		    }
 			 
 		</div>
-
-
 		{data.decision_points ?
 		 <>
 		     {data.decision_points.map((d, index) => {
 			 if (index <= decisionPoint) {
-
 			     if ((d.decision_type == "simple") && (index != data.decision_points.length - 1)) {
 				 let checked = "";
-				 if (props.vul && props.vul.ssvc_decision_tree) {
-				     let old = props.vul.ssvc_decision_tree.filter((b) => b.label == d.label)
-				     if (old.length > 0) {
-					 checked = old[0]['value']
-				     }
+				 if (decisions.length > 0) {
+				     let old = decisions.filter((b) => b.label == d.label)
+				     if (old.length > 0) 
+					 checked = old[0]['value'];
 				 }
-				     {/*<div key={`${d.label}-${index}`} className="mb-3 d-flex align-start gap-5">*/}
+				 /*if (props.vul && props.vul.ssvc_decision_tree) {
+				   let old = props.vul.ssvc_decision_tree.filter((b) => b.label == d.label)
+				   if (old.length > 0) {
+				   console.log(props.vul.ssvc_decision_tree);
+				   console.log(`Better Checked is ${old[0]['value']}`);
+				   checked = old[0]['value']
+				   }*/
 				 return (
-				     <React.Fragment key={`${d.label}-${index}`}>
+				     <React.Fragment key={`${d.label}-form`}>
 					 <Row className="pb-3">
-					     <Col lg={4} className="d-grid">
-						 <OverlayTrigger
-						     trigger="click"
-						     rootClose
-						     placement="right"
-						     overlay={<SSVCPopover
-								  label={d.label}
-								  options={d.options}
-							      />}
-						 >
-						     <Button
-							 variant="primary">
-							 {d.label}
-						     </Button>
-						 </OverlayTrigger>
-					     </Col>
-					     <Col lg={6}>
-						 {d.options.map((option, index) => {
-						     return (
-							 <Form.Check
-							     type="radio"
-							     inline
-							     key={`${d.label}-${option.label}`}
-							     label={option.label}
-							     disabled={formLocked}
-							     aria-label={option.label}
-							     name={d.label}
-							     value={option.label}
-							     defaultChecked={checked.toLowerCase() === option.label.toLowerCase() ? true : false}
-							     onChange={(e)=>(moveDecisionPoint(d.label, e))}
-							 />
-						     )
-						 })
-						 }
-					     </Col>
+					     <SSVCFormOption
+						 label = {d.label}
+						 options = {d.options}
+						 checked = {checked}
+					     />
 					     <Col lg={2} className="text-end">
-						 <Button variant="btn-icon p-0 text-nowrap" disabled={formLocked} onClick={() => showDecisionNotes(d.label)}><i className="fas fa-plus"></i>
+						 <Button variant="btn-icon p-0 text-nowrap" onClick={() => showDecisionNotes(d.label)}><i className="fas fa-plus"></i>
 						     {Object.keys(justifications).includes(d.label) ?
 						      ` View Notes`
 						      :
@@ -569,7 +620,8 @@ const SSVCScore = (props) => {
 					  <Row className="pb-3">
 					      <Col lg={12}>
 						  <Form.Label>{d.label} Decision Justification:</Form.Label>
-						  <Form.Control name={d.label} as="textarea" rows={3} value={justifications[d.label]} onChange={handleAddDecisionNotes} />
+						  <Form.Control name={d.label} as="textarea" rows={3} disabled={formLocked} defaultValue={justifications[d.label]} ref={el=>justRef.current[index] = el} />
+								{/*onChange={(e) => handleAddDecisionNotes(e)} />*/}
 					      </Col>
 					  </Row>
 					 }
@@ -602,24 +654,31 @@ const SSVCScore = (props) => {
 		     {finalDecision &&
 		      <>
 			  <Alert variant={decisionColor}>
-			      <div className="text-center">Decision is {finalDecision}<br/>
-				  {vector &&
-				   
-				   <span>SSVC Vector: {vector}</span>
+			      <div className="text-center">Decision is {finalDecision}{" "}
+				  {props.preScore &&
+				   <>
+				       <span onClick={(e)=>showMismatch()}><i className='bx bxs-comment-error' title="Does this decision not match your expectation?"></i></span>
+				       {showGutMismatch &&
+					<div>
+					    <Form.Label>Does this decision not match your expectation? Explain here:</Form.Label>
+					    <Form.Control name="assessment_mismatch" as="textarea" rows={3} defaultValue={justifications['assessment_mismatch']} ref={mismatchRef} disabled={formLocked} />
+					</div>
+				       }
+				   </>
 				  }
-			     
 			      </div>
 			  </Alert>
 			  
 			  <div className="d-flex justify-content-between mt-3">
                               {props.vul && props.vul.ssvc_decision ?
-			       
-                               <Button variant="danger" disabled={formLocked} onClick={(e)=>removeScore(e)}>
+			       <Button variant="danger" disabled={formLocked} onClick={(e)=>setDisplayConfirmationModal(true)}>
 				   Delete Score
-                               </Button>
-                               :
+			       </Button>
+			       :
                                <div></div>
                               }
+
+			      
 			      
 			      <div>
 				  <div className="d-flex justify-content-end gap-2">
@@ -632,6 +691,14 @@ const SSVCScore = (props) => {
 					      onClick={(e)=>saveScore()}>
 				      {disabledButton ? <>Saving...</>:<>Save Score</>}</Button>
 				  </div>
+				  <DeleteConfirmation
+                                      showModal={displayConfirmationModal}
+                                      confirmModal={removeScore}
+                                      hideModal={hideConfirmationModal}
+                                      id={1}
+                                      message={`Are you sure you want to delete the score? This cannot be undone.`}
+                                  />
+
 			      </div>
 			  </div>
 		      </>

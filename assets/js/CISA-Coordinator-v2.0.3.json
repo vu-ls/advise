@@ -57,6 +57,27 @@
 	    ]
 	},
 	{
+	    "label": "Mission Prevalence",
+	    "key": "P",
+	    "decision_type": "simple",
+	    "options":[
+		{
+		    "label": "Minimal",
+		    "key": "M",
+		    "description": "Neither support nor essential apply. The vulnerable component may be used within the entities, but it is not used as a mission-essential component nor does it support (enough) mission essential functions." },
+		{
+		    "label": "Support",
+		    "key": "S",
+		    "description": "The operation of the vulnerable component merely supports mission essential functions for two or more entities."
+		},
+		{
+		    "label": "Essential",
+		    "key": "E",
+		    "description": "The vulnerable component directly provides capabilities that constitute at least one MEF for at least one entity, and failure may (but need not) lead to overall mission failure."
+		}
+	    ]
+	},
+	{
 	    "label": "Public Well-being Impact",
 	    "key": "B",
 	    "decision_type": "simple",
@@ -78,27 +99,6 @@
 		}
 	    ]
 	},	
-	{
-	    "label": "Mission Prevalence",
-	    "key": "P",
-	    "decision_type": "simple",
-	    "options":[
-		{
-		    "label": "Minimal",
-		    "key": "M",
-		    "description": "Neither support nor essential apply. The vulnerable component may be used within the entities, but it is not used as a mission-essential component nor does it support (enough) mission essential functions." },
-		{
-		    "label": "Support",
-		    "key": "S",
-		    "description": "The operation of the vulnerable component merely supports mission essential functions for two or more entities."
-		},
-		{
-		    "label": "Essential",
-		    "key": "E",
-		    "description": "The vulnerable component directly provides capabilities that constitute at least one MEF for at least one entity, and failure may (but need not) lead to overall mission failure."
-		}
-	    ]
-	},
 	{
 	    "label": "Mission & Well-being",
 	    "key": "M",

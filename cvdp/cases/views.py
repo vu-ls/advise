@@ -1599,24 +1599,39 @@ class SSVCVulView(viewsets.ModelViewSet):
         if not(is_case_owner_or_staff(request.user, vul.case.id)):
             raise PermissionDenied()
         logger.debug(request.data)
-        serializer = self.serializer_class(instance=vul.vulssvc, data=request.data, partial=True)
-        if serializer.is_valid():
-            olddecision=vul.vulssvc.final_decision
-            x = serializer.save()
-
-            action = create_case_action(f"modified SSVC score for vulnerability {vul.vul}", request.user, vul.case, True)
-            action.vulnerability=vul
-            action.save()
-
-            if olddecision != x.final_decision:
-                create_case_change(action, "final_decision", olddecision, x.final_decision)
-            x.user = self.request.user
-            x.last_edit = timezone.now()
-            x.save()
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-        logger.debug(serializer.errors)
-        return Response(serializer.errors,
-			status=status.HTTP_400_BAD_REQUEST)
+        #does ssvc score exist?
+        if VulSSVC.objects.filter(vul=vul).exists():
+            serializer = self.serializer_class(instance=vul.vulssvc, data=request.data, partial=True)
+            if serializer.is_valid():
+                olddecision=vul.vulssvc.final_decision
+                x = serializer.save()
+                
+                action = create_case_action(f"modified SSVC score for vulnerability {vul.vul}", request.user, vul.case, True)
+                action.vulnerability=vul
+                action.save()
+                
+                if olddecision != x.final_decision:
+                    create_case_change(action, "final_decision", olddecision, x.final_decision)
+                x.user = self.request.user
+                x.last_edit = timezone.now()
+                x.save()
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            logger.debug(serializer.errors)
+            return Response(serializer.errors,
+			    status=status.HTTP_400_BAD_REQUEST)
+        else:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                ssvc = VulSSVC(vul=vul, user=self.request.user, **serializer.validated_data)
+                logger.debug(ssvc)
+                ssvc.save()
+                action = create_case_action(f"scored vulnerability (SSVC) {vul.vul}", request.user, vul.case, True)
+                action.vulnerability=vul
+                action.save()
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            logger.debug(serializer.errors)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
 class NotifyVendorsView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
     login_url = "authapp:login"
