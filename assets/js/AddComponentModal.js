@@ -8,7 +8,7 @@ import axios from 'axios';
 const componentapi = new ComponentAPI();
 const contactapi = new ContactAPI();
 
-const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
+const AddComponentModal = ({showModal, hideModal, title, edit, group, clone}) => {
 
     const [error, setError] = useState(null);
     const [formContent, setFormContent] = useState(null);
@@ -17,6 +17,7 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
     const [activeTab, setActiveTab] = useState("detail");
     const [dependencies, setDependencies] = useState([]);
     const [removeList, setRemoveList] = useState([]);
+    const [modalTitle, setModalTitle] = useState("");
     
     // Async Fetch
     const fetchInitialData = async () => {
@@ -36,6 +37,12 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 		await componentapi.getEditComponentForm(edit).then((response) => {
 		    setFormContent(response);
 		})
+		
+	    } else if (clone) {
+		await componentapi.getEditComponentForm(clone).then((response) => {
+                    setFormContent(response);
+                })
+		
 	    } else {
 		await componentapi.getComponentForm().then((response) => {
                     setFormContent(response);
@@ -49,11 +56,18 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 
     useEffect(() => {
 	if (showModal) {
+	    setError(null);
+	    setActiveTab("detail");
             fetchInitialData();
+	    if (clone) {
+		setModalTitle("Clone Component");
+	    } else {
+		setModalTitle(title);
+	    }
 	}
     }, [showModal]);
 
-    useEffect(() => {
+    /*useEffect(() => {
 	if (showModal) {
 	    fetchInitialData();
 	}
@@ -62,7 +76,8 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
     useEffect(() => {
 	setError(null);
     }, [hideModal]);
-
+    */
+    
     const handleSubmit = async (event) => {
 	console.log("IN SUBMIT!!!");
 	
@@ -70,7 +85,10 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 	const formData = new FormData(event.target),
               formDataObj = Object.fromEntries(formData.entries());
 	console.log(formDataObj);
-
+	if (clone) {
+	    /* add the object being so we can copy dependencies */
+	    formDataObj['clone'] = clone
+	}
 	if (edit) {
 	    await componentapi.updateComponent(edit, formDataObj).then((response) => {
 		hideModal();
@@ -121,20 +139,28 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 
     
     const fetchDependencies = async() => {
-	await componentapi.getDependencies(edit).then((response) => {
-            setDependencies(response['dependencies']);
+
+	let component = edit ? edit : clone;
+	
+	await componentapi.getDependencies(component).then((response) => {
+	    setDependencies(response['dependencies']);
             setLoading(false);
         }).catch (err => {
             setLoading(false);
-	    setError(err.response.data.detail);
+	    if (err.response?.data?.detail) {
+		setError(err.response?.data.detail);
+	    } else if (err.response?.status == 404) {
+		setError("No dependencies found.");
+	    } else {
+		setError("Unable to retrieve dependencies");
+	    }
             console.log(err);
         });
     }
 
 
     const setActiveTabNow = (props) => {
-	console.log(edit);
-	if (props == "deps") {
+	if (activeTab != props && props == "deps") {
 	    fetchDependencies();
 	}
         setActiveTab(props);
@@ -152,7 +178,7 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
 
 	<Modal show={showModal} onHide={hideModal} size="lg" centered backdrop="static">
             <Modal.Header closeButton className="border-bottom">
-                <Modal.Title>{title}</Modal.Title>
+                <Modal.Title>{modalTitle}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
 		{groupName &&
@@ -163,7 +189,11 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group}) => {
                  <div className="alert alert-danger">{error}</div>
                  : ""}
 
-		{edit ?
+		{clone &&
+		 <div className="alert alert-info">You are cloning a component. Make sure to change <b>version</b> or <b>name</b> before submitting.</div>
+		}
+
+		{edit || clone ?
 		 <Tabs
                      defaultActiveKey={"detail"}
                      activeKey = {activeTab}

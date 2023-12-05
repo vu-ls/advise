@@ -49,6 +49,7 @@ const ParticipantModal = (props) => {
 		setError(`Error adding participant: ${err.response.data.error}`);
 	    });
 	} else if (props.caseid) {
+	    console.log(`IN CASE ADD ${props.caseid}`)
 	    threadapi.createCaseParticipants(props.caseid, participants, role).then((response) => {
                 setSelected([]);
                 props.hideModal();

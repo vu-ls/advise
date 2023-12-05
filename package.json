@@ -13,6 +13,7 @@
     "react": "^18.2.0",
     "react-bootstrap": "^2.7.0",
     "react-bootstrap-typeahead": "^6.0.0",
+    "react-date-range": "^1.4.0",
     "react-dom": "^18.2.0",
     "react-google-recaptcha": "^2.1.0",
     "react-infinite-scroll-component": "^6.1.0",
@@ -20,6 +21,7 @@
     "react-quill": "^2.0.0",
     "react-router-dom": "^6.14.2",
     "react-table": "^7.8.0",
+    "recharts": "^2.10.3",
     "styled-components": "^6.0.0-rc.1",
     "ts-loader": "^9.4.2",
     "validator": "^13.9.0"

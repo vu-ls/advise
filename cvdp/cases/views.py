@@ -93,31 +93,24 @@ def _my_threads(user):
         cps = CaseThreadParticipant.objects.filter(participant__contact=contact).exclude(participant__notified__isnull=True).values_list('thread__id', flat=True)
     return CaseThread.objects.filter(id__in=cps)
 
+
+#assignee is CONTACT being assigned
+#user is person making the change
+def assign_case_user(case, assignee, user):
+    thread = CaseThread.objects.filter(case=case, official=True).first()
+    add_new_case_participant(thread, assignee.uuid, user, 'owner')
+
 @login_required(login_url="authapp:login")
-@user_passes_test(is_staff_member, login_url='authapp:login')
 def assign_case(request, caseid):
+    if not request.user.is_coordinator:
+        raise PermissionDenied
+    
     case = get_object_or_404(Case, case_id=caseid)
     logger.debug(request.POST)
     title = ""
-    old_value = None
     if request.POST.get('user'):
-        u_id = request.POST['user']
-        if u_id == '-1':
-            #UNASSIGN
-            title = "unassigned case"
-            participant = CaseParticipant.objects.filter(case=case).first()
-            old_value = participant.contact.user.screen_name
-	    # get all threads
-            threads = CaseThreadParticipant.objects.filter(participant=participant)
-            for t in threads:
-                t.delete()
-            participant.delete()
-            action = create_case_action(title, request.user, case)
-            create_case_change(action, "owner", old_value, None)
-            return JsonResponse({'status': 'success'}, status=200)
-        else:
-            user = get_object_or_404(User, id=request.POST.get('user'))
-            title = f"assigned case to {user.screen_name}"
+        user = get_object_or_404(User, id=request.POST.get('user'))
+        title = f"assigned case to {user.screen_name}"
     elif request.POST.get('role'):
         #get role
         role = get_object_or_404(AssignmentRole, role=request.POST.get('role'))
@@ -128,13 +121,58 @@ def assign_case(request, caseid):
     contact = Contact.objects.filter(user=user).first()
     if contact == None:
         raise Http404
+
+    #replaces below code
+    try:
+        assign_case_user(case, contact, request.user)
+    except InvalidRoleException:
+        return JsonResponse({'error': 'Invalid case owner'}, status=400)
+    """
     thread = CaseThread.objects.filter(case=case, official=True).first()
     add_new_case_participant(thread, contact.uuid, request.user, 'owner')
+    """
     action = create_case_action(title, request.user, case)
     #create the case change
-    create_case_change(action, "owner", old_value, user.screen_name)
+    create_case_change(action, "owner", None, user.screen_name)
+
     return JsonResponse({'status':'success'}, status=200)
 
+
+@login_required(login_url="authapp:login")
+def unassign_case(request, caseid):
+    if not request.user.is_coordinator:
+        raise PermissionDenied
+    
+    case = get_object_or_404(Case, case_id=caseid)
+    logger.debug(request.POST)
+    users = request.POST.getlist('users[]', None)
+    if (users):
+        #UNASSIGN
+        for u in users:
+            unassign = get_object_or_404(User, id=u)
+            contact = Contact.objects.filter(user=unassign).first()
+            if (contact):
+                participant = CaseParticipant.objects.filter(case=case, contact=contact, role="owner").first()
+            else:
+                participant = None
+            if (participant):
+                old_value = participant.contact.user.screen_name
+                title = f"unassigned {old_value} from case"
+        
+	        # remove from  all threads
+                threads = CaseThreadParticipant.objects.filter(participant=participant)
+                for t in threads:
+                    t.delete()
+                participant.delete()
+                action = create_case_action(title, request.user, case)
+                create_case_change(action, "owner", old_value, None)
+            else:
+                return JsonResponse({'error': 'User not assigned'}, status=400)
+                
+        return JsonResponse({'status': 'success'}, status=200)
+    else:
+        raise Http404
+    
 
 class StandardResultsPagination(PageNumberPagination):
     page_size = 10
@@ -171,15 +209,15 @@ class CaseNotificationAPI(APIView):
                 artifacts = CaseArtifact.objects.filter(case=case, shared=True, action__created__gte=cv.date_viewed).exclude(action__user=request.user)
                 if artifacts:
                     data.append({'case': case, 'text': f'There are {len(artifacts)} new files in {case.caseid}'})
-                
+
             else:
                 data.append({'case': case, 'text': f'You have a new case to view: {case.caseid}.'})
 
         serializer = NotificationSerializer(data, many=True)
         return Response(serializer.data)
-    
-            
-    
+
+
+
 class CreateNewCaseView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     form_class = CreateCaseForm
     template_name = "cvdp/newcase.html"
@@ -218,14 +256,14 @@ class CreateNewCaseView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         case = form.save()
         case.created_by = self.request.user
         case.save()
-        
+
         if form.cleaned_data.get('auto_assign'):
             contact = Contact.objects.filter(user=self.request.user).first()
             thread = CaseThread.objects.filter(case=case, official=True).first()
             add_new_case_participant(thread, contact.uuid, self.request.user, 'owner')
             action = create_case_action(f"assigned case to {self.request.user.screen_name}", self.request.user, case)
             create_case_change(action, "owner", None, self.request.user.screen_name)
-            
+
         return redirect("cvdp:case", case.case_id)
 
 
@@ -290,7 +328,7 @@ class AdvisoryAPIView(viewsets.ModelViewSet):
         else:
             revision.date_shared = timezone.now()
             action = create_case_action("shared Advisory draft", self.request.user, ca.case, True)
-            
+
         revision.save()
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
@@ -348,7 +386,7 @@ class VulVEXAPIView(generics.RetrieveAPIView):
         context = super().get_serializer_context()
         context.update({"user": self.request.user})
         return context
-    
+
     def get_object(self):
         vul = get_object_or_404(Vulnerability, id=self.kwargs['pk'])
         self.check_object_permissions(self.request, vul.case)
@@ -366,7 +404,7 @@ class VulVEXAPIView(generics.RetrieveAPIView):
                 return vul
             else:
                 raise Http404
-    
+
 class AdviseFilterBackend(DjangoFilterBackend):
     def get_filterset_kwargs(self, request, queryset, view):
         kwargs = super().get_filterset_kwargs(request, queryset, view)
@@ -421,7 +459,7 @@ class CaseAPIFilter(django_filters.FilterSet):
 
 def _search_cases(mycases, searchterm):
     search_query = None
-    
+
     if searchterm:
         search_query = process_query(searchterm)
 
@@ -434,7 +472,7 @@ def _search_cases(mycases, searchterm):
     dedup = list(dict.fromkeys(case_list))
 
     return Case.objects.filter(id__in=dedup)
-        
+
 class CaseAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, CaseObjectAccessPermission)
     lookup_field = "case_id"
@@ -665,7 +703,7 @@ class CaseThreadAPIView(viewsets.ModelViewSet):
             thread.archived=False
             thread.save()
             return Response({}, status=status.HTTP_202_ACCEPTED)
-           
+
         #check to see if this thread has posts?
         if Post.objects.filter(thread=thread).exists():
             #if so, we want to archive vs delete
@@ -732,7 +770,7 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
             kwargs['fields'] = ['id', 'added_by', 'added', 'notified', 'roles_available', 'uuid']
 
         return serializer_class(*args, **kwargs)
-    
+
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return CaseParticipant.objects.none()
@@ -758,13 +796,24 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
         logger.debug(request.data)
         serializer = self.serializer_class(instance=instance, data=data, partial=True)
         if serializer.is_valid():
-            action = create_case_action(f"updated case participant {instance.name}", request.user, instance.case)
-            action.participant=instance
-            action.save()
-            for field, val in data.items():
-                if (val != getattr(instance, field, None)):
-                    create_case_change(action, field, getattr(instance, field), val);
-            serializer.save()
+            if request.data['role'] == 'owner':
+                #doing this so we can send the assignment email
+                cp = add_new_case_participant(instance.case.official_thread, instance.contact.uuid, request.user, request.data['role'])
+                action = create_case_action(f"assigned {instance.name} to case", request.user, instance.case)
+                action.participant=instance
+                action.save()
+            else:
+                action = create_case_action(f"updated case participant {instance.name}", request.user, instance.case)
+                action.participant=instance
+                action.save()
+                for field, val in data.items():
+                    if (val != getattr(instance, field, None)):
+                        create_case_change(action, field, getattr(instance, field), val);
+                serializer.save()
+
+            #get updated object
+            instance = CaseParticipant.objects.get(id=instance.id)
+            serializer = self.get_serializer(instance)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             logger.debug(serializer.errors)
@@ -863,6 +912,10 @@ class CaseThreadParticipantAPIView(viewsets.ModelViewSet):
         names = self.request.POST.getlist('names[]', [])
 
         role = self.request.POST.get('role', None)
+
+        if thread.official and not role:
+            role = 'supplier' #set default
+            
         if (role):
             role = role.lower()
 
@@ -878,7 +931,20 @@ class CaseThreadParticipantAPIView(viewsets.ModelViewSet):
             except InvalidRoleException as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        action = create_case_action(f"added participants to case thread \"{thread.subject}\": {(', ').join(added)}", request.user, thread.case)
+        if thread.official:
+            if role == "owner":
+                title = f" assigned {(', ').join(added)} to the case"
+            elif len(added) > 1:
+                title = f"added {role}s to case: {(', ').join(added)}"
+            else:
+                title = f"added {added[0]} to case as {role}."
+        else:
+            if len(added) >  1:
+                title = f"added participant to case thread \"{thread.subject}\": {(', ').join(added)}"
+            else:
+                title = f"added {added[0]} to case thread \"{thread.subject}\"."
+
+        action = create_case_action(title, request.user, thread.case)
 
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
@@ -965,7 +1031,7 @@ class PostDiffView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
         mimetype = 'application/json'
         return HttpResponse(data, mimetype)
 
-    
+
 class CWEAPIView(viewsets.ModelViewSet):
     serializer_class = CWESerializer
     permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
@@ -995,7 +1061,7 @@ class VulAPIView(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"user": self.request.user})
         return context
-    
+
     def get_queryset(self):
         logger.debug("IN VULS API");
         if getattr(self, 'swagger_fake_view', False):
@@ -1114,8 +1180,8 @@ class UploadPostFile(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateVi
         ca.save()
         url = reverse("cvdp:artifact", args=[ca.file.uuid])
         return JsonResponse({'status': 'success', 'image_url': url}, status=200)
-       
-    
+
+
 class CaseArtifactAPIView(viewsets.ModelViewSet):
     serializer_class = ArtifactSerializer
     permission_classes = (IsAuthenticated, PendingUserPermission, CaseObjectAccessWritePermission)
@@ -1160,7 +1226,7 @@ class CaseArtifactAPIView(viewsets.ModelViewSet):
     def get_object(self):
         ca = get_object_or_404(CaseArtifact, file__uuid=self.kwargs['uuid'])
         logger.debug(f"IN CASE ARTIFACT!!! {ca.file.file.size}")
-                
+
         self.check_object_permissions(self.request, ca.case)
         return ca
 
@@ -1243,7 +1309,7 @@ class ArtifactTransferAPIView(viewsets.ModelViewSet):
         if not request.FILES:
             return Response({'detail': 'No files present'},
                             status=status.HTTP_400_BAD_REQUEST)
-        
+
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             logger.debug(request.data['file'])
@@ -1252,7 +1318,7 @@ class ArtifactTransferAPIView(viewsets.ModelViewSet):
             logger.debug(fname)
             if CaseArtifact.objects.filter(file__filename=fname, case=case).exists():
                 return Response({'detail': f'File {fname} already transferred'}, status=status.HTTP_400_BAD_REQUEST)
-                
+
             if connection:
                 action = create_case_action(f"transferred document: {fname} from {connection.group.name}",
                                             self.request.user, case)
@@ -1264,20 +1330,20 @@ class ArtifactTransferAPIView(viewsets.ModelViewSet):
 
                 """action = Action(title=f"Group transferred document: {fname}",
                                 user=self.request.user)
-                
+
                 action.save()"""
 
             file = request.data['file']
             artifact = add_artifact(file)
 
             b_action = Action.objects.get(id=action.action_ptr_id)
-            
+
             ca = CaseArtifact(action=b_action,
                               file=artifact,
                               case=case)
             ca.save()
             logger.debug("ADDED ARTIFACT")
-            
+
             return Response({}, status=status.HTTP_202_ACCEPTED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -1298,7 +1364,7 @@ class ThreadTransferAPIView(viewsets.ModelViewSet):
         prev = CaseThread.objects.filter(case=case, subject="Transferred Case Thread").first()
         if prev:
             return Response({'detail': 'Thread has already been transferred'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         try:
             serializer = self.serializer_class(data=request.data['posts'], many=True)
             if serializer.is_valid():
@@ -1337,7 +1403,7 @@ class ThreadTransferAPIView(viewsets.ModelViewSet):
             logger.debug(traceback.format_exc())
             return Response({'detail': 'An error occurred during transfer.'},
                             status=status.HTTP_400_BAD_REQUEST)
-                        
+
 
 class StatusTransferAPIView(viewsets.ModelViewSet):
     serializer_class = VEXUploadSerializer
@@ -1349,7 +1415,7 @@ class StatusTransferAPIView(viewsets.ModelViewSet):
         case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         if not request.data.get('vex'):
             return Response({'detail': 'vex is required field'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         serializer = self.serializer_class(data=request.data['vex'])
         if serializer.is_valid():
             #get connection
@@ -1367,8 +1433,8 @@ class StatusTransferAPIView(viewsets.ModelViewSet):
         else:
             print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                                       
-        
+
+
 class VulTransferAPIView(viewsets.ModelViewSet):
     serializer_class = VulSerializer
     permission_classes = (IsAuthenticated, CaseTransferAccessPermission)
@@ -1409,7 +1475,7 @@ class VulTransferAPIView(viewsets.ModelViewSet):
         except:
             logger.debug(traceback.format_exc())
             return Response({'detail': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 class AdvisoryTransferAPIView(viewsets.ModelViewSet):
     serializer_class = AdvisorySerializer
@@ -1437,7 +1503,7 @@ class AdvisoryTransferAPIView(viewsets.ModelViewSet):
                 else:
                     action = Action(title="transferred new version of Advisory",
                                     user=self.request.user)
-                    
+
                 action.save()
                 serializer = self.serializer_class(instance=advisory.current_revision)
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -1448,7 +1514,7 @@ class AdvisoryTransferAPIView(viewsets.ModelViewSet):
         except:
             return Response({'detail': 'error occurred during transfer'},
                             status=status.HTTP_400_BAD_REQUEST)
-        
+
 class ScoreVulCVSSView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     form_class = CVSSForm
     login_url = "authapp:login"
@@ -1605,11 +1671,11 @@ class SSVCVulView(viewsets.ModelViewSet):
             if serializer.is_valid():
                 olddecision=vul.vulssvc.final_decision
                 x = serializer.save()
-                
+
                 action = create_case_action(f"modified SSVC score for vulnerability {vul.vul}", request.user, vul.case, True)
                 action.vulnerability=vul
                 action.save()
-                
+
                 if olddecision != x.final_decision:
                     create_case_change(action, "final_decision", olddecision, x.final_decision)
                 x.user = self.request.user
@@ -1654,7 +1720,7 @@ class NotifyVendorsView(LoginRequiredMixin, UserPassesTestMixin, generic.Templat
         if not participants and "all" in request.path:
             #get all participants that haven't been notified
             participants = CaseParticipant.objects.filter(case=case).exclude(notified__isnull=False).values_list('id', flat=True)
-        
+
         if not participants or not subject or not content:
             return JsonResponse({'message': 'participants, subject, and content required'}, status=400)
 
@@ -1686,7 +1752,7 @@ class CaseActivityAPIView(APIView):
         # -----------------------------------------------------------
         logger.debug(f"page_number is {page_number}")
         logger.debug(request.query_params)
-        
+
         cases = []
         if self.kwargs.get('caseid'):
             case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
@@ -1713,7 +1779,7 @@ class CaseActivityAPIView(APIView):
             status = StatusRevision.objects.filter(component_status__vul__case__in=cases)
             status_serializer = StatusActionSerializer(status, many=True)
             status_actions = status_serializer.data
-            
+
         else:
             actions = CaseAction.objects.filter(case__in=cases, action_type=1)
             action_serializer = CaseActionSerializer(actions, many=True)
@@ -1751,12 +1817,12 @@ class CaseActivityAPIView(APIView):
             next_page = data.next_page_number()
         else:
             next_page = None
-        
+
         return Response({'results':data.object_list, 'next_page': next_page})
 
 class GroupCasesAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, PendingUserPermission, CoordinatorPermission)
-    serializer_class = CaseSerializer 
+    serializer_class = CaseSerializer
     pagination_class=StandardResultsPagination
 
     def get_queryset(self):
@@ -1792,11 +1858,11 @@ class ContactActivityAPIView(viewsets.ModelViewSet):
         contact = get_object_or_404(Contact, uuid=self.kwargs.get('contact'))
         if contact.user:
             return CaseAction.objects.filter(user=contact.user).order_by('-created')
-        
+
         cp = CaseParticipant.objects.filter(contact=contact)
         return CaseAction.objects.filter(participant__in=cp).order_by('-created')
 
-    
+
 class CaseTransferAPIView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, CoordinatorPermission)
     serializer_class = CaseTransferSerializer
@@ -1837,13 +1903,11 @@ class CaseTransferAPIView(viewsets.ModelViewSet):
             case.status=Case.INACTIVE_STATUS
             case.resolution = f'Transferred to {connection.group.name}'
             case.save()
-            
+
             serializer = self.serializer_class(ct)
-            
+
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-        
+
         else:
             logger.debug(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    

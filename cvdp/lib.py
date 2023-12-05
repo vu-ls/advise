@@ -190,10 +190,11 @@ def add_new_case_participant(thread, name, user, role):
                 #TODO: ADD Activity for role change
                 if role == "owner":
                     if contact.user:
-                        if user == contact.user:
-                            cp.notified=timezone.now()
                         if not contact.user.is_coordinator:
                             raise InvalidRoleException("Participant can't be case owner")
+                        else:
+                            cp.notified = timezone.now()
+                            logger.debug(f"AUTO NOTIFYING USER - user gets assignment email - {timezone.now()}")
                     else:
                         raise InvalidRoleException("Participant can't be case owner")
 
@@ -263,6 +264,7 @@ def add_new_case_participant(thread, name, user, role):
         """
 
     if ((created or role_change) and role == "owner"):
+
         email_context = {'url': f'{settings.SERVER_NAME}{thread.case.get_absolute_url()}', 'case': thread.case.caseid, 'template': "case_assignment", 'assignee': user.screen_name, 'prepend': thread.case.caseid}
         #if this user assigned themselves, don't send an email
         if contact and (contact.email != user.email):

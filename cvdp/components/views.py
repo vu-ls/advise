@@ -146,7 +146,24 @@ class ComponentAPIView(viewsets.ModelViewSet):
             component = serializer.save()
             component.added_by = self.request.user
             component.save()
-            create_component_action("created component", self.request.user, component, 1)
+
+            if request.data.get('clone'):
+                #get original component
+                old_comp = Component.objects.filter(id=request.data['clone']).first()
+                if old_comp:
+                    create_component_action(f"cloned component {old_comp.name} {old_comp.version}", self.request.user, component, 1)
+                    #clone dependencies
+                    prod = Product.objects.filter(component=old_comp).first()
+                    if (prod and (prod.dependencies.count() > 0)):
+                        #create cloned product
+                        cloned_prod = Product(component=component)
+                        cloned_prod.save()
+                        #copy dependencies to cloned component
+                        for dep in prod.dependencies.all():
+                            cloned_prod.dependencies.add(dep)
+                            action = create_component_action(f"added dependency {dep} to cloned component", self.request.user, component, 4)
+            else:
+                create_component_action("created component", self.request.user, component, 1)
         else:
             logger.debug(serializer.errors)
             return Response(serializer.errors,
@@ -765,7 +782,7 @@ class DownloadSPDXFile(LoginRequiredMixin, UserPassesTestMixin, generic.Template
             logger.debug(traceback.format_exc())
             return JsonResponse({'error': f'Problem generating SPDX file: {str(e)}'}, status=400)
 
-        action = create_component_action(f"create {format} spdx file", self.request.user, obj, 3)
+        action = create_component_action(f"generated {format} spdx file", self.request.user, obj, 3)
         with open(tf.name, 'r') as content:
             sbom = ContentFile(content.read(), name=f"{obj.name}_{obj.version}.{format}")
             mime_type = 'application/json'

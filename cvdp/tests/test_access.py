@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from authapp.models import User
 from django.contrib.auth.models import Group
-from cvdp.models import Case, CaseParticipant, Contact
+from cvdp.models import Case, CaseParticipant, Contact, UserAssignmentWeight, AssignmentRole
 from django.test import TestCase, Client, modify_settings
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -25,6 +25,10 @@ class TestAccessUrls(TestCase):
         group = Group.objects.create(name='vendor')
         group.user_set.add(self.vendor_user)
 
+        role = AssignmentRole.objects.create(role="coordinator")
+
+        UserAssignmentWeight.objects.create(user=self.coord_user, role=role, weight=5)
+        
         Case.objects.create(case_id = '123456', status=Case.ACTIVE_STATUS, title='Test Case', summary="This is a summary of test case")
         Case.objects.create(case_id = '987654', status=Case.ACTIVE_STATUS, title='Test Case', summary="This is a summary of test case")
         acase = Case.objects.create(case_id = '567891', status=Case.ACTIVE_STATUS, title='Test Case', summary="This is a summary of test case")
@@ -69,6 +73,174 @@ class TestAccessUrls(TestCase):
     @modify_settings(MIDDLEWARE={
         'remove': 'authapp.middleware.Require2FAMiddleware'
     })
+    def test_coordinator_assign_case(self):
+        client = Client()
+
+        client.force_login(user=self.coord_user)
+
+        logger.debug(reverse('cvdp:assign_case', args=['123456']))
+        valid_payload = {'user': self.coord_user.id}
+
+        response = client.post(
+            reverse('cvdp:assign_case', args=['123456']),
+            data=valid_payload
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @modify_settings(MIDDLEWARE={
+        'remove': 'authapp.middleware.Require2FAMiddleware'
+    })
+    def test_coordinator_autoassign_case_bogus(self):
+        client = Client()
+
+        client.force_login(user=self.coord_user)
+
+        logger.debug(reverse('cvdp:assign_case', args=['123456']))
+        valid_payload = {'role': 'bogus'}
+
+        response = client.post(
+            reverse('cvdp:assign_case', args=['123456']),
+            data=valid_payload
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    @modify_settings(MIDDLEWARE={
+        'remove': 'authapp.middleware.Require2FAMiddleware'
+    })
+    def test_coordinator_autoassign_case(self):
+        client = Client()
+
+        client.force_login(user=self.coord_user)
+        
+        logger.debug(reverse('cvdp:assign_case', args=['123456']))
+        valid_payload = {'role': 'coordinator'}
+
+        response = client.post(
+	    reverse('cvdp:assign_case', args=['123456']),
+            data=valid_payload
+	)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+    @modify_settings(MIDDLEWARE={
+        'remove': 'authapp.middleware.Require2FAMiddleware'
+    })
+    def test_coordinator_assign_non_coordinator_case(self):
+        client = Client()
+
+        client.force_login(user=self.coord_user)
+
+        logger.debug(reverse('cvdp:assign_case', args=['123456']))
+        valid_payload = {'user': self.reporter_user.id}
+
+        response = client.post(
+            reverse('cvdp:assign_case', args=['123456']),
+            data=valid_payload
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        
+    @modify_settings(MIDDLEWARE={
+        'remove': 'authapp.middleware.Require2FAMiddleware'
+    })
+    def test_vendor_assign_coordinator_case(self):
+        client = Client()
+
+        client.force_login(user=self.vendor_user)
+
+        logger.debug(reverse('cvdp:assign_case', args=['123456']))
+        valid_payload = {'user': self.coord_user.id}
+
+        response = client.post(
+            reverse('cvdp:assign_case', args=['123456']),
+            data=valid_payload
+        )
+        #redirects to login because user doesn't pass test
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    @modify_settings(MIDDLEWARE={
+        'remove': 'authapp.middleware.Require2FAMiddleware'
+    })
+    def test_coordinator_unassign_case(self):
+        client = Client()
+
+        client.force_login(user=self.coord_user)
+
+        logger.debug(reverse('cvdp:assign_case', args=['123456']))
+        valid_payload = {'user': self.coord_user.id}
+
+        response = client.post(
+            reverse('cvdp:assign_case', args=['123456']),
+            data=valid_payload
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        valid_payload = {'users[]': [self.coord_user.id]}
+        
+        response = client.post(
+            reverse('cvdp:unassign_case', args=['123456']),
+            data=valid_payload
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+
+    @modify_settings(MIDDLEWARE={
+        'remove': 'authapp.middleware.Require2FAMiddleware'
+    })
+    def test_noncoordinator_unassign_case(self):
+        client = Client()
+
+        client.force_login(user=self.coord_user)
+
+        logger.debug(reverse('cvdp:assign_case', args=['123456']))
+        valid_payload = {'user': self.coord_user.id}
+
+        response = client.post(
+            reverse('cvdp:assign_case', args=['123456']),
+            data=valid_payload
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        client.force_login(user=self.vendor_user)
+        
+        valid_payload =	{'users[]': [self.coord_user.id]}
+	
+        response = client.post(
+            reverse('cvdp:unassign_case', args=['123456']),
+            data=valid_payload
+	)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @modify_settings(MIDDLEWARE={
+        'remove': 'authapp.middleware.Require2FAMiddleware'
+    })
+    def test_coordinator_unassign_case_baddata(self):
+        client = Client()
+
+        client.force_login(user=self.coord_user)
+
+        logger.debug(reverse('cvdp:assign_case', args=['123456']))
+        valid_payload = {'user': self.coord_user.id}
+
+        response = client.post(
+            reverse('cvdp:assign_case', args=['123456']),
+            data=valid_payload
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        valid_payload = {'users[]': [self.reporter_user.id]}
+
+        response = client.post(
+            reverse('cvdp:unassign_case', args=['123456']),
+            data=valid_payload
+	)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+        
+    @modify_settings(MIDDLEWARE={
+        'remove': 'authapp.middleware.Require2FAMiddleware'
+    })
     def test_vendor_case_access(self):
         client = Client()
         client.force_login(user=self.vendor_user)
@@ -91,6 +263,8 @@ class TestAccessUrls(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
+    
+        
     """
     @modify_settings(MIDDLEWARE={
         'remove': 'authapp.middleware.Require2FAMiddleware'

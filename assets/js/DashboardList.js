@@ -89,7 +89,8 @@ const DashboardList = () => {
                 setActivityLoading(false);
             })
             .catch((err) => {
-                setError(`Error is ${err.response}`);
+		console.log(err);
+                setError(`Error is ${err.response.data.message}`);
                 setActivityLoading(false);
             });
     };

@@ -93,6 +93,7 @@ const CaseThreadApp = () => {
 		    console.log("GOT NEW PARTICIPANTS");
                     console.log(response);
                     setParticipants(response);
+		    setReloadActivity(reloadActivity + 1);
 		    //setIsLoading(false);
 		})
             } catch (err) {

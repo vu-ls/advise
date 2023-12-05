@@ -46,6 +46,15 @@ export default class CaseThreadAPI{
 	const url = `${API_URL}/api/case/${c.case_id}/activity/?q=${search}`;
         return axios.get(url).then(response => response.data);
     }
+
+    unassignCase(c, names) {
+	const url = `${API_URL}/api/case/${c}/unassign/`;
+        let formField = new FormData();
+	for (var i = 0; i < names.length; i++) {
+            formField.append('users[]', names[i]);
+        }
+        return axios.post(url, formField).then(response => response.data);
+    }
     
     assignCase(c, name) {
 	const url = `${API_URL}/api/case/${c}/assign/`;
@@ -228,7 +237,7 @@ export default class CaseThreadAPI{
     }
     createCaseParticipants(c, participants, role) {
 	let formField = new FormData();
-	const url = `${API_URL}/api/case/${c.case}/participants/`;
+	const url = `${API_URL}/api/case/${c}/participants/`;
 	for (var i = 0; i < participants.length; i++) {
 	    formField.append('names[]', participants[i]);
 	}

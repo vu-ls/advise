@@ -50,7 +50,7 @@ const StandardPagination = ({
 	const isPageNumberFirst = pageNumber === 1;
 	const isPageNumberLast = pageNumber === pagesCount;
 	const isCurrentPageWithinTwoPageNumbers =
-	      Math.abs(pageNumber - currentPage) <= 2;
+	      Math.abs(pageNumber - currentPage) <= 1;
 	
 	if (
 	    isPageNumberFirst ||

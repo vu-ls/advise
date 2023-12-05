@@ -57,7 +57,6 @@ function Table({columns, data, setSelectedRows}) {
 	if (selectedFlatRows) {
 	    setSelectedRows(selectedFlatRows);
 	}
-	console.log(selectedFlatRows);
     },[
 	setSelectedRows,
 	selectedRowIds
@@ -350,21 +349,23 @@ const ParticipantTable = () => {
 	setError(null);
         threadapi.editCaseParticipant(rowIndex, value).then((response) => {
             console.log("successfully updated");
+	    setData((old) =>
+		old.map((row, index) => {
+		    if (row.id === rowIndex) {
+			return response;
+			/*return {
+			    ...old[index],
+			    [id]: value,
+			};*/
+		    }
+		    return row;
+		})
+	    );
 	}).catch(err => {
 	    setError(`Error changing role for this user: ${err.message} ${err.response.data.detail}`);
 	    console.log(err);
 	})
-	setData((old) =>
-	    old.map((row, index) => {
-		if (row.id === rowIndex) {
-		    return {
-			...old[index],
-			[id]: value,
-		    };
-		}
-		return row;
-	    })
-	);
+
     }
 
 

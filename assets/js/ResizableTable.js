@@ -91,8 +91,10 @@ const IndeterminateCheckbox = React.forwardRef(
   }
 )
 
-const ResizableTable = ({columns, data, setSelectedRows, update, showRowExpansion, hasMore, searchParams}) => {
+const ResizableTable = ({columns, data, setSelectedRows, update, showRowExpansion, hasMore, searchParams, skipPageResetRef}) => {
 
+    
+    
     const defaultColumn = React.useMemo(
     () => ({
       minWidth: 30,
@@ -118,6 +120,13 @@ const ResizableTable = ({columns, data, setSelectedRows, update, showRowExpansio
             columns,
             data,
 	    defaultColumn,
+	    autoResetPage: !skipPageResetRef.current,
+	    autoResetExpanded: !skipPageResetRef.current,
+	    autoResetGroupBy: !skipPageResetRef.current,
+	    autoResetSelectedRows: !skipPageResetRef.current,
+	    autoResetSortBy: !skipPageResetRef.current,
+	    autoResetFilters: !skipPageResetRef.current,
+	    autoResetRowState: !skipPageResetRef.current,
         },
         useSortBy,
 	useExpanded,

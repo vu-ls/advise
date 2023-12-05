@@ -62,6 +62,7 @@ const SSVCScore = (props) => {
     const toggleFormLock = () => {
 	if (formLocked) {
 	    setFormLocked(false);
+	    props.scoreChange(true);
 	} else {
 	    setFormLocked(true);
 	}
@@ -388,6 +389,7 @@ const SSVCScore = (props) => {
     }, [decisions]);
 
     const moveDecisionPoint = (label, e) => {
+	props.scoreChange(true);
 	/* get next decision point */
 	data.decision_points.forEach((d, index) => {
 	    if (d.label == label) {
@@ -478,10 +480,10 @@ const SSVCScore = (props) => {
     )
 
     const showDecisionNotes = (label) => {
-	console.log(justifications);
+
 	if (showNotes.includes(label)) {
-	    /* remove it */
 	    setShowNotes((item) => item.filter((select) => select != label))
+	    
 	} else {
 	    setShowNotes(showNotes => [...showNotes, label])
 	}
@@ -493,8 +495,7 @@ const SSVCScore = (props) => {
 	setJustifications({
 	    ...justifications,
 	    [key]:value
-	}
-			 );
+	});
     }
     
     
@@ -503,7 +504,18 @@ const SSVCScore = (props) => {
 	const formData = {};
 	justRef.current = justRef.current.slice(0, decisions.length);
 	let new_justifications = {};
-	decisions.map((el, i) => (justRef.current[i] ? new_justifications[el.label] = justRef.current[i].value : ''));
+	if (justifications) {
+	    decisions.map((el, i) => {
+		if (justRef.current[i]) {
+		    new_justifications[el.label] = justRef.current[i].value;
+		} else if (el.label in justifications) {
+		    /* keep old note */
+		    new_justifications[el.label] = justifications[el.label];
+		}
+	    });
+	} else {
+	    decisions.map((el, i) => (justRef.current[i] ? new_justifications[el.label] = justRef.current[i].value : ''));
+	}
 	if (mismatchRef?.current?.value) {
 	    new_justifications['assessment_mismatch'] = mismatchRef.current.value;
 	}
@@ -562,10 +574,11 @@ const SSVCScore = (props) => {
 	<>
 	<Row>
 	    <Col lg={12}>
-		<div className="d-flex justify-content-between mb-3 pb-3 border-bottom">
+		<div className="d-flex justify-content-between pb-1 border-bottom mb-3">
 		    <div>
 			<h5 className="mb-2">Currently using <b>{decisionTreeName}</b> as Decision Tree</h5>
 			<small>Click decision button to view description of each decision point.</small>
+			
 		    </div>
 		    {props.assignment &&
 		     <div>
@@ -580,6 +593,16 @@ const SSVCScore = (props) => {
 		    }
 			 
 		</div>
+		{props.vul && props.vul.ssvc_decision &&
+		 <div className="mb-3 mt-3">
+		     {formLocked ?
+		      <span><Button onClick={(e)=>toggleFormLock()} variant="btn btn-icon warningtext"><i className="fas fa-lock"></i></Button> This vulnerability has already been scored. Click the lock to reassess. </span>
+		      :
+		      <span><Button onClick={(e)=>toggleFormLock()} variant="btn btn-icon goodtext"><i className="fas fa-unlock"></i></Button> Click the lock to prevent changes.</span>
+		     }
+		 </div>
+		}
+
 		{data.decision_points ?
 		 <>
 		     {data.decision_points.map((d, index) => {
@@ -608,7 +631,7 @@ const SSVCScore = (props) => {
 					     />
 					     <Col lg={2} className="text-end">
 						 <Button variant="btn-icon p-0 text-nowrap" onClick={() => showDecisionNotes(d.label)}><i className="fas fa-plus"></i>
-						     {Object.keys(justifications).includes(d.label) ?
+						     {Object.keys(justifications).includes(d.label) && justifications[d.label] ?
 						      ` View Notes`
 						      :
 						      ` Add Notes`
@@ -616,15 +639,13 @@ const SSVCScore = (props) => {
 						 </Button>
 					     </Col>
 					 </Row>
-					 {showNotes.includes(d.label) &&
-					  <Row className="pb-3">
+					 <Row className={`pb-3 ${showNotes.includes(d.label) ? "": "hidden"}`}>
 					      <Col lg={12}>
 						  <Form.Label>{d.label} Decision Justification:</Form.Label>
-						  <Form.Control name={d.label} as="textarea" rows={3} disabled={formLocked} defaultValue={justifications[d.label]} ref={el=>justRef.current[index] = el} />
-								{/*onChange={(e) => handleAddDecisionNotes(e)} />*/}
+						  <Form.Control name={d.label} as="textarea" rows={3} disabled={formLocked} defaultValue={justifications[d.label]} ref={el=>justRef.current[index] = el} onChange={(e)=>(props.scoreChange(true))} />
+						  {/*onChange={(e) => handleAddDecisionNotes(e)} />*/}
 					      </Col>
 					  </Row>
-					 }
 				     </React.Fragment>
 				 )
 			     } else if (index != data.decision_points.length - 1) {
@@ -661,23 +682,23 @@ const SSVCScore = (props) => {
 				       {showGutMismatch &&
 					<div>
 					    <Form.Label>Does this decision not match your expectation? Explain here:</Form.Label>
-					    <Form.Control name="assessment_mismatch" as="textarea" rows={3} defaultValue={justifications['assessment_mismatch']} ref={mismatchRef} disabled={formLocked} />
+					    <Form.Control name="assessment_mismatch" as="textarea" rows={3} defaultValue={justifications['assessment_mismatch']} ref={mismatchRef} disabled={formLocked} onChange={(e)=>props.scoreChange(true)}/>
 					</div>
 				       }
 				   </>
 				  }
 			      </div>
 			  </Alert>
-			  
+
 			  <div className="d-flex justify-content-between mt-3">
-                              {props.vul && props.vul.ssvc_decision ?
+			      {props.vul && props.vul.ssvc_decision ?
 			       <Button variant="danger" disabled={formLocked} onClick={(e)=>setDisplayConfirmationModal(true)}>
 				   Delete Score
 			       </Button>
 			       :
-                               <div></div>
-                              }
-
+			       <div></div>
+				  }
+			      
 			      
 			      
 			      <div>
@@ -692,13 +713,12 @@ const SSVCScore = (props) => {
 				      {disabledButton ? <>Saving...</>:<>Save Score</>}</Button>
 				  </div>
 				  <DeleteConfirmation
-                                      showModal={displayConfirmationModal}
-                                      confirmModal={removeScore}
-                                      hideModal={hideConfirmationModal}
-                                      id={1}
-                                      message={`Are you sure you want to delete the score? This cannot be undone.`}
+				      showModal={displayConfirmationModal}
+				      confirmModal={removeScore}
+				      hideModal={hideConfirmationModal}
+				      id={1}
+				      message={`Are you sure you want to delete the score? This cannot be undone.`}
                                   />
-
 			      </div>
 			  </div>
 		      </>
@@ -707,17 +727,6 @@ const SSVCScore = (props) => {
 		}
 	    </Col>
 	</Row>
-	    {props.vul && props.vul.ssvc_decision &&
-	     <Row className="mt-2">
-		 <Col lg={12}>
-		     {formLocked ?
-		      <span><Button onClick={(e)=>toggleFormLock()} variant="btn btn-icon"><i className="fas fa-lock"></i></Button> This vulnerability has already been scored. Click the lock to reassess. </span>
-		      :
-		      <span><Button onClick={(e)=>toggleFormLock()} variant="btn btn-icon"><i className="fas fa-unlock"></i></Button> Click the lock to prevent changes.</span>
-		     }
-		 </Col>
-	     </Row>
-	    }
 	</>
 		 
     )

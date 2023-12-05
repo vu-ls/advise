@@ -313,7 +313,7 @@ class CaseParticipantSerializer(DynamicFieldsModelSerializer):
     logocolor = serializers.SerializerMethodField()
     #profile = serializers.SerializerMethodField()
     participant_type = serializers.SerializerMethodField()
-    added_by = serializers.CharField(source='user.screen_name')
+    added_by = serializers.CharField(source='user.screen_name', read_only=True)
     uuid = serializers.SerializerMethodField()
     roles_available = serializers.SerializerMethodField()
     users = serializers.SerializerMethodField()
@@ -886,7 +886,7 @@ class CSAFPublisherSerializer(serializers.ModelSerializer):
     contact_details = serializers.CharField(default=f"Email: {settings.CONTACT_EMAIL}")
     issuing_authority = serializers.CharField(default=f'{settings.ORG_NAME}')
     name = serializers.CharField(default=f'{settings.ORG_NAME}')
-    namespace = serializers.CharField(default="www.test.org")
+    namespace = serializers.CharField(default=f'{settings.SERVER_NAME}')
 
     class Meta:
         model = CaseAdvisory

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Badge, FloatingLabel, Button, InputGroup, Form, Row, Col } from "react-bootstrap";
 import {Typeahead} from 'react-bootstrap-typeahead';
-import { useState, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { format, parse, addHours } from 'date-fns';
 import ThreadAPI from './ThreadAPI';
 import 'react-bootstrap-typeahead/css/Typeahead.bs5.css';
@@ -10,6 +10,11 @@ import '../css/casethread.css';
 
 const threadapi = new ThreadAPI();
 
+
+const ActiveIndexWatcher = ({ update }) => {
+    useEffect(update);
+    return null;
+};
 
 const EditVulModal = (props) => {
     const [error, setError] = useState("");
@@ -27,6 +32,9 @@ const EditVulModal = (props) => {
     const [datePublic, setDatePublic] = useState("");
     const [userInput, setUserInput] = useState(false);
     const [alert, setAlert] = useState(null);
+    const [activeIndex, setActiveIndex] = useState(-1);
+    const ref_typeahead = useRef(null);
+
     
     useEffect(() => {
 	if (props.vul) {
@@ -81,7 +89,7 @@ const EditVulModal = (props) => {
 	}
     }
     
-    const submitVul = (event) => {
+    const submitVul = async (event) => {
         event.preventDefault();
         const error = false;
         const formData = new FormData(event.target),
@@ -114,19 +122,34 @@ const EditVulModal = (props) => {
         }
 	if (error == false) {
             /* else submit form */
-            try {
-                threadapi.updateVul(props.vul, formDataObj).then((response) => {
-                    /* get all questions updated */
-		    props.updateVul();
-		    props.hideModal();
-                })
-
-            } catch (err) {
+            await threadapi.updateVul(props.vul, formDataObj).then((response) => {
+                /* get all questions updated */
+		props.updateVul();
+		props.hideModal();
+	    }).catch(err => {
                 console.log(err);
-            }
+		setError(`Error submitting vulnerability information: ${err.response?.data.detail}`);
+            });
         }
     }
 
+
+    const onKeyDown = useCallback(
+	(e) => {
+	    if (e.keyCode === 13 && activeIndex === -1) {
+		const input_target = e.target.getAttribute('aria-owns');
+		//if ("reference" in e.target) {
+		if (input_target.includes('reference')) {
+		    setUserInput(true);
+		    setReferences(references => [...references, e.target.value])
+		    ref_typeahead.current.clear()
+		}
+
+	    }
+	},
+	[activeIndex]
+    );
+    
     return (
 	props.vul ?
         <Modal show={props.showModal} onHide={props.hideModal} size="lg" centered backdrop="static">
@@ -191,6 +214,7 @@ const EditVulModal = (props) => {
                                     options={[]}
                                     allowNew
                                     onChange={setTags}
+				    className="typeahead"
                                     selected={tags}
                                     placeholder="Add Tags"
                                 />
@@ -209,22 +233,31 @@ const EditVulModal = (props) => {
 				    multiple
 				    labelKey="cwe"
 				    options={cwes}
+				    className="typeahead"
 				    onChange={(e)=>(setUserInput(true), setCWESelected(e))}
 				    selected={cweSelected}
 				    placeholder="Add problem type(s)..."
 				/>
 			    </Form.Group>
-			    <Form.Group className="mb-3" controlId="_type">
+			    <Form.Group className="mb-3 typeahead" controlId="_type">
 				<Form.Label>References</Form.Label>
 				<Typeahead
 				    id="reference"
+				    ref={ref_typeahead}
+				    labelKey="references"
+				    onKeyDown={onKeyDown}
 				    multiple
 				    options={[]}
 				    allowNew
 				    onChange={(e)=>(setUserInput(true), setReferences(e))}
 				    selected={references}
 				    placeholder="Add references"
-				/>
+				>
+				    {({ activeIndex }) => (
+					<ActiveIndexWatcher update={() => setActiveIndex(activeIndex)} />
+				    )}
+				</Typeahead>
+				
 			    </Form.Group>
 			</Col>
 		    </Row>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import ComponentAPI from './ComponentAPI';
 import {Row, Alert, Card, Col, Button, Form, Dropdown, InputGroup, DropdownButton} from 'react-bootstrap';
@@ -46,6 +45,7 @@ const ComponentTable = (props) => {
     const [searchVal, setSearchVal] = useState("");
     const [addComponentModal, setAddComponentModal] = useState(false);
     const [editComponent, setEditComponent] = useState(null);
+    const [cloneComponent, setCloneComponent] = useState(null);
     const [displayConfirmationModal, setDisplayConfirmationModal] = useState(false);
     const [deleteMessage, setDeleteMessage] = useState(null);
     const [removeID, setRemoveID] = useState([]);
@@ -57,6 +57,8 @@ const ComponentTable = (props) => {
     const [showGroupModal, setShowGroupModal] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [feedback, setFeedback] = useState(null);
+    const skipPageResetRef = React.useRef()
+    
     
     const hideUploadModal = () => {
         setShowUploadModal(false);
@@ -70,14 +72,14 @@ const ComponentTable = (props) => {
 	    fetchInitialData(searchVal);
         }).catch(err => {
 	    console.log(err);
-	    setError(`Error uploading SBOM file: ${err.response.data.error}`);
+	    setError({'msg': `Error uploading SBOM file: ${err.response.data.error}`, 'variant': danger});
 	    setIsLoading(false);
 	});
-	    
+
         hideUploadModal();
     }
 
-    
+
     const columns = useMemo(
         () => [
             /*{
@@ -149,28 +151,37 @@ const ComponentTable = (props) => {
 		    // Use Cell to render an expander for each row.
 		    // We can use the getToggleRowExpandedProps prop-getter
 		    // to build the expander.
-		    <span {...props.row.getToggleRowExpandedProps()}>
+		    <>
+
 			{props.row.original.dependencies.length > 0 ?
-			 <>
+			 <span {...props.row.getToggleRowExpandedProps()}>
 			     {props.row.isExpanded ?
-			      <button className="btn btn-secondary btn-xs"><i className="fas fa-angle-down"></i>  Hide</button> : <button className='btn m-1 btn-xs btn-secondary'><i className="fas fa-angle-right"></i>  Show {props.row.original.dependencies.length}  </button>}
+			      <Button variant="secondary" size="xs"><i className="fas fa-angle-down"></i>  Hide</Button> : <Button variant='secondary' size="xs"><i className="fas fa-angle-right"></i>  Show {props.row.original.dependencies.length}  </Button>}
+			 </span>
+			 :
+			 <>
+			     0{" "}<Button variant="btn-icon px-1" title="Add Dependencies" onClick={() => addDeps(props.row)}><i className="fas fa-plus"></i></Button>
 			 </>
-			 : 0
 			}
-		    </span>
+		    </>
 		),
 	    },
 	    {
 		Header: 'Action',
 		accessor: 'action',
-		Cell: props => (<div className="text-nowrap"><Button variant="btn-icon px-1" onClick={() => handleShow(props)}><i className="fas fa-edit"></i></Button> <Button variant="btn-icon px-1" onClick={() => addDeps(props)}><i className="fas fa-plus"></i></Button><Button variant="btn-icon px-1" onClick={() => viewDetails(props)}><i className="fas fa-search-plus"></i></Button></div>)
+		Cell: props => (<div className="text-nowrap"><Button variant="btn-icon px-1" onClick={() => handleShow(props)}><i className="fas fa-edit"></i></Button> <Button variant="btn-icon px-1" onClick={() => viewDetails(props)}><i className="fas fa-search-plus"></i></Button><Button variant="btn-icon px-1" title="Clone Component" onClick={()=>handleCloneComponent(props)}><i className="fas fa-clone"></i></Button></div>)
 	    }
         ],
         []
     );
 
-    const addDeps = (props) => {
-	setProduct(props.row.original);
+    const addDeps = (row) => {
+	setProduct(row.original);
+	window.scrollTo(0, 0)
+    };
+
+    const handleCloneComponent = (props) => {
+	setCloneComponent(props.row.original.id);
     };
 
     const showDeleteModal = () => {
@@ -193,11 +204,11 @@ const ComponentTable = (props) => {
 
     const submitRemoveComponent = () => {
         componentapi.removeComponents(removeID).then((response) => {
-	    setFeedback(`Got it! ${removeID.length} items successfully removed.`);
+	    setError({'msg':`Got it! ${removeID.length} items successfully removed.`, 'variant': 'success'});
             fetchInitialData(searchVal);
 
         }).catch(err => {
-	    setError(`Error removing components: ${err.response.data.detail}`);
+	    setError({'msg': `Error removing components: ${err.response.data.detail}`, 'variant': 'danger'});
 	})
         setDisplayConfirmationModal(false);
     };
@@ -222,14 +233,15 @@ const ComponentTable = (props) => {
     };
 
     useEffect(() => {
-	if (editComponent) {
+	if (editComponent || cloneComponent) {
 	    setAddComponentModal(true);
 	}
-    }, [editComponent]);
+    }, [editComponent, cloneComponent]);
 
     const hideComponentModal = () => {
         setAddComponentModal(false);
 	setEditComponent(null);
+	setCloneComponent(null);
 	fetchInitialData(searchVal);
     };
 
@@ -255,7 +267,7 @@ const ComponentTable = (props) => {
 		    setCount(response.count);
                     setNextUrl(response.next);
                 }).catch(err => {
-		    setError(`Error filtering components: ${err.response.data.detail}`);
+		    setError({'msg':`Error filtering components: ${err.response.data.detail}`, 'variant': 'danger'});
 		});
 	    } else {
 		componentapi.getComponents(query).then((response) => {
@@ -265,9 +277,9 @@ const ComponentTable = (props) => {
 		    }
 		    setCount(response.count);
                     setNextUrl(response.next);
-		    
+
 		}).catch(err => {
-		    setError(`Error filtering components: ${err.response.data.detail}`) ;
+		    setError({'msg': `Error filtering components: ${err.response.data.detail}`, 'variant': 'danger'}) ;
 		})
 	    }
 	    /*
@@ -301,7 +313,7 @@ const ComponentTable = (props) => {
 	case 'upload':
 	    setShowUploadModal(true);
 	    return;
-	   
+
         }
     };
 
@@ -324,29 +336,30 @@ const ComponentTable = (props) => {
 
     const submitDependencies = async () =>{
 	const axiosArray = []
-	
+
 	setError(null);
-	
+
 	selectedRows.map(item => {
 	    let data = {'dependency': item.original.id}
 	    axiosArray.push(componentapi.addOneDependency(product.id, data));
 	});
-	
+
 	try {
 	    await axios.all(axiosArray);
 	    setProduct(null)
 	    setSelectedRows([]);
 	    setSearchVal(null);
 	    fetchInitialData(searchVal);
+	    setError({'msg': `Successfully added ${selectedRows.length} dependencies`, 'variant': 'success'});
 	} catch(err) {
-	    setError(`Error adding dependency: ${err.response.data.detail}`);
+	    setError({'msg': `Error adding dependency: ${err.response.data.detail}`, 'variant': 'danger'});
 	};
     }
-    
+
     // Async Fetch
     const fetchInitialData = async (searchParam) => {
         console.log("fetching components");
-	
+
         try {
 	    if ('group' in props) {
 		await componentapi.getGroupComponents(props.group).then((response) => {
@@ -378,15 +391,18 @@ const ComponentTable = (props) => {
 	    }
         } catch (err) {
 	    if (err.response?.data) {
-		setError(`Error retrieving components: ${err.response.data.detail}`);
+		setError({'msg': `Error retrieving components: ${err.response.data.detail}`, 'variant': 'danger'});
 	    } else {
-		setError("Error retrieving components.");
+		setError({'msg': "Error retrieving components.", 'variant': 'danger'});
 	    }
             console.log('Error:', err)
         }
     }
 
     const fetchNextData = async () => {
+	
+	skipPageResetRef.current = true
+	
 	try {
             if ('group' in props) {
 	        await componentapi.getNextGroupComponents(nextUrl).then((response) => {
@@ -406,7 +422,7 @@ const ComponentTable = (props) => {
                 })
             }
         } catch (err) {
-	    setError(`Error retrieving components: ${err.response.data.detail}`);
+	    setError({'msg': `Error retrieving components: ${err.response.data.detail}`, 'variant': 'danger'});
 	    console.log('Error:', err)
         }
     }
@@ -432,7 +448,7 @@ const ComponentTable = (props) => {
 	    fetchNextData();
 	}
 	setTimeout(() => {
-	    
+
 	}, 1500);
     };
 
@@ -480,11 +496,19 @@ const ComponentTable = (props) => {
 
 
 		})}
+		<tr key={`${rowProps.key}-expanded-addmore`} className="text-center border-bottom">
+                    <td colSpan={visibleColumns.length} className="text-center noborder">
+			<Button variant="primary" size="xs" className="p-1" title="Add Dependencies" onClick={() => addDeps(row)}><i className="fas fa-plus"></i> Add Dependencies</Button>
+                    </td>
+                </tr>
 	    </>
 	);
     }
 
-
+    useEffect(() => {
+	// After the table has updated, always remove the flag
+	skipPageResetRef.current = false
+    }, [data])
 
     function SubRowAsync({ row, rowProps, visibleColumns }) {
 	const [loading, setLoading] = React.useState(true);
@@ -537,12 +561,20 @@ const ComponentTable = (props) => {
 	    <Card>
             <Card.Header>
 		{product ?
-		 <div className="d-flex align-items-start gap-4">
-		     <Card.Title> Add dependencies for {product.name} </Card.Title>
-		     <Button variant="secondary" onClick={(e)=>setProduct(null)}>Cancel</Button>
-		 </div>
+
+		 <Alert variant="warning">
+		     <div className="d-flex align-items-start gap-4">
+		     <Card.Title>Adding dependencies for <b>{product.name}</b></Card.Title>
+			 <Button variant="secondary" onClick={(e)=>setProduct(null)}>Cancel</Button>
+		     </div>
+		 </Alert>
+
 		 : ""
 		}
+		{selectedRows.length > 0 &&
+		 <Alert variant="info">{selectedRows.length} rows selected</Alert>
+		}
+		  
                 <div className="d-flex align-items-start justify-content-between mt-2 gap-5">
                     <Searchbar
 			onChange={onSearchbarChange}
@@ -550,7 +582,7 @@ const ComponentTable = (props) => {
 		    />
 
 		    {product ?
-		     <Button variant="primary" onClick={(e)=>submitDependencies()} disabled={btnDisabled}>Add Selected Dependencies for {product.name}</Button>
+		     <Button variant="primary" onClick={(e)=>submitDependencies()} disabled={btnDisabled}>Submit Dependencies</Button>
 		     :
                     <DropdownButton
                         variant="primary"
@@ -573,12 +605,8 @@ const ComponentTable = (props) => {
             </Card.Header>
             <Card.Body>
 		{error &&
-		 <Alert variant="danger">{error}</Alert>
+		 <Alert variant={error.variant}>{error.msg}</Alert>
 		}
-		{feedback &&
-		 <Alert variant="success">{feedback}</Alert>
-		}
-		
 		{ isLoading ?
 		  <div className="text-center">
                       <div className="lds-spinner"><div></div><div></div><div></div></div>
@@ -591,6 +619,7 @@ const ComponentTable = (props) => {
 				  showRowExpansion={showDeps}
 				  hasMore={nextUrl ? true : false}
 				  searchParams = {searchVal}
+				  skipPageResetRef = {skipPageResetRef}
 		  />
 		}
 	    </Card.Body>
@@ -601,6 +630,7 @@ const ComponentTable = (props) => {
 		title = {editComponent? "Edit Component" : "Add Component"}
 		edit = {editComponent}
 		group = {props.group}
+		clone = {cloneComponent}
 	    />
 
 	    <DeleteConfirmation
@@ -620,7 +650,7 @@ const ComponentTable = (props) => {
                 confirmModal = {submitFile}
 		title = "Upload SBOM file (SPDX format) to load components."
 		subtitle="All packages and package dependencies will be uploaded."
-            />     
+            />
 	    {props.group ? "" :
 	     <SelectGroupModal
 		 showModal = {showGroupModal}

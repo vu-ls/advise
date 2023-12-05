@@ -141,7 +141,7 @@ def send_templated_mail(template_name,
 
     footer_file = os.path.join('cvdp-email', locale, 'email_text_footer.txt')
 
-    context['logo'] = f"{settings.STATIC_URL}cvdp/css/images/CVDP.png"
+    context['logo'] = settings.LOGO
     context['button_link'] = context.get('url', None)
     context['email_signature'] = f"Your {settings.ORG_NAME} Coordination Team"
     context['homepage'] = f"{settings.SERVER_NAME}/advise/dashboard/"

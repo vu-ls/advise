@@ -284,7 +284,17 @@ const InboxApp = (props) => {
 				 {threads.map((thread, inbox) => {
 				     let date = new Date(thread.last_message.created);
 				     let timeago = formatDistance(date, new Date(), {addSuffix: true});
-				     
+				     /* find additional members in this thread (just 1 from each) */
+				     let other_users = thread.users.find((item) => (item.name != thread.last_message.sender.name));
+				     let other_groups = thread.groups.find((item) => (item.name != thread.last_message.sender.name));
+				     if (other_users && other_groups) {
+					 other_users = [other_users, other_groups]
+				     } else if (other_groups) {
+					 other_users = [other_groups];
+				     } else {
+					 other_users = [other_users];
+				     }
+				     let total_threaders = thread.users.length + thread.groups.length - 1 - other_users.length;
 				     return (
 					 <li className="p-2 border-bottom" id={`inbox-${thread.id}`} key={`inbox-${thread.id}`} style={{ backgroundColor: (curThread && curThread.id == thread.id) ? "#eee" : 'inherit'}}>
 					     <a href="#" onClick={(e)=>setCurThread(thread)} className="d-flex justify-content-between">
@@ -295,7 +305,19 @@ const InboxApp = (props) => {
 							 color={thread.last_message.sender.logocolor}
 						     />
 						     <div className="pt-1">
-							 <p className="fw-bold mb-0">{thread.last_message.sender.name}</p>
+							 <p className="mb-0">
+							     <span className="fw-bold">{thread.last_message.sender.name}, </span>
+							     {other_users.map((item, index) => {
+								 return (
+								     <span className="fw-bold" key={`${thread.id}-${index}`}>{item?.name}
+									 {index+1 < other_users.length && ", "}
+								     </span>
+								 )})
+							     }
+							     {total_threaders > 0 &&
+							      <span className="fw-bold"> +{total_threaders}{" "}</span>
+							     }
+							 <small>{" "}({thread.messages.length})</small></p>
 							 <div className="small text-muted text-break" dangerouslySetInnerHTML={{__html: thread.last_message.content.trim().substring(0, 50)}} />
 							 
 						     </div>

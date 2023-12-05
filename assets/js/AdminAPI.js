@@ -362,4 +362,31 @@ export default class AdminAPI{
 	let url = `${API_URL}/score/api/users/`;
         return axios.get(url).then(response=>response.data);
     }
+
+    getSSVCInsights(start, end) {
+	let url = `${API_URL}/score/api/insights/?start=${start}&end=${end}`;
+	return axios.get(url).then(response=>response.data);
+    }
+    
+    
+    getSSVCInsightsUser(start, end, user) {
+        let url = `${API_URL}/score/api/insights/?start=${start}&end=${end}&user=${user}`;
+        return axios.get(url).then(response=>response.data);
+    }
+
+    getSoftwarePriorities() {
+	let url = `${API_URL}/score/api/priorities/`;
+        return axios.get(url).then(response=>response.data);
+    }
+
+    createSoftwarePriority(data) {
+        let url = `${API_URL}/score/api/priorities/`;
+        return axios.post(url, data).then(response=>response.data);
+    }
+
+    deleteSoftwarePriority(id) {
+	let url = `${API_URL}/score/api/priorities/${id}/`;
+        return axios.delete(url).then(response => response.data);
+    }
+    
 }

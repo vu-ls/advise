@@ -10,6 +10,7 @@ import DisplayStatus from './DisplayStatus';
 import DisplayLogo from './DisplayLogo';
 import {Typeahead} from 'react-bootstrap-typeahead';
 import AutoAssignModule from './AutoAssignModule';
+import UnassignModule from './UnassignModule';
 import NotifyVendorModal from "./NotifyVendorModal";
 import TransferCaseModal from "./TransferCaseModal";
 import ErrorModal from "./ErrorModal";
@@ -38,6 +39,7 @@ const CaseStatusApp = (props) => {
     const [displayTransferModal, setDisplayTransferModal] = useState(false);
     const [displayErrorModal, setDisplayErrorModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
+    const [showUnassignModal, setShowUnassignModal] = useState(false);
 
     const hideErrorModal = () => {
 	setDisplayErrorModal(false);
@@ -51,6 +53,8 @@ const CaseStatusApp = (props) => {
 
     const hideAutoAssign = () => {
         setShowAutoAssign(false);
+	setShowUnassignModal(false);
+	
     };
 
     const hideVNModal = () => {
@@ -69,9 +73,23 @@ const CaseStatusApp = (props) => {
 	setShowResolutionPrompt(false);
     }
 
+    const unassignUser = async (users) => {
+	setShowUnassignModal(false);
+	await threadapi.unassignCase(caseInfo.case_id, users).then((response) => {
+	    props.updateStatus();
+	}).catch(err => {
+	    setErrorMessage(`Error removing user from case: ${err.message}.`);
+            setDisplayErrorModal(true);
+	    console.log(err);
+	});
+    }
+    
     function assignUser(evtKey, evt) {
+	console.log(props);
 	if (evtKey == 0) {
 	    setShowAutoAssign(true);
+	} else if (evtKey == -1) {
+	    setShowUnassignModal(true);
 	} else {
 	    threadapi.assignCase(caseInfo.case_id, evtKey).then((response) => {
 		props.updateStatus();
@@ -705,6 +723,12 @@ const CaseStatusApp = (props) => {
 			 hideModal = {hideAutoAssign}
 			 confirmModal = {autoAssignUser}
 			 roles = {roles}
+		     />
+		     <UnassignModule
+			 showModal = {showUnassignModal}
+			 hideModal = {hideAutoAssign}
+			 confirmModal = {unassignUser}
+			 owners = {caseInfo.owners}
 		     />
 		     <AddResolutionPrompt
 			 show = {showResolutionPrompt}

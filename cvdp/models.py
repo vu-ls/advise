@@ -143,9 +143,8 @@ class Action(models.Model):
 	default=timezone.now
     )
 
-    title = models.CharField(
+    title = models.TextField(
 	_('Title'),
-	max_length=200,
         blank=True,
 	null=True,
     )
@@ -608,6 +607,8 @@ class CaseParticipant(models.Model):
         if self.group:
             return self.group.name
         else:
+            if self.contact.user:
+                return self.contact.user.screen_name
             return self.contact.email
         
     name = property(_get_name)

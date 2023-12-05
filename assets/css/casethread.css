@@ -6,6 +6,31 @@
     display: inline-block;
 }
 
+.clicktocopy {
+    border-bottom: 1px dotted #000;
+    cursor: copy;
+}
+
+.input-group .rbt {
+    display: flex;
+    flex: 1 1 0%;
+    height: 100%;
+    position: relative;
+}
+
+.typeahead * {
+    margin: 0 !important;
+}
+
+.rbt-input-multi .rbt-input-main {
+    padding: 1px 0 4px 0 !important;
+    offset: 1px 0 4px 0;
+}
+
+.modal-table{
+    overflow-x: auto;
+}
+
 .card-grid-wrapper .col {
     display: flex;
     justify-content:space-between;

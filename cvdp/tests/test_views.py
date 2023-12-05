@@ -7,6 +7,8 @@ from django_otp.oath import TOTP
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from cvdp.models import Case, CaseParticipant, Contact, CaseArtifact, Action
 from django.contrib.auth.models import Group
+from django.test import TestCase, Client
+from rest_framework.test import APIClient
 from authapp.models import APIToken, User
 from cvdp.cases.serializers import *
 from cvdp.components.models import *
@@ -65,6 +67,7 @@ class GetAllCasesTest(TestCase):
         #use results due to pagination
         self.assertEqual(response.data['results'], serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
 
     def test_coordinator_get_case_detail(self):
         # get API response
@@ -1286,7 +1289,7 @@ class TestSystemSettings(TestCase):
                                content_type='application/json')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        
+
     def test_staffmember_rm_resolution(self):
 
         client = APIClient()

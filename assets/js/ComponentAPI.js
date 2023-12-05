@@ -11,13 +11,11 @@ export default class ComponentAPI {
     constructor(useInterceptor=false, navigateFn=null){
 	this.navigateFn = navigateFn;
 	this.useInterceptor = useInterceptor;
-	
 	if (this.useInterceptor) {
 	    axios.interceptors.response.use(
 		response=>response,
 		error => {
-		    console.log("IN FAIL");
-		    navigateFn();
+		    navigateFn(error);
 		}
 	    )
 	}
@@ -25,8 +23,10 @@ export default class ComponentAPI {
     }
 
     getDependencies(item) {
+	/* ignore interrupt so we can display correct response */
+        const ignoreInterrupt = axios.create();
 	const url = `${API_URL}/api/components/${item}/dependency/`;
-        return axios.get(url).then(response => response.data);
+        return ignoreInterrupt.get(url).then(response => response.data);
     }
 
     getComponent(c) {

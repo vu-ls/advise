@@ -74,6 +74,7 @@ export default function ParticipantList(props) {
 
     const getSummary = async () => {
 	/* only get this info if user is coordinator */
+	setWarning(null);
 	if (props.caseInfo && props.user && ['owner', 'coordinator'].includes(props.user.role)) {
 	    await threadapi.getCaseParticipantSummary({'case': props.caseInfo.case_id}).then((response) => {
 		let data = response.data;

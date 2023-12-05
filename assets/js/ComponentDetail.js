@@ -19,7 +19,7 @@ const ComponentDetail = () => {
     const [searchParams, setSearchParms] = useState(location.state?.search);
     const navigate = useNavigate();
 
-    const permDenied = () => {
+    const permDenied = (error) => {
 	navigate('err');
     }
 
