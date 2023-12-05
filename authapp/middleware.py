@@ -95,12 +95,9 @@ class Require2FAMiddleware(MiddlewareMixin):
         if self.is_allowed_page(request):
             return None
 
-        print("IS MFA ENABLED?")
         # User already has two-factor configured, do nothing.
         if is_mfa_enabled(request.user):
-            print("BOOSH")
             return None
-        print("WOMP WOMP")
         # The request required 2FA but it isn't configured!
         return self.on_require_2fa(request)
 

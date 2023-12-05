@@ -488,13 +488,4 @@ class SendValidationEmailView(TemplateView):
         return super(SendValidationEmailView, self).dispatch(request, *args, **kwargs)
 
 
-    def get_context_data(self, **kwargs):
-        context = super(SendValidationEmailView, self).get_context_data(**kwargs)
-
-        context['homepage'] = f"{settings.SERVER_NAME}"
-        if hasattr(settings, "LOGO"):
-            context['logo'] = f"{settings.LOGO}"
-        if hasattr(settings, 'EMAIL_SIG'):
-            context['email_signature'] = settings.EMAIL_SIG
-        return context
         

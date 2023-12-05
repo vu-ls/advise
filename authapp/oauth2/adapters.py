@@ -7,11 +7,17 @@ from django.conf import settings
 
 
 class AdViseAccountAdapter(DefaultAccountAdapter):
-    def save_user(self, request, user, form, commit=True):
-        return super(AdViseAccountAdapter, self).save_user(
-            request, user, form, commit)
 
+    def render_mail(self, template_prefix, email, context, headers=None):
 
+        context['homepage'] = f"{settings.SERVER_NAME}"
+        if hasattr(settings, "LOGO"):
+            context['logo'] = f"{settings.LOGO}"
+        if hasattr(settings, 'EMAIL_SIG'):
+            context['email_signature'] = settings.EMAIL_SIG
+
+        return super(AdViseAccountAdapter, self).render_mail(
+            template_prefix, email, context, headers)
     
 class AdViseSocialAccountAdapter(DefaultSocialAccountAdapter):
 

@@ -130,7 +130,7 @@ THIRD_PARTY_APPS = [
 
 
 #OAUTH2 - ALLAUTH  SETTINGS
-#ACCOUNT_ADAPTER = 'allauth_2fa.adapter.OTPAdapter'
+ACCOUNT_ADAPTER = 'authapp.oauth2.adapters.AdViseAccountAdapter'
 MFA_ADAPTER = "allauth.mfa.adapter.DefaultMFAAdapter"
 # for sites that have all traffic passing through SSL, change this to https
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = os.environ.get("ACCOUNT_DEFAULT_HTTP_PROTOCOL", "http")

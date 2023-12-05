@@ -48,7 +48,6 @@ urlpatterns = [
     path('accounts/social/connections/', RedirectView.as_view(url="/advise/auth/profile/mfa/")),
     path('accounts/password/set/', RedirectView.as_view(url='/advise/auth/password/')),
     path('accounts/password/change/', RedirectView.as_view(url='/advise/auth/password/')),
-    path('accounts/confirm-email/', RedirectView.as_view(url='/advise/auth/verify/email/')),
     path('accounts/2fa/', RedirectView.as_view(url='/advise/auth/profile/mfa/')),
     path('accounts/', include('allauth.urls')),
 
