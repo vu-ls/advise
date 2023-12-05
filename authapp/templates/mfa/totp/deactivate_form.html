@@ -1,0 +1,28 @@
+{% extends 'cvdp/bt_base_site.html' %}
+{% load i18n crispy_forms_tags %}
+
+{% load allauth %}
+{% block head_title %}
+    {% trans "Deactivate Authenticator App" %}
+{% endblock head_title %}
+{% block content %}
+
+<p><a href="{% url 'authapp:mfaaccess' %}">< Go back to my profile</a></p>
+					     
+<h2 class="text-center">
+  {% trans "Deactivate Authenticator App" %}
+  </h2>
+    <p>
+        {% blocktranslate %}You are about to deactivate authenticator app based authentication. Are you sure?{% endblocktranslate %}
+    </p>
+    {% url 'mfa_deactivate_totp' as action_url %}
+    <form method="post" action={{action_url}}>
+      {% csrf_token %}
+      {% element fields form=form %}
+      {{ form.as_p }}
+      {% endelement %}
+    <button class="btn btn-danger d-grid w-100" type="submit">
+    {% trans 'Deactivate' %}
+    </button>
+    </form>
+{% endblock content %}

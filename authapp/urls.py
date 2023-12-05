@@ -17,6 +17,7 @@ urlpatterns = [
     path('profile/', views.UpdateProfileView.as_view(),name='profile'),
     path('profile/mfa/', views.MFAAccessView.as_view(), name='mfaaccess'),
     path('profile/add/logo/', views.UpdateProfilePhoto.as_view(), name='addphoto'),
+    path('verify/email/', views.SendValidationEmailView.as_view(), name='resend'),
     path('account/help/', views.LoginHelpView.as_view(), name='loginhelp'),
     re_path('user/(?P<pk>[0-9]+)/resetmfa/$', views.ResetUserMFAView.as_view(), name='reset_mfa'),
     path('confirmed/', TemplateView.as_view(template_name='authapp/account_confirmed.html'), name='account_confirmed'),

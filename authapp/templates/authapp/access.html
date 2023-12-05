@@ -65,22 +65,25 @@
 	    <div class="ms-3 d-flex align-items-center gap-2">
               {% if user|mfa_set %}<span class="badge rounded-pill bg-label-success">Set</span>{% else %}<span class="badge rounded-pill bg-label-danger">Not Set</span> {% endif %}
 	      <div class="ms-3">
-		{% if user|mfa_set %}<a href="{% url 'two-factor-remove' %}" id="rmmfa" class="btn btn-primary btn-sm">Disable MFA</a>{% else %}<a href="{% url 'two-factor-setup' %}" id="enablemfa" class="btn btn-primary btn-sm">Enable MFA</a>{% endif %}
+		{% if user|mfa_set %}<a href="{% url 'mfa_deactivate_totp' %}" id="rmmfa" class="btn btn-primary btn-sm">Disable MFA</a>{% else %}<a href="{% url 'mfa_activate_totp' %}" id="enablemfa" class="btn btn-primary btn-sm">Enable MFA</a>{% endif %}
               </div>
             </div>
 	  </div>
 	</div>
+	{% if user|mfa_set %}
 	<div class="row">
 	  <div class="mb-3 col-md-2">
             <label class="form-label">MFA Backup Tokens</label>
           </div>
 	  <div class="mb-3 col-md-8">
             <div class="ms-3 d-flex align-items-center gap-2">
-	      <a href="{% url 'two-factor-backup-tokens' %}" class="btn btn-outline-primary btn-sm">{% if user.staticdevice_set.count > 0 %}View{% else %}Generate{% endif %}</a>
+
+	      <a href="{% url 'mfa_view_recovery_codes' %}" class="btn btn-outline-primary btn-sm">View Codes</a>
+	      <a href="{% url 'mfa_download_recovery_codes' %}" class="btn btn-outline-primary btn-sm">Download Codes</a>
 	    </div>
 	  </div>
 	</div>
-	
+	{% endif %}
 	{% endif %}
 	{% if oauth_provider_mfa %}
 	<div class="row">
@@ -157,7 +160,7 @@
 	    <div class="socialaccount_providers align-items-center w-100 justify-content-center gap-4">
 	      {% for p in providers %}
 	      <a title="{{p.name}}" class="socialaccount_provider {{p.id}} btn btn-outline-primary" 
-		 href="{% provider_login_url p.id process=process scope=scope auth_params=auth_params %}">{{p.name}}</a>
+		 href="{% provider_login_url p.id process='connect' scope=scope auth_params=auth_params %}">{{p.name}}</a>
 	      {% endfor %}
 	    </div>
 	  </div>

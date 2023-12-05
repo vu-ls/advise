@@ -2,7 +2,7 @@ from django.conf import settings
 from django.urls import reverse
 
 def advise_version(request):
-    # return the value you want as a dictionnary. you may add multiple values in there.
+    # return the value you want as a dictionary. you may add multiple values in there.
     context_vars = {}
     context_vars['VERSION'] = settings.VERSION
     context_vars['ORG_NAME'] = getattr(settings, 'ORG_NAME', None)

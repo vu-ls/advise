@@ -23,8 +23,7 @@ cryptography==41.0.6
 defusedxml==0.7.1
 Deprecated==1.2.13
 Django==4.2.7
-django-allauth==0.51.0
-django-allauth-2fa @ git+https://github.com/esarneso/django-allauth-2fa.git@6bd3101916f2fca6f2ff414b3b1181bbd44d1b99
+django-allauth==0.58.2
 django-celery-beat==2.5.0
 django-cors-headers==3.13.0
 django-crispy-forms==1.14.0

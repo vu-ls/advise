@@ -40,6 +40,8 @@ class CustomAdapter(OAuth2Adapter):
         logger.debug(resp.request.headers)
         extra_data = resp.json()
         logger.debug(extra_data)
+        if extra_data.get('username'):
+            request.session['USERNAME'] = extra_data['username']
         logger.debug(self.get_provider())
         logger.debug(self.get_provider().sociallogin_from_response(request, extra_data))
         return self.get_provider().sociallogin_from_response(request, extra_data)

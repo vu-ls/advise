@@ -1,7 +1,7 @@
 # Create your views here.
 from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin, UserPassesTestMixin
 from django.forms.utils import ErrorList
-from django.http import Http404, JsonResponse, HttpResponseRedirect
+from django.http import Http404, JsonResponse, HttpResponseRedirect, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import gettext as _
 from django.utils.decorators import method_decorator
@@ -11,6 +11,7 @@ from django.urls import reverse_lazy, reverse
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from django.views.generic import FormView, TemplateView
+from django.views import View
 from django.contrib import messages
 from django.urls import resolve
 from django.contrib.auth import authenticate, login as auth_login
@@ -32,9 +33,11 @@ import traceback
 from django.utils.http import url_has_allowed_host_and_scheme
 from allauth.socialaccount.forms import DisconnectForm
 from allauth.account.forms import ChangePasswordForm, SetPasswordForm
+from allauth.mfa.models import Authenticator
 from allauth.socialaccount import providers
 from allauth.socialaccount.providers.oauth2.views import OAuth2View
-from django_otp.plugins.otp_totp.models import TOTPDevice
+from allauth.account.models import EmailAddress
+from allauth.account.utils import send_email_confirmation
 from django.template.defaulttags import token_kwargs
 from django.utils.http import urlencode
 from allauth.utils import get_request_param, build_absolute_uri
@@ -99,7 +102,7 @@ class InitLoginView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(InitLoginView, self).get_context_data(**kwargs)
 
-        social_accounts = providers.registry.get_list()
+        #social_accounts = providers.registry.get_list()
         if hasattr(settings, 'USE_PROVIDER'):
             context['provider'] = settings.USE_PROVIDER
         else:
@@ -266,15 +269,19 @@ class MFAAccessView(LoginRequiredMixin, FormView):
         context = super(MFAAccessView, self).get_context_data(**kwargs)
         context['groups'] = self.request.user.groups.values_list('name', flat=True)
         context['api_key'] = APIToken.objects.filter(user=self.request.user).first()
-        ps = providers.registry.get_list()
+        ps = providers.registry.as_choices()
+        provider_list = []
+        logger.debug(ps)
         if ps:
-            if hasattr(settings, 'USE_PROVIDER'):
-                for p in ps:
-                    if p.name == settings.USE_PROVIDER:
-                        ps.remove(p)
-                if hasattr(settings, "OAUTH_SERVER_MFA_SETUP"):
-                    context['oauth_provider_mfa'] = settings.OAUTH_SERVER_MFA_SETUP
-        context['providers'] = ps
+            for p in ps:
+                logger.debug(p[1])
+                if hasattr(settings, 'USE_PROVIDER'):
+                    if p[1] == settings.USE_PROVIDER:
+                        continue
+                provider_list.append({'id': p[0], 'name': p[1]})
+            if hasattr(settings, "OAUTH_SERVER_MFA_SETUP"):
+                context['oauth_provider_mfa'] = settings.OAUTH_SERVER_MFA_SETUP
+            context['providers'] = provider_list
             
         return context
 
@@ -291,21 +298,13 @@ class ResetUserMFAView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Delete any backup tokens and their related static device.
         user = get_object_or_404(User, id=self.kwargs['pk'])
         
-        try:
-            static_device = user.staticdevice_set.get(name="backup")
-            static_device.token_set.all().delete()
-            static_device.delete()
-        except:
+        twofa_stuff = Authenticator.objects.filter(user=user)
+        if twofa_stuff:
+            for x in twofa_stuff:
+                x.delete()
+        else:
             logger.debug("backup tokens do not exist")
-            pass
 
-        try:
-            # Delete TOTP device.
-            device = TOTPDevice.objects.get(user=user)
-            device.delete()
-        except:
-            logger.debug("MFA not set")
-            pass
 
         email_context={'template': 'mfa_removed'}
         cvdp_send_email(None, None, [user.email], **email_context) 
@@ -446,3 +445,56 @@ class LogoutView(CALogoutView):
         return super(LogoutView, self).dispatch(request, *args, **kwargs)
 
 
+def is_user_email_verified(user, email):
+    """
+    returns True if EmailAddress exists and is already verified, otherwise returns False
+    """
+    result = False
+    try:
+        emailaddress = EmailAddress.objects.get_for_user(user, email)
+        result = emailaddress.verified
+    except EmailAddress.DoesNotExist:
+        pass
+    return result
+
+    
+class SendValidationEmailView(TemplateView):
+    template_name = "account/verification_sent.html"
+    
+    """
+    Implement requests to manually send confirmation email in case it hasn't been received
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        request for validation email sending
+        """
+        if self.request.session.get("USERNAME"):
+            try:
+                user = User.objects.get(email=self.request.session['USERNAME'])
+            except User.DoesNotExist:
+            # avoid leaking information about user existence
+                messages.warning(request, "An error occurred while trying to resend your verification email")
+            
+            if not is_user_email_verified(user, user.email):
+                send_email_confirmation(request, user, user.email)
+                
+                messages.success(request, "Successfully resent your verification email.")
+            else:
+                return redirect("cvdp:dashboard")
+        else:
+            messages.warning(request, "An error occurred while trying to resend your verification email")
+            
+        return super(SendValidationEmailView, self).dispatch(request, *args, **kwargs)
+
+
+    def get_context_data(self, **kwargs):
+        context = super(SendValidationEmailView, self).get_context_data(**kwargs)
+
+        context['homepage'] = f"{settings.SERVER_NAME}"
+        if hasattr(settings, "LOGO"):
+            context['logo'] = f"{settings.LOGO}"
+        if hasattr(settings, 'EMAIL_SIG'):
+            context['email_signature'] = settings.EMAIL_SIG
+        return context
+        

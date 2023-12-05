@@ -1,0 +1,32 @@
+{% extends 'cvdp/bt_base_site.html' %}
+{% load i18n crispy_forms_tags %}
+{% load allauth %}
+{% block content %}
+<p><a href="{% url 'authapp:mfaaccess' %}">< Go back to my profile</a></p>
+
+<h2 class="text-center">
+  {% translate "Recovery Codes" %}
+</h2>
+<p>
+  {% blocktranslate %}You are about to generate a new set of recovery codes for your account.{% endblocktranslate %}
+  {% if unused_code_count %}
+  {% blocktranslate %}This action will invalidate your existing codes.{% endblocktranslate %}
+  {% endif %}
+  {% blocktranslate %}Are you sure?{% endblocktranslate %}
+</p>
+{% url 'mfa_generate_recovery_codes' as action_url %}
+<form method="post" action="{{action_url }}">
+{% csrf_token %}
+{{ form.as_p }}
+{% setvar tags %}
+{% if unused_code_count %}
+danger
+{% else %}
+primary
+{% endif %}
+{% endsetvar %}
+<button class="btn btn-{{tags}} d-grid w-100" type="submit">
+  {% trans "Generate" %}
+  </button>
+</form>
+{% endblock content %}

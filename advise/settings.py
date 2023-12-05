@@ -110,13 +110,13 @@ THIRD_PARTY_APPS = [
     'qr_code',
     'django_filters',
     'allauth',
+    'allauth.mfa',
     'allauth.account',
     'allauth.socialaccount',
     'authapp.oauth2',
     'django_otp',
     'django_otp.plugins.otp_static',
     'django_otp.plugins.otp_totp',
-    'allauth_2fa',
     'crispy_forms',
     'crispy_bootstrap5',
     'widget_tweaks',
@@ -130,7 +130,8 @@ THIRD_PARTY_APPS = [
 
 
 #OAUTH2 - ALLAUTH  SETTINGS
-ACCOUNT_ADAPTER = 'allauth_2fa.adapter.OTPAdapter'
+#ACCOUNT_ADAPTER = 'allauth_2fa.adapter.OTPAdapter'
+MFA_ADAPTER = "allauth.mfa.adapter.DefaultMFAAdapter"
 # for sites that have all traffic passing through SSL, change this to https
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = os.environ.get("ACCOUNT_DEFAULT_HTTP_PROTOCOL", "http")
 #user is required to hand over an email address when signing up
@@ -171,6 +172,7 @@ MIDDLEWARE = [
     'authapp.middleware.Require2FAMiddleware', #<--- if you want to require 2fa for local users, otherwise comment out
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
 
 ]
 
@@ -503,6 +505,8 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', CONTACT_EMAIL)
 REPLY_TO_EMAIL = os.environ.get('REPLY_TO_EMAIL', CONTACT_EMAIL)
 EMAIL_HEADERS = {}
 
+EMAIL_SIG = "Your AdVISE Team"
+
 # default to dump email to the console unless we actually configure email
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
@@ -578,7 +582,8 @@ if (use_provider := os.environ.get('USE_PROVIDER')):
 if (registration_link := os.environ.get('REGISTRATION_LINK')):
     REGISTRATION_LINK = registration_link #f'{OAUTH_SERVER_BASEURL}/provider/register'
 
-
+LOGO = "cvdp/css/images/CVDP.png"
+    
 SERVER_NAME = os.environ.get('APP_SERVER_FQDN', "localhost:8000")
 SERVER_NAME = f'{ACCOUNT_DEFAULT_HTTP_PROTOCOL}://{SERVER_NAME}'
 RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_SITE_KEY')

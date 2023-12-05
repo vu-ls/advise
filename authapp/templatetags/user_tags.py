@@ -1,4 +1,5 @@
 from django import template
+from allauth.mfa.utils import is_mfa_enabled
 import random
 import os
 
@@ -8,7 +9,7 @@ register = template.Library()
 def mfa_set(user):
     if not user.is_authenticated:
         return False
-    return user.totpdevice_set.filter(confirmed=True).exists()
+    return is_mfa_enabled(user)
 
 @register.filter
 def userlogo(user, imgclass):

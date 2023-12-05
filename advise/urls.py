@@ -48,8 +48,10 @@ urlpatterns = [
     path('accounts/social/connections/', RedirectView.as_view(url="/advise/auth/profile/mfa/")),
     path('accounts/password/set/', RedirectView.as_view(url='/advise/auth/password/')),
     path('accounts/password/change/', RedirectView.as_view(url='/advise/auth/password/')),
+    path('accounts/confirm-email/', RedirectView.as_view(url='/advise/auth/verify/email/')),
+    path('accounts/2fa/', RedirectView.as_view(url='/advise/auth/profile/mfa/')),
     path('accounts/', include('allauth.urls')),
-    path('accounts/', include('allauth_2fa.urls')),
+
     path('advise/',include(('cvdp.urls', 'cvdp'), namespace="cvdp")),
     path('advise/auth/', include(('authapp.urls', 'authapp'), namespace='authapp')),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),

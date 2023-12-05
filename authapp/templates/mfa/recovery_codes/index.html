@@ -1,0 +1,38 @@
+{% extends 'cvdp/bt_base_site.html' %}
+{% load i18n crispy_forms_tags %}
+
+{% load i18n %}
+{% load allauth %}
+{% block content %}
+<p><a href="{% url 'authapp:mfaaccess' %}">< Go back to my profile</a></p>
+<h2 class="text-center">
+  {% translate "Recovery Codes" %}
+</h2>
+    <p>
+      {% blocktranslate count unused_count=unused_codes|length %}There is {{ unused_count }} out of {{ total_count }} recovery codes available.{% plural %}There are {{ unused_count }} out of {{ total_count }} recovery codes available.{% endblocktranslate %}
+    </p>
+    <div id="div_id_recovery_codes" class="mb-3">
+      <label for="id_recovery_codes" class="form-label">Unused Codes</label>
+      <textarea id="id_recovery_codes" class="textarea form-control" disabled="disabled" rows="{{ unused_codes|length }}" readonly="True" value="{{ unused_codes }}" name="recovery_codes">
+	{% for code in unused_codes %}{% if forloop.counter0 %}
+	{% endif %}{{ code }}{% endfor %}
+      </textarea>
+    </div>
+    <div class="d-flex justify-space-between gap-2 mb-3">
+      {% if unused_codes %}
+      {% url 'mfa_download_recovery_codes' as download_url %}
+      <a class="btn btn-secondary d-grid w-100" type="submit" href="{{ download_url }}">
+	{% trans 'Download codes' %}
+      </a>
+      
+      {% endif %}
+      {% url 'mfa_generate_recovery_codes' as generate_url %}
+      <a class="btn btn-secondary d-grid w-100" type="submit" href="{{ generate_url }}">
+	{% trans 'Generate new codes' %}
+      </a>
+      
+    </div>
+    <a href="{% url 'cvdp:dashboard' %}" class="btn btn-primary w-100 grid">
+      {% trans 'Go to my Dashboard' %}
+    </a>
+{% endblock content %}

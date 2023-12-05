@@ -12,7 +12,7 @@ from cvdp.models import UserProfile, GroupProfile, Contact, CaseThreadParticipan
 from cvdp.manage.models import AdVISEConnection, AdviseTask, AdviseScheduledTask
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-
+from allauth.mfa.models import Authenticator
 
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
@@ -113,6 +113,16 @@ class CaseAdmin(admin.ModelAdmin):
 
     case_get_owners.short_description = _('Case Owners')
 
+class CustomAuthenticator(admin.ModelAdmin):
+    list_display = ('user', 'type')
+    search_fields=['user__email']
+    title = "MFA"
+
+    def has_delete_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return True
+        return False
+
 
 class ConnectionAdmin(admin.ModelAdmin):
     list_display = ('get_group_name', 'url', )
@@ -124,6 +134,7 @@ class ContactAdmin(admin.ModelAdmin):
     search_fields=['email', 'name']
     list_display=['email', 'name', 'user_id',]
 
+    
     def has_delete_permission(self, request, obj=None):
         if request.user.is_superuser:
             return True
@@ -150,4 +161,4 @@ admin.site.register(CaseThread)
 admin.site.register(Vulnerability, VulAdmin)
 admin.site.register(AdviseTask)
 admin.site.register(AdviseScheduledTask)
-
+admin.site.register(Authenticator, CustomAuthenticator)

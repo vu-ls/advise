@@ -6,7 +6,7 @@
 
 {% block content %}
     <h4>{% trans "Verify Your E-mail Address" %}</h4>
-    {% url 'account-confirm-email' as reset_url %}
+    {% url 'authapp:resend' as reset_url %}
     <p>{% blocktrans %}We have sent an e-mail to you for verification. Follow the link provided to finalize the signup process. If you do not see the verification e-mail in your main inbox, check your spam folder. If you do not receive the verification e-mail within a few minutes, you can try to <a href="{{ reset_url }}">resend</a> it.{% endblocktrans %}</p>
 
     <div class="mt-2"><a class="btn btn-primary d-grid w-100" href="{% url 'authapp:login' %}">Sign In</a>

@@ -2,11 +2,15 @@
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.conf import settings
+
 
 class AdViseAccountAdapter(DefaultAccountAdapter):
     def save_user(self, request, user, form, commit=True):
         return super(AdViseAccountAdapter, self).save_user(
             request, user, form, commit)
+
 
     
 class AdViseSocialAccountAdapter(DefaultSocialAccountAdapter):
@@ -24,6 +28,7 @@ class AdViseSocialAccountAdapter(DefaultSocialAccountAdapter):
             user.org = data.get('org')
             
         return user
+
 
     """
     
