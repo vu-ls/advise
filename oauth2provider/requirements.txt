@@ -13,7 +13,7 @@ django-oauth-toolkit==2.2.0
 django-otp==1.1.4
 django-widget-tweaks==1.4.12
 idna==3.4
-jwcrypto==1.4.2
+jwcrypto==1.5.1
 oauthlib==3.2.2
 psycopg2-binary==2.9.5
 pycparser==2.21
