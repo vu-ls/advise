@@ -258,15 +258,14 @@ const InboxApp = (props) => {
             <Col lg={4} md={4} sm={12}>
 		<Card className="thread-messages-preview">  
 		    <Card.Body className="px-0">
-			<div className="d-flex justify-content-between mb-3">
+			<div className="d-flex justify-content-between mb-3 px-3">
 			    <Card.Title>
-				
 			    Your messages</Card.Title>
 			    <Button className="btn btn-icon" onClick={(e)=>setNewMessage(true)}>
 				<i className="far fa-edit"></i>
 			    </Button>
 			</div>
-			<InputGroup className="rounded mb-3">
+			<InputGroup className="rounded px-3">
 			    <Form.Control
 				className="form-control rounded"
 				placeholder="Search"
@@ -278,7 +277,7 @@ const InboxApp = (props) => {
 				variant="outline-primary"
                             ><i className="fas fa-search"></i></Button>
 			</InputGroup>
-			<ul className="list-unstyled mb-0 thread-preview-list">
+			<ul className="list-unstyled mb-4 thread-preview-list">
 			    {threads.length > 0 ?
 			     <>
 				 {threads.map((thread, inbox) => {
@@ -337,7 +336,7 @@ const InboxApp = (props) => {
 			     
 			    }
 			</ul>
-		    <div className="justify-content-center text-center mt-4">
+		    <div className="inbox-pagination w-100">
 			{itemsCount > 0 &&
 			 <StandardPagination
 			     itemsCount={itemsCount}
@@ -402,16 +401,16 @@ const InboxApp = (props) => {
 					   <Dropdown>
 					       <Dropdown.Toggle className="p-1 mt-1 chat-dropdown" variant="light">
 						   {curThread.users.length + curThread.groups.length > 1 ?
-						    <span>{curThread.users.length+curThread.groups.length} people</span>
+						    <span>{curThread.users.length+curThread.groups.length} participants</span>
 						    
 						    :
-						    <>1 person</>
+						    <>1 participant</>
 						   }
 					       </Dropdown.Toggle>
 					       <Dropdown.Menu>
 						   {curThread.users.map((user, index) => {
 						       return (
-							   <Dropdown.Item key={`threadusers-${index}`} className="d-flex flex-row gap-2 mb-2"> 
+							   <Dropdown.Item key={`threadusers-${index}`} className="d-flex flex-row gap-2 mb-2 align-items-center"> 
 							       <DisplayLogo
 								   name={user.name}
 								   photo={user.photo}
@@ -424,7 +423,7 @@ const InboxApp = (props) => {
 						   <>
 						       {curThread.groups.map((group, index)	=> {
                                      			   return (
-							       <Dropdown.Item key={`threadgroups-${index}`} className="d-flex flex-row gap-2 mb-2">
+							       <Dropdown.Item key={`threadgroups-${index}`} className="d-flex flex-row gap-2 mb-2 align-itmes-center">
 								   <DisplayLogo
 								       name={group.name}
 								       photo={group.photo}
@@ -460,7 +459,11 @@ const InboxApp = (props) => {
 						       </div>
 						       <Card className="w-100 mx-3">
 							   <Card.Header className="d-flex justify-content-between p-3 border-bottom">
-							       <p className="fw-bold mb-0">{message.sender.name}</p>
+							       <p className="fw-bold mb-0">{message.sender.name}
+								   {message.groups.length > 0 &&
+								    <span>{" "}({message.groups.map(group => group).join(', ')})</span>
+								   }
+							       </p>
 							       
 							       <p className="text-muted small mb-0">
 								   <i className="fas fa-clock" />{' '}{timeago}

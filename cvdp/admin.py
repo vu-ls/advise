@@ -22,7 +22,7 @@ class UserProfileInline(admin.StackedInline):
 
 class VulAdmin(admin.ModelAdmin):
     list_display = ('get_vul_id', 'cve', 'case', 'description')
-    search_fields=['description', 'case__vuid', 'cve']
+    search_fields=['description', 'case__case_id', 'cve']
     actions = ['get_vul_id']
     title = "Deleted Vulnerabilities"
 
@@ -53,16 +53,21 @@ class GroupProfileInline(admin.StackedInline):
 
 class GroupAdmin(BaseGroupAdmin):
     inlines = (GroupProfileInline, )
-    list_display = ('name', 'get_group_type')
+    list_display = ('name', 'get_group_type', 'get_group_uuid')
     search_fields=['name']
 
     def get_group_type (self, instance):
-        print(instance)
-        print(instance.groupprofile)
         if instance.groupprofile:
             return instance.groupprofile.vendor_type
         return "None"
     get_group_type.short_description="Group Type"
+    
+    def get_group_uuid(self, instance):
+        if instance.groupprofile:
+            return instance.groupprofile.uuid
+        return "None"
+    get_group_uuid.short_description="UUID"
+
     
 class AdVISEAdminSite(admin.AdminSite):
     site_header = "AdVISE Administration"

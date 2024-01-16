@@ -13,11 +13,21 @@ class MessageSerializer(serializers.ModelSerializer):
 
     sender = UserSerializer()
     content = ContentSerializerField()
+    groups = serializers.SerializerMethodField()
     
     class Meta:
         model = Message
-        fields = ('id', 'created', 'sender', 'content', )
+        fields = ('id', 'created', 'sender', 'content', 'groups')
 
+    def get_groups(self, obj):
+        #get groups in this thread
+        thread_groups = obj.thread.groups.values_list('id', flat=True)
+        if thread_groups:
+            sender_groups = list(obj.sender.groups.filter(id__in=thread_groups).values_list('name', flat=True))
+            return sender_groups
+        elif (obj.thread.is_user_member(obj.sender)):
+            return []
+        return []
 
 class ThreadSerializer(serializers.ModelSerializer):
 

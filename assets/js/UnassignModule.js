@@ -36,7 +36,7 @@ const UnassignModule = ({ showModal, hideModal, confirmModal, owners }) => {
 
     
     return (
-        <Modal show={showModal} onHide={hideModal}>
+        <Modal show={showModal} onHide={hideModal} centered backdrop="static">
         <Modal.Header closeButton>
           <Modal.Title>Select User to Unassign</Modal.Title>
         </Modal.Header>

@@ -103,6 +103,38 @@ class VulTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
+    def test_coordinator_update_invalid_references(self):
+        self.api_client.force_authenticate(user=self.coord_user)
+
+        vul = Vulnerability.objects.filter(case=self.case, deleted=False).first()
+
+        valid_payload = {
+            'references': {"reference": "https:www.thisisnotvalid.because.its.not.an.array"}
+        }
+
+        response = self.api_client.patch(
+            reverse('cvdp:vulapi-detail', args=[vul.id]),
+            data=json.dumps(valid_payload),
+            content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+    def test_coordinator_update_valid_references(self):
+        self.api_client.force_authenticate(user=self.coord_user)
+
+        vul = Vulnerability.objects.filter(case=self.case, deleted=False).first()
+
+        valid_payload = {
+            'references': ["https:www.thisisvalid.com", "www.badguys.net"]
+        }
+
+        response = self.api_client.patch(
+            reverse('cvdp:vulapi-detail', args=[vul.id]),
+            data=json.dumps(valid_payload),
+            content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        
 
     def test_coordinator_delete_vul(self):
         self.api_client.force_authenticate(user=self.coord_user)

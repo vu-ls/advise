@@ -142,9 +142,12 @@ def assign_case(request, caseid):
 def unassign_case(request, caseid):
     if not request.user.is_coordinator:
         raise PermissionDenied
-    
+
     case = get_object_or_404(Case, case_id=caseid)
-    logger.debug(request.POST)
+    #is this my case? - don't allow rando coordinator (non staff) to unassign cases
+    if not(is_case_owner_or_staff(request.user, case.id)):
+        raise PermissionDenied
+    
     users = request.POST.getlist('users[]', None)
     if (users):
         #UNASSIGN
@@ -297,11 +300,18 @@ class AdvisoryAPIView(viewsets.ModelViewSet):
     def get_object(self):
         ca = CaseAdvisory.objects.filter(case__case_id=self.kwargs['caseid']).first()
         if ca:
-            if self.request.user.is_coordinator or ca.current_revision.date_shared:
+            if self.request.user.is_coordinator or ca.current_revision.date_shared or ca.current_revision.date_published:
                 return ca.current_revision
+            #get last shared?
+            if ca.date_published:
+                #get last published
+                return AdvisoryRevision.objects.filter(advisory=ca).exclude(date_published__isnull=True).order_by('-revision_number').first()
+            elif AdvisoryRevision.objects.filter(advisory=ca).exclude(date_shared__isnull=True).exists():
+                #has any revision been shared at any point?
+                return AdvisoryRevision.objects.filter(advisory=ca).exclude(date_shared__isnull=True).order_by('-revision_number').first()
         elif self.request.user.is_coordinator:
             raise Http404
-        #this revision has been't shared
+        #this revision has not been shared
         raise PermissionDenied()
 
 
@@ -321,15 +331,76 @@ class AdvisoryAPIView(viewsets.ModelViewSet):
             raise PermissionDenied()
 
         revision = ca.current_revision
-        if revision.date_shared:
-            revision.date_shared = None
-            #unshare?
-            action = create_case_action("unshared Advisory draft", self.request.user, ca.case)
-        else:
-            revision.date_shared = timezone.now()
-            action = create_case_action("shared Advisory draft", self.request.user, ca.case, True)
+        if request.data.get('share'):
 
-        revision.save()
+            if revision.date_shared:
+                revision.date_shared = None
+                #unshare?
+                action = create_case_action("unshared Advisory draft", self.request.user, ca.case)
+            else:
+                revision.date_shared = timezone.now()
+                action = create_case_action("shared Advisory draft", self.request.user, ca.case, True)
+
+            if not ca.date_published:
+                #giv this revision a version number
+                revcount = AdvisoryRevision.objects.filter(advisory=ca).exclude(date_shared__isnull=True).count() + 1
+                revision.version_number = f"0.{revcount}.0"
+                
+            revision.save()
+
+        elif request.data.get('publish'):
+
+            log = ""
+            version = ""
+            if not ca.date_published:
+                version = "1.0.0"
+            else:
+                #get last published version
+                revs = AdvisoryRevision.objects.filter(advisory=ca).exclude(date_published__isnull=True).order_by('-revision_number').first()
+                version = revs.version_number
+
+            if not version:
+                version = "1.0.0"
+                
+            version_list = version.split('.')
+            if len(version_list) < 3:
+                #this is wrong
+                if (len(version_list) > 0):
+                    #just use first number
+                    version = f"{version_list[0]}.0.0"
+            if revision.date_published:
+                if (revision.version_number == version):
+                    # this was the last published version
+                    # revision already published/ content hasn't changed
+                    log = request.data.get('log', 'non-content update')
+                    #bump minor version
+                    version = f"{version_list[0]}.{int(version_list[1])+1}.0"
+                else:
+                    log = request.data.get('log', 'Content update')
+                    #bump major version
+                    version = f"{int(version_list[0])+1}.0.0"
+            else:
+                log = request.data.get('log', revision.user_message)
+                version = f"{int(version_list[0])+1}.0.0"
+            
+
+            ca.add_revision(AdvisoryRevision(user=self.request.user,
+                                             title=revision.title,
+                                             content=revision.content,
+                                             references=revision.references,
+                                             date_published=timezone.now(),
+                                             version_number = version,
+                                             user_message=log),
+                            save=True)
+
+            if ca.date_published:
+                action = create_case_action("re-published advisory", self.request.user, ca.case, True)
+            else:
+                action = create_case_action("published advisory", self.request.user, ca.case, True)
+                ca.date_published = timezone.now()
+            ca.date_last_published = timezone.now()
+            ca.save()
+
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
     def create(self, request, *args, **kwargs):
@@ -779,9 +850,9 @@ class CaseParticipantAPIView(viewsets.ModelViewSet):
         c = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         self.check_object_permissions(self.request, c)
         if self.request.user.is_coordinator:
-            return CaseParticipant.objects.filter(case=c)
+            return CaseParticipant.objects.filter(case=c).order_by('contact__name')
         else:
-            return CaseParticipant.objects.filter(case=c).exclude(notified__isnull=True)
+            return CaseParticipant.objects.filter(case=c).exclude(notified__isnull=True).order_by('contact__name')
 
     def get_object(self):
         obj = get_object_or_404(CaseParticipant, id=self.kwargs['pk'])
@@ -899,8 +970,7 @@ class CaseThreadParticipantAPIView(viewsets.ModelViewSet):
         logger.debug("IN THREADAPI");
         casethread = get_object_or_404(CaseThread, id=self.kwargs['pk'])
         self.check_object_permissions(self.request, casethread)
-        ret= CaseThreadParticipant.objects.filter(thread=casethread)
-        logger.debug(ret)
+        ret= CaseThreadParticipant.objects.filter(thread=casethread).order_by('participant__title')
         return ret
 
     def create(self, request, *args, **kwargs):
@@ -975,6 +1045,7 @@ class UserCaseStateAPIView(generics.RetrieveAPIView):
         #get case last viewed state
         case = get_object_or_404(Case, case_id=self.kwargs['caseid'])
         role = my_case_role(user, case)
+        logger.debug(f"{self.request.user.screen_name} is {role}")
         status_needed = False
         if (role != "owner" and user.is_coordinator):
             #this is a special role - because coordinators should be able to do

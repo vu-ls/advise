@@ -191,8 +191,11 @@ class CaseCoordinatorSerializer(serializers.ModelSerializer):
         if advisory:
             if advisory.date_published:
                 return "PUBLISHED"
-            elif advisory.current_revision.date_shared:
-                return "DRAFT SHARED"
+            elif AdvisoryRevision.objects.filter(advisory=advisory, date_shared__isnull=False).exists():
+                if advisory.current_revision.date_shared:
+                    return "LATEST DRAFT SHARED"
+                else:
+                    return "PREVIOUS DRAFT SHARED"
             else:
                 return "DRAFT"
         else:
@@ -241,7 +244,7 @@ class CaseSerializer(serializers.ModelSerializer):
         if advisory:
             if advisory.date_published:
                 return "PUBLISHED"
-            elif advisory.current_revision.date_shared:
+            elif AdvisoryRevision.objects.filter(advisory=advisory, date_shared__isnull=False).exists():
                 return "DRAFT"
             else:
                 return "PENDING"
@@ -703,6 +706,7 @@ class VulSerializer(serializers.ModelSerializer):
                 return value
         return value
 
+    
     def get_tags(self, obj):
         return list(obj.vulnerabilitytag_set.values_list('tag', flat=True))
         
@@ -893,24 +897,92 @@ class CSAFPublisherSerializer(serializers.ModelSerializer):
         fields = ('category', 'contact_details', 'issuing_authority', 'name', 'namespace', )
         depth = 1
 
+
+class CSAFDocumentRevisionHistory(serializers.ModelSerializer):
+    number = serializers.CharField(source='version_number')
+    date = serializers.SerializerMethodField()
+    summary = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AdvisoryRevision
+        fields = ('number', 'summary', 'date')
+
+    def get_date(self, obj):
+        if obj.date_published:
+            return obj.date_published
+        else:
+            return obj.date_shared
+
+    def get_summary(self, obj):
+        if obj.user_message:
+            return obj.user_message
+        else:
+            return "Case update resulted in new information"
+        
 class CSAFTrackingSerializer(serializers.ModelSerializer):
-    current_release_date = serializers.DateTimeField(source='advisory.date_last_published')
+    current_release_date = serializers.SerializerMethodField()
     generator = serializers.SerializerMethodField()
     id = serializers.CharField(source='advisory.case.get_caseid')
-    initial_release_date = serializers.DateTimeField(source='advisory.date_published')
-    status = serializers.ReadOnlyField(default='final') #also could be 'draft' or 'interim'
-    version = serializers.CharField(source='revision_number')
+    initial_release_date = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()      #ReadOnlyField(default='final') #also could be 'draft' or 'interim'
+    version = serializers.SerializerMethodField()
+    revision_history = serializers.SerializerMethodField()
 
     class Meta:
         model = CaseAdvisory
-        fields = ('current_release_date', 'generator', 'id', 'initial_release_date', 'status', 'version', )
+        fields = ('current_release_date', 'generator', 'id', 'initial_release_date', 'status', 'version', 'revision_history', )
         depth = 1
-    
+
+    def get_initial_release_date(self, obj):
+        if obj.advisory.date_published:
+            return obj.advisory.date_published
+        else:
+            #get first shared
+            revs = AdvisoryRevision.objects.filter(advisory__id=obj.advisory.id).exclude(date_shared__isnull=True).order_by('revision_number').first()
+            if (revs):
+                return revs.date_shared
+            else:
+                return None
+
+    def get_current_release_date(self, obj):
+        if obj.advisory.date_published:
+            return obj.advisory.date_last_published
+        else:
+            # get last shared
+            revs = AdvisoryRevision.objects.filter(advisory__id=obj.advisory.id).exclude(date_shared__isnull=True).order_by('-revision_number').first()
+            if (revs):
+                return revs.date_shared
+            else:
+                return None
+        
+        
+    def get_status(self, obj):
+        if obj.advisory.date_published:
+            return "final"
+        else:
+            return "draft"
+        
     def get_generator(self, obj):
         engine = {}
         engine['name'] = "AdVISE"
         engine['version'] = settings.VERSION
         return {'engine': engine}
+
+    def get_version(self, obj):
+        #get revision last published
+        revs = AdvisoryRevision.objects.filter(advisory__id=obj.advisory.id).exclude(date_published__isnull=True).order_by('-revision_number')
+        if (len(revs) > 0):
+            return revs.first().version_number
+        else:
+            return '0'
+
+    def get_revision_history(self, obj):
+        if obj.advisory.date_published:
+            revs = AdvisoryRevision.objects.filter(advisory__id=obj.advisory.id).exclude(date_published__isnull=True).order_by('-revision_number')
+        else:
+            revs = AdvisoryRevision.objects.filter(advisory__id=obj.advisory.id).exclude(date_shared__isnull=True).order_by('-revision_number')
+        data =  CSAFDocumentRevisionHistory(revs, many=True)
+        return data.data
     
 class CSAFDocumentSerializer(serializers.ModelSerializer):
     category = serializers.ReadOnlyField(default='csaf_vex')
@@ -1006,7 +1078,7 @@ class CSAFProductTreeVendorSerializer(serializers.ModelSerializer):
         
 
 class CSAFVulnerabilitySerializer(serializers.ModelSerializer):
-    cve = serializers.CharField()
+    cve = serializers.SerializerMethodField()
     cwe = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
     title = serializers.CharField(source='description')
@@ -1023,6 +1095,10 @@ class CSAFVulnerabilitySerializer(serializers.ModelSerializer):
         if not ComponentStatus.objects.filter(vul=self.instance, current_revision__status=0).exclude(component__product_info__isnull=True).exists():
             fields.pop('flags')
         return fields
+
+    def get_cve(self, obj):
+        #this returns CVE-{obj.cve}
+        return obj.vul
         
     def get_cwe(self, obj):
         #CSAF only allows 1 for some reason

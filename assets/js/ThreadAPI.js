@@ -455,5 +455,12 @@ export default class CaseThreadAPI{
         return axios.patch(url, data);
     }
 
+    publishAdvisory(c, data) {
+        const url = `${API_URL}/api/case/${c}/advisory/latest/`;
+	data['publish'] = true;
+        return axios.patch(url, data);
+    }
+
+
     
 }

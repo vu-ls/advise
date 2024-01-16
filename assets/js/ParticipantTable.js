@@ -144,7 +144,7 @@ const ParticipantTable = () => {
 	});
 	if (rmnames.length > 0) {
             setRemoveID(rmids);
-            setDeleteMessage(`Are you sure you want to remove these participants: ${rmnames}`);
+            setDeleteMessage(`Are you sure you want to remove these participants: ${rmnames.map(item => item).join(', ')}`);
 	} else {
 	    setDeleteMessage("Please select a participant(s) to remove them from this case.");
 	}

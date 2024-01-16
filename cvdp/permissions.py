@@ -82,8 +82,10 @@ def is_my_msg_thread(user, thread):
 
 def is_case_owner(user, case):
     #get my contact
-    contact = Contact.objects.filter(user=user).first()
-    return CaseParticipant.objects.filter(case__id=case, contact=contact, role='owner').exists()
+    if user.is_coordinator:
+        contact = Contact.objects.filter(user=user).first()
+        return CaseParticipant.objects.filter(case__id=case, contact=contact, role='owner').exists()
+    return False
 
 def is_case_owner_or_staff(user, case):
     #more permissive then above
@@ -103,6 +105,13 @@ def my_case_role(user, case):
     if user.is_superuser:
         return "owner"
     contact = Contact.objects.filter(user=user).first()
+
+    if user.is_coordinator:
+        #this user is assigned to the case
+        cp = CaseParticipant.objects.filter(case=case, contact=contact, role="owner").first()
+        if cp:
+            return "owner"
+    
     #is this a vendor?
     groups = user.groups.all()
     cp = CaseParticipant.objects.filter(case=case, group__in=groups).values_list('role', flat=True)

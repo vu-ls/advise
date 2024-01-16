@@ -3,6 +3,7 @@ import { Modal, Badge, FloatingLabel, Button, InputGroup, Form, Row, Col } from 
 import {Typeahead} from 'react-bootstrap-typeahead';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { format, parse, addHours } from 'date-fns';
+import DRFErrorMessage from './DRFErrorMessage';
 import ThreadAPI from './ThreadAPI';
 import 'react-bootstrap-typeahead/css/Typeahead.bs5.css';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
@@ -33,6 +34,7 @@ const EditVulModal = (props) => {
     const [userInput, setUserInput] = useState(false);
     const [alert, setAlert] = useState(null);
     const [activeIndex, setActiveIndex] = useState(-1);
+    const [drfError, setDRFError] = useState(null);
     const ref_typeahead = useRef(null);
 
     
@@ -91,14 +93,15 @@ const EditVulModal = (props) => {
     
     const submitVul = async (event) => {
         event.preventDefault();
+
         const error = false;
         const formData = new FormData(event.target),
               formDataObj = Object.fromEntries(formData.entries());
 
 	formDataObj['problem_types'] = cweSelected.map((item)=> item.cwe);
 	formDataObj['references'] = references.map((item) => {
-	    if (item.label) {
-		return item.label;
+	    if (item.references) {
+		return item.references;
 	    } else {
 		return item;
 	    }
@@ -128,7 +131,13 @@ const EditVulModal = (props) => {
 		props.hideModal();
 	    }).catch(err => {
                 console.log(err);
-		setError(`Error submitting vulnerability information: ${err.response?.data.detail}`);
+		console.log(err.response.data);
+		if (err.response?.data) {
+		    setDRFError(err.response.data);
+		    //setError(`Error submitting vulnerability information: ${errlist}}`);
+		} else {
+		    setError(`Error submitting vulnerability information: ${err.reponse.data.detail}`);
+		}
             });
         }
     }
@@ -139,7 +148,7 @@ const EditVulModal = (props) => {
 	    if (e.keyCode === 13 && activeIndex === -1) {
 		const input_target = e.target.getAttribute('aria-owns');
 		//if ("reference" in e.target) {
-		if (input_target.includes('reference')) {
+		if (input_target && input_target.includes('reference')) {
 		    setUserInput(true);
 		    setReferences(references => [...references, e.target.value])
 		    ref_typeahead.current.clear()
@@ -164,6 +173,11 @@ const EditVulModal = (props) => {
                     {error &&
                      <div className="alert alert-danger">{error}</div>
                     }
+		    {drfError &&
+		     <DRFErrorMessage
+			 error={drfError}
+		     />
+		    }
 
 		    <Row>
 			<Col lg={6}>

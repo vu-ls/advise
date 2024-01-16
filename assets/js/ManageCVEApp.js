@@ -597,7 +597,7 @@ const ManageCVEApp = () => {
                                              id="input-group-dropdown-2"
 
                                          >
-                                             {['2023', '2022', '2021', '2020'].map((o, index) => {
+                                             {['2024', '2023', '2022', '2021', '2020'].map((o, index) => {
                                                  return (
                                                      <Dropdown.Item
 							 key={o}

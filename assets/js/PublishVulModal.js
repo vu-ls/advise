@@ -93,44 +93,39 @@ const PublishVulModal = (props) => {
     }, [cveAccount]);
 
 
-    useEffect(() => {
-	if (vul && props.showModal) {
-	    let cveAPI = new CVEAPI(cveAccount.org_name, cveAccount.email, cveAccount.api_key, cveAccount.server);
 
-            const fetchADPContainer = async () => {
-                await cveAPI.getCVE(vul.vul).then((response) => {
-		    console.log(response);
-		    try {
-			if (response.cveMetadata.assignerShortName != cveAccount.org_name) {
-			    setPublishWarning("You are not the CNA for this CVE and cannot publish CVE data.")
-			    setNotCNA(true);
-			    setVulJSON(response)
-			    setBtnDisabled(true);
-			} else {
-			    setPublishWarning(`This CVE was first published on ${response.cveMetadata.datePublished} and last updated on ${response.cveMetadata.dateUpdated}. Confirm changes before hitting publish.`);
-			    setPreviouslyPublished(response);
-			}
-			if (response.containers.adp){
-			    setAdpContainer(response.containers.adp);
-			}
-		    } catch (err) {
-			console.log(err);
-			console.log("no cve, no adp");
-		    }
-		}).catch(err => {
-		    if (err.response && err.response.status == 404) {
-			setAdpError("CVE ADP container does not exist.  Did you publish it yet?");
-		    } else {
-			setAdpError(err.message);
-		    }
-		    console.log(err);
-		});
-            };
-
-            fetchADPContainer();
-        }
-    }, [adpRole, vul, props.showModal]);
-
+    const fetchADPContainer = async () => {
+	let cveAPI = new CVEAPI(cveAccount.org_name, cveAccount.email, cveAccount.api_key, cveAccount.server);
+	
+        await cveAPI.getCVE(vul.vul).then((response) => {
+	    console.log(response);
+	    try {
+		if (response.cveMetadata.assignerShortName != cveAccount.org_name) {
+		    setPublishWarning("You are not the CNA for this CVE and cannot publish CVE data.")
+		    setNotCNA(true);
+		    setVulJSON(response)
+		    setBtnDisabled(true);
+		} else {
+		    setPublishWarning(`This CVE was first published on ${response.cveMetadata.datePublished} and last updated on ${response.cveMetadata.dateUpdated}. Confirm changes before hitting publish.`);
+		    setPreviouslyPublished(response);
+		}
+		if (response.containers.adp){
+		    setAdpContainer(response.containers.adp);
+		}
+	    } catch (err) {
+		console.log(err);
+		console.log("no cve, no adp");
+	    }
+	}).catch(err => {
+	    if (err.response && err.response.status == 404) {
+		setAdpError("CVE ADP container does not exist.  Did you publish it yet?");
+	    } else {
+		setAdpError(err.message);
+	    }
+	    console.log(err);
+	});
+    }
+    
     const updateSSVC = (e) => {
 	let cveAPI = new CVEAPI(cveAccount.org_name, cveAccount.email, cveAccount.api_key, cveAccount.server);
 
@@ -217,7 +212,8 @@ const PublishVulModal = (props) => {
     };
 
     useEffect(() => {
-	if (props.vul && props.showModal) {
+	console.log("IN PROPS EFFECT");
+	if (props.showModal) {
 
 	    fetchCVEAccount();
 	    setSuccessMsg(null);
@@ -227,12 +223,27 @@ const PublishVulModal = (props) => {
 	    setAdpError(null);
 	    setPublishWarning(null);
 	    setVul(props.vul);
+	} else {
+	    setVul(null);
 	}
+	    
 
-    }, [props]);
+    }, [props.showModal]);
 
     useEffect(() => {
+
+	if (props.showModal && vul) {
+	    fetchADPContainer();
+	}
+    }, [adpRole]);
+    
+    useEffect(() => {
+
 	if (vul) {
+	    if (props.showModal && adpRole) {
+		fetchADPContainer();
+	    }
+	    
 	    let json = {};
 	    let cnacontainer = {};
 	    json['descriptions'] = [{"lang": "en", "value": props.vul.description}];

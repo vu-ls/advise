@@ -50,7 +50,9 @@ class AdScoreCVELoader(object):
             last_modified = vul['cveMetadata']['dateUpdated']
         else:
             last_modified = published
-    
+
+        cna = vul['cveMetadata']['assignerShortName']
+        
         #this is annoying but django complains when you add a non-timezone aware date, so try to make it aware
         """
         if published and not(('Z' in published) or ('+' in published)):
@@ -84,18 +86,18 @@ class AdScoreCVELoader(object):
                 description = d["value"]
         if not description:
             description = vul['containers']['cna']['descriptions'][0]['value']
-        
+
         self.cursor.execute("SELECT last_modified from adscore_vul where cve=%s", (cve,))
         ad_vul = self.cursor.fetchone()
         if ad_vul:
             if ad_vul[0] == last_modified:
                 return
             else:
-                self.cursor.execute("UPDATE adscore_vul SET description=%s, last_modified=%s, published=%s, status=%s where cve=%s", (description, last_modified, published, status, cve,))
+                self.cursor.execute("UPDATE adscore_vul SET description=%s, last_modified=%s, published=%s, status=%s, cna=%s where cve=%s", (description, last_modified, published, status, cna, cve,))
             
         else:
             dt = datetime.now(timezone.utc)
-            self.cursor.execute("INSERT INTO adscore_vul(cve, description, last_modified, published, status, date_added) VALUES (%s, %s, %s, %s, %s, %s)", (cve, description, last_modified, published, status, dt,))
+            self.cursor.execute("INSERT INTO adscore_vul(cve, description, last_modified, published, status, cna, date_added) VALUES (%s, %s, %s, %s, %s, %s, %s)", (cve, description, last_modified, published, status, cna, dt,))
 
         self.conn.commit()
 

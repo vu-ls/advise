@@ -13,6 +13,7 @@ import AutoAssignModule from './AutoAssignModule';
 import UnassignModule from './UnassignModule';
 import NotifyVendorModal from "./NotifyVendorModal";
 import TransferCaseModal from "./TransferCaseModal";
+import PublishAdvisoryModal from "./PublishAdvisoryModal";
 import ErrorModal from "./ErrorModal";
 import {Link} from "react-router-dom"
 
@@ -38,6 +39,7 @@ const CaseStatusApp = (props) => {
     const [notifyVendorCount, setNotifyVendorCount] = useState(0);
     const [displayTransferModal, setDisplayTransferModal] = useState(false);
     const [displayErrorModal, setDisplayErrorModal] = useState(false);
+    const [displayPublishModal, setDisplayPublishModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
     const [showUnassignModal, setShowUnassignModal] = useState(false);
 
@@ -54,7 +56,8 @@ const CaseStatusApp = (props) => {
     const hideAutoAssign = () => {
         setShowAutoAssign(false);
 	setShowUnassignModal(false);
-	
+	setDisplayPublishModal(false);
+
     };
 
     const hideVNModal = () => {
@@ -78,12 +81,16 @@ const CaseStatusApp = (props) => {
 	await threadapi.unassignCase(caseInfo.case_id, users).then((response) => {
 	    props.updateStatus();
 	}).catch(err => {
-	    setErrorMessage(`Error removing user from case: ${err.message}.`);
+	    if (err.response?.status == 403) {
+		setErrorMessage(`Error removing user from case: Permission Denied.`);
+	    } else {
+		setErrorMessage(`Error removing user from case: ${err.message}.`);
+	    }
             setDisplayErrorModal(true);
 	    console.log(err);
 	});
     }
-    
+
     function assignUser(evtKey, evt) {
 	console.log(props);
 	if (evtKey == 0) {
@@ -205,6 +212,12 @@ const CaseStatusApp = (props) => {
 	});
     }
 
+
+    const publishAdvisory = () => {
+	props.updateStatus();
+	hideAutoAssign();
+    }
+
     const StatusChanger = (props) => {
 	return (
 	    <Dropdown onSelect={changeStatus}>
@@ -253,7 +266,7 @@ const CaseStatusApp = (props) => {
         });
     }
 
-    
+
     useEffect(()=> {
 	if (caseResolution && showResolutionPrompt) {
 	    console.log(`do something ${caseResolution}`);
@@ -290,7 +303,7 @@ const CaseStatusApp = (props) => {
 	const [showOther, setShowOther] = useState(false);
 	const [options, setOptions] = useState([]);
 	const [error, setError] = useState(null);
-	
+
 	const fetchInitialData = async () => {
 	    adminapi.getResolutionOptions().then((response) => {
 		setOptions(response);
@@ -302,13 +315,13 @@ const CaseStatusApp = (props) => {
 		setError(`Error retrieving resolutions - ${err.message}`);
             });
 	}
-	
+
 	useEffect(() => {
 	    if (props.show) {
 		fetchInitialData();
 	    }
 	}, []);
-	
+
 	const addResolution = async () => {
 	    if (other) {
 		setCaseResolution(other);
@@ -356,7 +369,7 @@ const CaseStatusApp = (props) => {
 			 <Form.Control autoFocus placeholder="Required: resolution" name="resolution" as="textarea" rows={3} value={other} onChange={(e)=>setOther(e.target.value)}/>
 		     </Form.Group>
 		     }
-		     
+
 		</Modal.Body>
                 <Modal.Footer>
                     <Button variant="primary" onClick={addResolution}>
@@ -403,11 +416,17 @@ const CaseStatusApp = (props) => {
 	}
 	return (
 	    <div className="d-flex align-items-center gap-3">
-		<Link to="advisory/" state={{caseInfo: caseInfo}}>
-		    <Badge pill bg={badgetype}>
-			{props.advisory}
-		    </Badge>
-		</Link>
+		{['owner', 'coordinator'].includes(props.role) ?
+		 <Link to="advisory/" state={{caseInfo: caseInfo}}>
+		     <Badge pill bg={badgetype}>
+			 {props.advisory}
+		     </Badge>
+		 </Link>
+		 :
+		 <Badge pill bg={badgetype}>
+                     {props.advisory}
+                 </Badge>
+		}
 		{props.advisory !== "NOT STARTED" &&
                 <DropdownButton variant="btn p-0"
                                 title={<i className="fas fa-download"></i>}
@@ -605,9 +624,12 @@ const CaseStatusApp = (props) => {
 			       :
 			       <Dropdown.Item eventKey='share' onClick={(e)=>shareAdvisory()}>Share Latest Advisory</Dropdown.Item>
 			      }
+			      <Dropdown.Item eventKey='publish' onClick={(e)=>setDisplayPublishModal(true)}>Publish Advisory</Dropdown.Item>
+
 			  </>
 			 }
-			<Dropdown.Item eventKey='transfer' onClick={(e)=>setDisplayTransferModal(true)}>Transfer Case</Dropdown.Item>
+			 <Dropdown.Item eventKey='transfer' onClick={(e)=>setDisplayTransferModal(true)}>Transfer Case</Dropdown.Item>
+
                     </DropdownButton>
 		    }
 		</Card.Header>
@@ -698,7 +720,6 @@ const CaseStatusApp = (props) => {
 			    }
                         </Col>
                     </Row>
-		    {['owner', 'coordinator'].includes(props.user.role) &&
                     <Row className="mb-2">
                         <Col sm={4}>
                             <Form.Label>Advisory</Form.Label>
@@ -707,14 +728,13 @@ const CaseStatusApp = (props) => {
 			    <AdvisoryBadge
 				advisory = {caseInfo.advisory_status}
 				case_id = {caseInfo.case_id}
+				role = {props.user.role}
 			    />
                         </Col>
 			{error &&
 			 <Alert variant="danger">{error}</Alert>
 			}
                     </Row>
-		    }
-
 		</Card.Body>
 		{['owner', 'coordinator'].includes(props.user.role) &&
 		 <>
@@ -756,7 +776,12 @@ const CaseStatusApp = (props) => {
 			 hideModal = {hideErrorModal}
 			 message = {errorMessage}
 		     />
-
+		     <PublishAdvisoryModal
+			 showModal = {displayPublishModal}
+			 hideModal = {hideAutoAssign}
+			 caseInfo = {caseInfo}
+			 publish = {publishAdvisory}
+		     />
 		 </>
 		}
 	    </Card>

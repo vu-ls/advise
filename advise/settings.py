@@ -8,7 +8,6 @@ import logging.config
 import environ
 import json
 import copy
-from celery.schedules import crontab
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -23,7 +22,7 @@ DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'local')
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT_DIR = environ.Path(__file__) - 3
 
-VERSION = '1.4.1'
+VERSION = '1.4.2'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -124,7 +123,6 @@ THIRD_PARTY_APPS = [
     'corsheaders',
     'webpack_loader',
     'drf_yasg',
-    'django_celery_beat',  #<--- only needed if using celery as JOB_MANAGER
 ]
 
 
@@ -555,19 +553,22 @@ WEBPACK_LOADER = {
 JOB_MANAGER = os.environ.get('JOB_MANAGER')
 
 
-#following 5 settings only required if JOB_MANAGER=cvdp.appcomms.async.CeleryRedis...
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_REDIS_URL', "redis://localhost:6379")
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', "redis://localhost:6379")
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
-CELERY_IGNORE_RESULT = True
+# following settings only required if JOB_MANAGER=cvdp.appcomms.async.CeleryRedis...
+if JOB_MANAGER == 'cvdp.appcomms.async.CeleryRedis':
+    from celery.schedules import crontab
+    INSTALLED_APPS.append('django_celery_beat')
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_REDIS_URL', "redis://localhost:6379")
+    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', "redis://localhost:6379")
+    CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
+    CELERY_IGNORE_RESULT = True
 
-#this runs every hour to check for new CVEs
-CELERY_BEAT_SCHEDULE = {
-    'check-new-cve': {
-        'task': 'adscore.tasks.check_for_new_cves',
-        'schedule': crontab(minute=0)
+    #this runs every hour to check for new CVEs
+    CELERY_BEAT_SCHEDULE = {
+        'check-new-cve': {
+            'task': 'adscore.tasks.check_for_new_cves',
+            'schedule': crontab(minute=0)
+        }
     }
-}
 
 
 # These 2 variables determine how initial login works

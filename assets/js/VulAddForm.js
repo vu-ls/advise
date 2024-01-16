@@ -103,7 +103,7 @@ const VulAddForm = (props) => {
 		    if (err.response?.status == 403) {
 			setReserveMessage(<Alert variant="danger">You are not authorized to add a vulnerability to this case. Are you the case owner?</Alert>)
 		    } else {
-			setReserveMessage(<Alert variant="danger">Error submitting vulnerability data: {err.message}</Alert>);
+			setReserveMessage(<Alert variant="danger">Error submitting vulnerability data: {err.message} {err.response?.data.detail}</Alert>);
 		    }
 		    console.log(err);
 		});

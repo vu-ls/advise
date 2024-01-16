@@ -6,6 +6,12 @@
     display: inline-block;
 }
 
+.inbox-pagination {
+    position: absolute;
+    bottom: 0;
+    margin: auto;
+}
+
 .clicktocopy {
     border-bottom: 1px dotted #000;
     cursor: copy;
@@ -105,7 +111,7 @@
     padding: 15px;
 }
 
-.thread-messages-preview {
+.thread-preview-list {
     padding: 15px;
 }
 

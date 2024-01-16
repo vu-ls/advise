@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.conf import settings
 from .utils import cached_attribute
 from cvdp.manage.models import FormEntry, CVEServicesAccount, AdVISEConnection
+from cvdp.validators import JSONSchemaValidator
 from django.utils.functional import cached_property
 from django.dispatch import Signal
 from django.core.exceptions import ValidationError
@@ -597,6 +598,13 @@ class CaseParticipant(models.Model):
         choices = CASE_ROLES,
         default = 'supplier')
 
+    #add this so we can sort */
+    
+    title = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True)
+
     def __str__(self):
         if self.group:
             return f"{self.group.name} in {self.case.case_id}"
@@ -612,6 +620,12 @@ class CaseParticipant(models.Model):
             return self.contact.email
         
     name = property(_get_name)
+
+    def save(self, *args, **kwargs):
+        
+        self.title = self._get_name()
+        
+        super(CaseParticipant, self).save(*args, **kwargs)
 
 # Adapted from Pinax-messages Project
 class MessageThread(models.Model):
@@ -665,12 +679,18 @@ class MessageThread(models.Model):
     @classmethod
     def group_unread(cls, group):
         return cls.objects.filter(groupthread__group=group, groupthread__deleted=False, groupthread__unread=True).distinct()
+
+    @classmethod
+    def is_user_member(cls, user):
+        return cls.objects.filter(userthread__user=user).exists()
+
     
     def __str__(self):
         return "{}: {}".format(
             self.subject,
             ", ".join([str(user) for user in self.users.all()])
         )
+    
 
     @property
     @cached_attribute
@@ -1384,6 +1404,7 @@ class Vulnerability(models.Model):
 
     references = models.JSONField(
         _('References'),
+        validators=[JSONSchemaValidator(limit_value={"type": "array", "items": {"type":"string"}})],
         blank=True,
         null=True)
 
@@ -1789,6 +1810,11 @@ class AdvisoryRevision(BaseRevisionMixin,  models.Model):
     date_shared = models.DateTimeField(
         blank=True, null=True)
 
+    version_number = models.CharField(
+        max_length = 10,
+        blank=True,
+        null=True)
+    
     search_vector = SearchVectorField(null=True)
 
     def __str__(self):
@@ -1980,8 +2006,6 @@ class CaseChange(models.Model):
             }
         return out
     
-
-
 class ContactAction(Action):
     
     contact = models.ForeignKey(
