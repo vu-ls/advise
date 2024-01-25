@@ -5,6 +5,11 @@
 # and password secrets, which is assumed to be a single secret entry using
 # JSON encoded data.
 
+data "aws_rds_engine_version" "default" {
+  engine                 = "postgres"
+  parameter_group_family = var.family
+}
+
 module "advise_db" {
   source  = "terraform-aws-modules/rds/aws"
   version = "~> 6.0"
@@ -12,6 +17,7 @@ module "advise_db" {
   identifier = "${var.name_prefix}-${local.unique_id}"
 
   engine               = "postgres"
+  engine_version       = data.aws_rds_engine_version.default.version
   family               = var.family
   major_engine_version = var.major_version
   instance_class       = var.instance_type
@@ -42,6 +48,14 @@ module "advise_db" {
   #backup_retention_period = 7
   #skip_final_snapshot     = false
   #deletion_protection     = true
+
+  # enhance performance for SSD-backed workload
+  parameters = [
+    {
+      name  = "random_page_cost"
+      value = 1
+    }
+  ]
 
   # TODO: Configure monitoring here?
   #performance_insights_enabled = true

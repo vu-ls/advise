@@ -15,7 +15,7 @@ resource "aws_synthetics_canary" "default" {
   execution_role_arn   = aws_iam_role.canary_lambda.arn
   handler              = "pageload_canary_lambda.handler"
   zip_file             = data.archive_file.canaries_lambda.output_path
-  runtime_version      = "syn-nodejs-puppeteer-4.0"
+  runtime_version      = "syn-nodejs-puppeteer-6.1"
   start_canary         = true
 
   schedule {

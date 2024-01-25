@@ -7,6 +7,14 @@ resource "aws_instance" "bastion" {
   associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.bastion.id
 
+  root_block_device {
+    encrypted = true
+  }
+
+  metadata_options {
+    http_tokens = "required"
+  }
+
   user_data = templatefile(
     "${path.module}/templates/bastion.tplfl",
     {

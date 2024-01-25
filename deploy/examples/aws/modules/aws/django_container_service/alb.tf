@@ -1,12 +1,13 @@
 # load balancer definition for app
 # note: name must be <32 chars, so we foreshorten
 resource "aws_lb" "default" {
-  name                 = "alb-${local.unique_id}"
-  internal             = false
-  load_balancer_type   = "application"
-  preserve_host_header = true
-  security_groups      = [aws_security_group.lb.id]
-  subnets              = var.network.public_subnets
+  name                       = "alb-${local.unique_id}"
+  internal                   = false
+  load_balancer_type         = "application"
+  preserve_host_header       = true
+  security_groups            = [aws_security_group.lb.id]
+  subnets                    = var.network.public_subnets
+  drop_invalid_header_fields = true
 
   enable_deletion_protection = var.deletion_protection
 }

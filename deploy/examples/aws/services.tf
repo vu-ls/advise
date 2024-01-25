@@ -28,6 +28,7 @@ module "app_service" {
   rotation_key            = var.advise_app_secret_key
   network                 = module.advise_vpc
   enable_worker           = true
+  worker_log_group_name   = "/ecs/${local.name_prefix}-worker-${local.unique_id}"
 
   app_env_vars = [
     {
