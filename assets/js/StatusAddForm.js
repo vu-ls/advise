@@ -360,7 +360,7 @@ const StatusAddForm = (props) => {
     const setSelectedComponent = (e) => {
 	console.log(e);
 	setSelComponent(e);
-	if (e[0].version) {
+	if (e && e[0]?.version) {
 	    setVersion(e[0].version)
 	}
     }

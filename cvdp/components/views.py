@@ -157,6 +157,9 @@ class ComponentAPIView(viewsets.ModelViewSet):
                     if (prod and (prod.dependencies.count() > 0)):
                         #create cloned product
                         cloned_prod = Product(component=component)
+                        if prod.supplier:
+                            #clone owner too
+                            cloned_prod.supplier=prod.supplier
                         cloned_prod.save()
                         #copy dependencies to cloned component
                         for dep in prod.dependencies.all():

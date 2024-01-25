@@ -204,7 +204,7 @@ const ComponentDetailInternal = ({component, loadactivity, updateComponent}) => 
 								     {value.map((v, index) => {
 									 if (typeof v === "object") {
 									     return (
-										 <li key={`${v.name}-${index}`}>{v.name}</li>
+										 <li key={`${v.name}-${index}`}>{v.name} {v.version}</li>
 									     )
 									 } else {
 									     return (
@@ -217,7 +217,7 @@ const ComponentDetailInternal = ({component, loadactivity, updateComponent}) => 
 							  :
 							  <>
 							      {typeof value === "object" ?
-						       <span className="m-2"><b>{value.name}</b></span>
+							       <span className="m-2"><b>{value.name} {value.version}</b></span>
 							       :
 							       <span className="m-2"><b>{value}</b></span>
 							      }

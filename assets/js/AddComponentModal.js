@@ -147,10 +147,10 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group, clone}) =>
             setLoading(false);
         }).catch (err => {
             setLoading(false);
-	    if (err.response?.data?.detail) {
-		setError(err.response?.data.detail);
-	    } else if (err.response?.status == 404) {
+	    if (err.response?.status == 404) {
 		setError("No dependencies found.");
+	    } else if (err.response?.data?.detail) {
+		setError(err.response?.data.detail);
 	    } else {
 		setError("Unable to retrieve dependencies");
 	    }
@@ -228,7 +228,7 @@ const AddComponentModal = ({showModal, hideModal, title, edit, group, clone}) =>
 			      <ul className="list-unstyled">
 			      {dependencies.map((d, index) => {
 				  return(
-				      <li key={`dep-${d.id}`}><Button variant="btn-icon" className={removeList.some(elem=>elem==d) ? `warningtext`: `goodtext`} onClick={(e)=>updateRemoveList(d)}><i className="fas fa-minus-square"></i></Button>{d.name}</li>
+				      <li key={`dep-${d.id}`}><Button variant="btn-icon" className={removeList.some(elem=>elem==d) ? `warningtext`: `goodtext`} onClick={(e)=>updateRemoveList(d)}><i className="fas fa-minus-square"></i></Button>{d.name} {d.version}</li>
 				  )
 			      })}
 			      </ul>

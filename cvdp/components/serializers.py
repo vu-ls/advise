@@ -19,19 +19,21 @@ class ParentProductSerializer(serializers.HyperlinkedModelSerializer):
 
     id = serializers.ReadOnlyField(source='product.component.id')
     name = serializers.ReadOnlyField(source='product.component.name')
+    version = serializers.ReadOnlyField(source='product.component.version')
 
     class Meta:
         model = ComponentRelationship
-        fields = ('id', 'name', 'date_added')
+        fields = ('id', 'name', 'version', 'date_added')
 
 class ComponentRelationshipSerializer(serializers.HyperlinkedModelSerializer):
 
     id = serializers.ReadOnlyField(source='component.id')
     name = serializers.ReadOnlyField(source='component.name')
+    version = serializers.ReadOnlyField(source='component.version')
 
     class Meta:
         model = ComponentRelationship
-        fields = ('id', 'name', 'date_added')
+        fields = ('id', 'name', 'version', 'date_added')
 
 
 class StatusTransferSerializer(serializers.ModelSerializer):
@@ -40,6 +42,13 @@ class StatusTransferSerializer(serializers.ModelSerializer):
     class Meta:
         model = ComponentStatusUpload
         fields = ('id', 'vex', 'received', 'user', 'merged', 'deleted')
+
+class DependencySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Component
+        fields = ('name', 'version', )
+    
         
 class ComponentSerializer(serializers.ModelSerializer):
 
@@ -55,7 +64,11 @@ class ComponentSerializer(serializers.ModelSerializer):
     def get_dependencies(self, obj):
         p = Product.objects.filter(component=obj).first()
         if p:
-            return list(p.dependencies.values_list('name', flat=True))
+            logger.debug("IN DEP SERIALIZER")
+            data = DependencySerializer(p.dependencies, many=True)
+            logger.debug(data.data)
+            return data.data
+        #return list(p.dependencies.values_list('name', 'version', flat=True))
         return []
 
     def get_owner(self, obj):

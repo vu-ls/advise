@@ -517,7 +517,7 @@ const ComponentTable = (props) => {
 	useEffect(() => {
 	    const timer = setTimeout(() => {
 		componentapi.getDependencies(row.original.id).then((response) => {
-		    const d = response.dependencies.map(item => item.name)
+		    const d = response.dependencies.map(item => `${item.name} ${item.version}`)
 		    setData(d);
 		    setLoading(false);
 		});

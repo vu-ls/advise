@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {Nav, Dropdown, DropdownButton, InputGroup, CardGroup, Alert, Button, Tab, Tabs, Row, Form, Card, Col} from 'react-bootstrap';
+import {Nav, OverlayTrigger, Tooltip, Dropdown, DropdownButton, InputGroup, CardGroup, Alert, Button, Tab, Tabs, Row, Form, Card, Col} from 'react-bootstrap';
 import {Typeahead} from 'react-bootstrap-typeahead';
 import AdminAPI from './AdminAPI';
 import CVEAPI from './CVEAPI';
@@ -221,7 +221,7 @@ const ManageCVEApp = () => {
             },
             {
                 Header: 'username',
-                accessor: 'username',
+                accessor: d => { return d.authority.active_roles.includes('ADMIN') ? <span>{d.username} <OverlayTrigger placement="top" overlay={<Tooltip> Admin </Tooltip>}><i className="fas fa-crown"></i></OverlayTrigger></span> : d.username} 
             },
             {
                 Header: 'active',

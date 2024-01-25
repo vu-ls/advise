@@ -363,6 +363,11 @@ export default class AdminAPI{
         return axios.get(url).then(response=>response.data);
     }
 
+    getSSVCScoredByUsers() {
+	let url = `${API_URL}/score/api/users/?scored=1`;
+        return axios.get(url).then(response=>response.data);
+    }
+    
     getSSVCInsights(start, end) {
 	let url = `${API_URL}/score/api/insights/?start=${start}&end=${end}`;
 	return axios.get(url).then(response=>response.data);

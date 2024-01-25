@@ -77,8 +77,17 @@ const PublishVulModal = (props) => {
     useEffect(() => {
 
 	if (cveAccount) {
+
+	    /* all these need to be reset*/
+	    setBtnDisabled(false);
+	    setCvePublishError(null);
+	    setAdpError(null);
+	    setPublishWarning(null);
+	    setAdpRole(false);
+	    
 	    /* check for ADP Role */
 	    let api = new CVEAPI(cveAccount.org_name, cveAccount.email, cveAccount.api_key, cveAccount.server);
+
 	    const fetchCVERole = async () => {
 		await api.getORG().then((response) => {
 		    let data = response.data;
@@ -89,6 +98,16 @@ const PublishVulModal = (props) => {
 	    };
 
 	    fetchCVERole();
+	    
+	    if (vul) {
+		updateVulJSON();
+	    }
+	    /* this is going to pull CVE information from the CVE environment that was picked */
+	    /* if the CVE exists and this account isn't the CNA for this CVE, it's not going to allow
+	       the account to publish CNA data.  Depending on the role for this account, it's possible
+	       that the user will be able to publish to ADP */
+	    fetchADPContainer();
+	    
 	}
     }, [cveAccount]);
 
@@ -101,8 +120,10 @@ const PublishVulModal = (props) => {
 	    console.log(response);
 	    try {
 		if (response.cveMetadata.assignerShortName != cveAccount.org_name) {
-		    setPublishWarning("You are not the CNA for this CVE and cannot publish CVE data.")
+		    setPublishWarning("You are not the CNA for this CVE and cannot publish CVE data to this API environment. The following record already exists.")
 		    setNotCNA(true);
+		    /* it doesn't matter if info is missing - this user can't publish this CVE anyway */
+		    setInfoMissing(false);
 		    setVulJSON(response)
 		    setBtnDisabled(true);
 		} else {
@@ -202,7 +223,7 @@ const PublishVulModal = (props) => {
 	    } else if (rj.length == 1) {
 		setCveAccount(rj[0]);
 	    } else {
-		setError("No active CVE account available.  Add a CVE account before attempting to publish");
+		setError("No active CVE account available.  Add a CVE account before attempting to publish.");
 		setBtnDisabled(true);
 	    }
         } catch (err) {
@@ -212,9 +233,7 @@ const PublishVulModal = (props) => {
     };
 
     useEffect(() => {
-	console.log("IN PROPS EFFECT");
 	if (props.showModal) {
-
 	    fetchCVEAccount();
 	    setSuccessMsg(null);
 	    setQuestion(true);
@@ -230,58 +249,45 @@ const PublishVulModal = (props) => {
 
     }, [props.showModal]);
 
-    useEffect(() => {
-
-	if (props.showModal && vul) {
-	    fetchADPContainer();
+    const updateVulJSON = () => {
+	
+	let json = {};
+	let cnacontainer = {};
+	json['descriptions'] = [{"lang": "en", "value": vul.description}];
+	json["affected"] = []
+	
+        if (!(vul.references && vul.references.length > 0 && vul.affected_products && vul.affected_products.length > 0 && vul.problem_types && vul.problem_types.length > 0 && vul.date_public)) {
+	    setPublishWarning("Information is missing.  Please populate all fields before publishing");
+	    setBtnDisabled(true);
+	    setInfoMissing(true);
+	    return;
 	}
-    }, [adpRole]);
-    
-    useEffect(() => {
-
-	if (vul) {
-	    if (props.showModal && adpRole) {
-		fetchADPContainer();
-	    }
-	    
-	    let json = {};
-	    let cnacontainer = {};
-	    json['descriptions'] = [{"lang": "en", "value": props.vul.description}];
-	    json["affected"] = []
-
-            if (!(vul.references && vul.references.length > 0 && vul.affected_products && vul.affected_products.length > 0 && vul.problem_types && vul.problem_types.length > 0 && vul.date_public)) {
-		setPublishWarning("Information is missing.  Please populate all fields before publishing");
-		setBtnDisabled(true);
-		setInfoMissing(true);
-		return;
-	    }
-
-	    console.log(vul.affected_products);
-	    vul.affected_products.forEach((v) => {
-		json["affected"].push({"vendor": v.vendor, "product": v.product,
-				       "versions": [{"version": v.version,
-						     "status": "affected"}]});
-	    });
-	    json["problemTypes"] = [];
-	    vul.problem_types.forEach((vul) => {
-		let cwetype = vul.replace(/ .*/,'');
-		let descriptions = [];
-		descriptions.push({"description": vul,
-				   "lang": "en",
-				   "type": cwetype})
-		json["problemTypes"].push({"descriptions": descriptions});
-	    });
-	    json["references"] = [];
-	    vul.references.forEach((vul) => {
-		json["references"].push({"name":"url", "url":vul});
-	    });
-	    let dateObj = new Date(vul.date_public);
-	    json["datePublic"] = dateObj.toISOString();
-	    cnacontainer['cnaContainer'] = json
-	    console.log(json);
-	    setVulJSON(cnacontainer);
-	}
-    }, [vul])
+	
+	console.log(vul.affected_products);
+	vul.affected_products.forEach((v) => {
+	    json["affected"].push({"vendor": v.vendor, "product": v.product,
+				   "versions": [{"version": v.version,
+						 "status": "affected"}]});
+	});
+	json["problemTypes"] = [];
+	vul.problem_types.forEach((vul) => {
+	    let cwetype = vul.replace(/ .*/,'');
+	    let descriptions = [];
+	    descriptions.push({"description": vul,
+			       "lang": "en",
+			       "type": cwetype})
+	    json["problemTypes"].push({"descriptions": descriptions});
+	});
+	json["references"] = [];
+	vul.references.forEach((vul) => {
+	    json["references"].push({"name":"url", "url":vul});
+	});
+	let dateObj = new Date(vul.date_public);
+	json["datePublic"] = dateObj.toISOString();
+	cnacontainer['cnaContainer'] = json
+	console.log(json);
+	setVulJSON(cnacontainer);
+    }
 
     const pickCVEAccount = (acc) => {
 	setCveAccount(acc);
@@ -376,7 +382,7 @@ const PublishVulModal = (props) => {
                               }
 			  </div>
 			 }
-
+			 {cveAccount &&
 			 <Tab.Container
 			     defaultActiveKey='publish'
 			     activeKey={activeTab}
@@ -397,17 +403,22 @@ const PublishVulModal = (props) => {
 				      <>
 					  <Alert variant="warning">{publishWarning}</Alert>
 					  {infoMissing &&
-					   <PublishCVEApp
-					       vul={vul}
-					   />
+					   <>
+					       <PublishCVEApp
+						   vul={vul}
+					       />
+					   </>
 					  }
 				      </>
 				      :
-				      <>
-					  <b>The following JSON will be published. Double check for errors.</b>
-					  <br/>
-					  <br/>
-				      </>
+				      <div className="mb-2">
+					  <div className="m-2 fw-bold">The following JSON will be published. Double check for errors.</div>
+					  {vulJSON &&
+					  <div>
+					      <Button variant="outline-primary" href={`data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(vulJSON, null, 2))}`} download={`${vul.vul}.json`}><i className="fas fa-download"></i> Download JSON</Button>
+					  </div>
+					  }
+				      </div>
 				     }
 				     {previouslyPublished ?
 				      <Row>
@@ -431,9 +442,6 @@ const PublishVulModal = (props) => {
 					       <pre>
 						   {JSON.stringify(vulJSON, null, 2)}
 					       </pre>
-					       <div>
-						   <Button variant="outline-primary" href={`data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(vulJSON, null, 2))}`} download={`${vul.vul}.json`}><i className="fas fa-download"></i> Download</Button>
-					       </div>
 					   </>
 					  }
 				      </>
@@ -485,6 +493,7 @@ const PublishVulModal = (props) => {
 			     </Tab.Content>
 
 			 </Tab.Container>
+			 }
 		     </>
 		    }
 		</Modal.Body>
