@@ -9,10 +9,10 @@ const DisplayVulStatus = ({status, count=null}) => {
 		Not Affected {count && <Badge bg="light" text="dark">{count}</Badge>}
 	    </Badge>
 	)
-    } else if (status == "Under Investigation") {
+    } else if (["Under Investigation", "Unknown"].includes(status)) {
 	return (
             <Badge pill bg="warning">
-                Under Investigation {count && <Badge bg="light" text="dark">{count}</Badge>}
+                {status} {count && <Badge bg="light" text="dark">{count}</Badge>}
             </Badge>
         )
     } else if (status == "Fixed") {

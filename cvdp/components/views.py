@@ -504,7 +504,7 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
 
                 logger.debug(serializer.validated_data)
                 sr  = StatusRevision(**serializer.validated_data)
-                logger.debug(sr)
+                logger.debug(f"DEFAULT STATUS {sr.default_status}")
                 sr.set_from_request(self.request)
                 cs.add_revision(sr, save=True)
 
@@ -590,7 +590,9 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                         change = True
                     elif (cs.current_revision.version_name != data["version_end_range"]):
                         change = True
-
+                    elif (cs.current_revision.default_status != data['default_status']):
+                        change = True
+                        
                     if cs.share != share:
                         cs.share = share
                         cs.save()

@@ -1,6 +1,7 @@
 # SNS topic for ECS state messages
 resource "aws_sns_topic" "metrics" {
-  name = "${var.name_prefix}-metrics-${local.unique_id}"
+  name              = "${var.name_prefix}-metrics-${local.unique_id}"
+  kms_master_key_id = var.sns_kms_key
 }
 
 # allow cloudwatch to post to this topic

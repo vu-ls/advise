@@ -338,6 +338,7 @@ const CaseDetailApp = (props) => {
 				transfers = {transfers}
 				user={props.user}
 				active={activeTab == "addstatus" ? true : false}
+				updateVuls = {fetchInitialData}
 			    />
 			</Tab.Pane>
 		    </Tab.Content>

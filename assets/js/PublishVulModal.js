@@ -244,6 +244,7 @@ const PublishVulModal = (props) => {
 	    setVul(props.vul);
 	} else {
 	    setVul(null);
+	    setCveAccount(null);
 	}
 	    
 
@@ -265,9 +266,22 @@ const PublishVulModal = (props) => {
 	
 	console.log(vul.affected_products);
 	vul.affected_products.forEach((v) => {
+	    let vul_status = v.status;
+	    switch(vul_status) {
+	    case 'Not Affected':
+	    case 'Fixed':
+		vul_status = "unaffected";
+		break;
+	    case 'Affected':
+		vul_status = "affected";
+		break;
+	    default:
+		vul_status = "unknown";
+	    }
 	    json["affected"].push({"vendor": v.vendor, "product": v.product,
+				   "defaultStatus": v.default_status.toLowerCase(),
 				   "versions": [{"version": v.version,
-						 "status": "affected"}]});
+						 "status": vul_status}]});
 	});
 	json["problemTypes"] = [];
 	vul.problem_types.forEach((vul) => {

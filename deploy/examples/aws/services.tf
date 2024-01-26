@@ -29,6 +29,7 @@ module "app_service" {
   network                 = module.advise_vpc
   enable_worker           = true
   worker_log_group_name   = "/ecs/${local.name_prefix}-worker-${local.unique_id}"
+  sns_kms_key             = module.keys.sns_id
 
   app_env_vars = [
     {
@@ -371,6 +372,7 @@ module "oauth_service" {
   service_fqdn            = local.oauth_svc_fqdn
   rotation_key            = var.advise_oauth_secret_key
   network                 = module.advise_vpc
+  sns_kms_key             = module.keys.sns_id
 
   app_env_vars = [
     {

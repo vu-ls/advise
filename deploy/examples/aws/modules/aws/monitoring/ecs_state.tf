@@ -1,6 +1,7 @@
 # SNS topic for ECS state messages
 resource "aws_sns_topic" "ecs_state" {
-  name = "${var.name_prefix}-ecs-state-${local.unique_id}"
+  name              = "${var.name_prefix}-ecs-state-${local.unique_id}"
+  kms_master_key_id = var.sns_kms_key
 }
 
 

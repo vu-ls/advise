@@ -113,6 +113,11 @@ variable "canary_duration_period" {
   default     = 300
 }
 
+variable "sns_kms_key" {
+  description = "KMS key id for SNS"
+  type        = string
+}
+
 
 variable "rotation_key" {
   description = "Protection header random id value will rotate when this value is changed"

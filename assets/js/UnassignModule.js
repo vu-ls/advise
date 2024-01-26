@@ -69,7 +69,7 @@ const UnassignModule = ({ showModal, hideModal, confirmModal, owners }) => {
             <Button variant="secondary" onClick={hideModal}>
 		Cancel
             </Button>
-            <Button variant="primary" onClick={() => submitForm() }>
+            <Button data-testid="submit-unassign" variant="primary" onClick={() => submitForm() }>
 		Submit
             </Button>
         </Modal.Footer>

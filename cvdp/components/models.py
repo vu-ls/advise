@@ -189,6 +189,14 @@ VUL_STATUS_CHOICES = (
     (4, _('Unknown')),
 )
 
+CVE_STATUS_CHOICES = (
+    (0, _('Unknown')),
+    (1, _('Affected')),
+    (2, _('Unaffected')),
+)
+
+
+
 VERSION_RANGE_CHOICES = (
     (None, 'None'),
     ('<', '<'),
@@ -216,6 +224,10 @@ class StatusRevision(BaseRevisionMixin, models.Model):
     status = models.IntegerField(
         choices=VUL_STATUS_CHOICES)
 
+    default_status = models.IntegerField(
+        choices=CVE_STATUS_CHOICES,
+        default=0)
+    
     version_name = models.CharField(
         _('Affected Version End Range'),
         blank=True,
@@ -260,6 +272,7 @@ class StatusRevision(BaseRevisionMixin, models.Model):
         self.component_status = predecessor.component_status
         self.status = predecessor.status
         self.statement = predecessor.statement
+        self.default_status = predecessor.default_status
         self.deleted = predecessor.deleted
         self.locked = predecessor.locked
         self.version_affected = predecessor.version_affected

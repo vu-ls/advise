@@ -1,5 +1,5 @@
 from cvdp.models import *
-from cvdp.components.models import ComponentStatus, Product
+from cvdp.components.models import ComponentStatus, Product, VUL_STATUS_CHOICES, CVE_STATUS_CHOICES
 from django.core.exceptions import ObjectDoesNotExist
 from cvdp.permissions import my_case_role, is_my_case, my_case_vendors, is_case_owner, my_components
 from cvdp.serializers import ChoiceField, UserSerializer, DynamicFieldsModelSerializer
@@ -553,10 +553,12 @@ class AffectedProductSerializer(serializers.ModelSerializer):
     version = serializers.CharField(source='current_revision.version_value')
     version_affected = serializers.CharField(source='current_revision.version_affected')
     end_version_range = serializers.CharField(source='current_revision.version_name')
+    status = ChoiceField(source='current_revision.status', choices=VUL_STATUS_CHOICES)
+    default_status = ChoiceField(source='current_revision.default_status', choices=CVE_STATUS_CHOICES)
     
     class Meta:
         model = ComponentStatus
-        fields = ('vendor', 'product', 'version', 'version_affected', 'end_version_range')
+        fields = ('vendor', 'product', 'version', 'version_affected', 'end_version_range', 'status', 'default_status')
 
     def get_vendor(self, obj):
         product = Product.objects.filter(component=obj.component).first()
@@ -766,11 +768,11 @@ class VulSerializer(serializers.ModelSerializer):
         user = self.context.get('user')
         if user:
             if user.is_coordinator:
-                #if case owner, get all affected components
-                status = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
+                #if case owner, get all components
+                status = ComponentStatus.objects.filter(vul=obj)
             else:
                 my_groups = my_case_vendors(user, obj.case)
-                components = ComponentStatus.objects.filter(vul=obj, current_revision__status=1)
+                components = ComponentStatus.objects.filter(vul=obj)
                 case_components = components.values_list('component__id', flat=True)
                 if my_groups and case_components:
                     products = Product.objects.filter(supplier__in=my_groups, component__in=case_components).values_list('component__id', flat=True)

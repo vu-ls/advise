@@ -36,6 +36,13 @@ const STATUS_CHOICES = [
     {val: 1, desc: 'Affected'},
     {val: 2, desc: 'Fixed'},
     {val: 3, desc: 'Under Investigation'},
+    {val: 4, desc: 'Unknown'},
+]
+
+const CVE_STATUS_CHOICES = [
+    {val: 0, desc: 'Unknown'},
+    {val: 1, desc: 'Affected'},
+    {val: 2, desc: 'Unaffected'},
 ]
 
 
@@ -104,7 +111,9 @@ const StatusAddForm = (props) => {
     const [selComponent, setSelComponent] = useState([]);
     const [invalidComponent, setInvalidComponent] = useState(false);
     const [version, setVersion] = useState("");
+    const [statusWarning, setStatusWarning] = useState(null);
     const [status, setStatus] = useState("");
+    const [defaultStatus, setDefaultStatus] = useState("Unknown");
     const [showJustification, setShowJustification] = useState(false);
     const [justification, setJustification] = useState("");
     const [versionRange, setVersionRange]=useState("");
@@ -135,7 +144,7 @@ const StatusAddForm = (props) => {
     const hideErrorModal = () => {
         setDisplayErrorModal(false);
     }
-    
+
     const radios = [
 	{ name: 'Share', value: true },
 	{ name: "Don't Share", value: false },
@@ -153,7 +162,7 @@ const StatusAddForm = (props) => {
 	    setTransfers([]);
 	}
     }
-    
+
     function removeStatus(id) {
         console.log("remove", id);
         setRemoveID(id);
@@ -235,6 +244,7 @@ const StatusAddForm = (props) => {
 	}
 	setCheckedVuls([q.vul.id]);
 	setStatus(q.status);
+	setDefaultStatus(q.default_status);
 	if (q.justification) {
 	    let val = JUSTIFICATION_CHOICES.filter(item => item.desc == q.justification);
 	    setJustification(val[0].val);
@@ -247,10 +257,29 @@ const StatusAddForm = (props) => {
 
     useEffect(() => {
 	console.log(status);
-	if (status && status === "Not Affected") {
-	    setShowJustification(true);
-	} else if (status) {
-	    setShowJustification(false);
+	if (status) {
+	    switch (status) {
+	    case 'Not Affected':
+		setShowJustification(true);
+		setStatusWarning(null);
+		return;
+	    case 'Fixed':
+		setStatusWarning("CVE will publish this status as \"Not Affected\"");
+		setShowJustification(false);
+		return;
+	    case 'Under Investigation':
+		setStatusWarning("CVE will publish this status as \"Unknown\"");
+		setShowJustification(false);
+		return;
+	    case 'Unknown':
+		setStatusWarning("Any VEX statements produced will use \"Under Investigation\"");
+		setShowJustification(false);
+		return;
+	    default:
+		setStatusWarning(null);
+		setShowJustification(false);
+
+	    }
 	}
     }, [status]);
 
@@ -315,6 +344,7 @@ const StatusAddForm = (props) => {
 		    componentapi.editStatus(editStatus, formDataObj).then((response) => {
 			addStatus();
 			getSelectedComponents();
+			props.updateVuls();
 			setShowForm(false);
 		    }).catch(err => {
 			setErrorMessage(`Error editing status: ${err.message}: ${err.response.data.detail}`);
@@ -325,6 +355,7 @@ const StatusAddForm = (props) => {
 		    componentapi.addStatus(caseInfo, formDataObj).then((response) => {
 			addStatus();
 			getSelectedComponents();
+			props.updateVuls();
 			setShowForm(false);
 		    }).catch(err => {
                         setErrorMessage(`Error adding status: ${err.message}: ${err.response.data.detail}`);
@@ -356,7 +387,7 @@ const StatusAddForm = (props) => {
 	}
     };
 
-    
+
     const setSelectedComponent = (e) => {
 	console.log(e);
 	setSelComponent(e);
@@ -404,9 +435,10 @@ const StatusAddForm = (props) => {
     }, [props.user]);
 
     const getSelectedComponents = async () => {
+
         console.log("fetching case components");
         await componentapi.getComponentStatus(caseInfo).then((response) => {
-	    
+
 	    console.log("COMP STATUS", response);
 	    setCaseComponents(response);
 	}).catch(err => {
@@ -423,6 +455,7 @@ const StatusAddForm = (props) => {
 	setVulStatement("");
 	setEndVersion("");
 	setStatus("");
+	setDefaultStatus("Unknown");
 	setShareStatus(false);
     }
 
@@ -501,9 +534,9 @@ const StatusAddForm = (props) => {
 		     transfers = {transfers}
 		 />
 	     </>
-	     
+
 	    }
-		 
+
 
 	    {vuls.length == 0 &&
 	     <>
@@ -578,7 +611,7 @@ const StatusAddForm = (props) => {
 							 <a href={`/advise/groups/${c.component.owner.id}`}>{c.component.owner.name}</a>
 							 :
 							 <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>
-							     <i className="fas fa-exclamation-triangle warningtext"></i>             
+							     <i className="fas fa-exclamation-triangle warningtext"></i>
 							 </OverlayTrigger>
 							}
 						    </td>
@@ -604,7 +637,7 @@ const StatusAddForm = (props) => {
 						    <td>{c.component.owner ?
 							 `${c.component.owner.name}`
 							 :
-                                                         <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>                                          
+                                                         <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>
                                                              <i className="fas fa-exclamation-triangle warningtext">
 							     </i>
                                                          </OverlayTrigger>
@@ -630,7 +663,7 @@ const StatusAddForm = (props) => {
                                                     </td>
 						    <td>{c.component.owner ?
 							 `${c.component.owner.name}`
-							 :							 
+							 :
                                                          <OverlayTrigger overlay={<Tooltip>No supplier provided for component. CSAF Advisory will not include status without supplier.</Tooltip>}>
                                                          <i className="fas fa-exclamation-triangle warningtext"></i>
                                                          </OverlayTrigger>
@@ -770,6 +803,27 @@ const StatusAddForm = (props) => {
                                   This field is required.
                               </Form.Text>
                              }
+			     {statusWarning &&
+			      <Alert variant="warning">{statusWarning}</Alert>
+			     }
+			 </Form.Group>
+			 <Form.Group className="mb-3" controlId="_type">
+                             <Form.Label>Default Status <OverlayTrigger overlay={<Tooltip>Versions not matched by any version object take the status listed in defaultStatus. When defaultStatus is itself omitted, it defaults to unknown.</Tooltip>}><i className="fas fa-question-circle"></i></OverlayTrigger></Form.Label> <br/>
+                             <div onChange={(e)=>setDefaultStatus(e.target.value)}>
+                                 {CVE_STATUS_CHOICES.map((type) => (
+				     <Form.Check
+                                         inline
+                                         label={type.desc}
+                                         aria-label={type.desc}
+                                         key={`defaultstatus-${type.desc}`}
+                                         name="default_status"
+                                         checked = {defaultStatus === type.desc ? true : false }
+                                         value={type.desc}
+                                         onChange={setDefaultStatus}
+                                         type="radio"
+                                     />
+                                 ))}
+                             </div>
 			 </Form.Group>
 			 {showJustification &&
 			  <Form.Group className="mb-3">
@@ -869,13 +923,13 @@ const StatusAddForm = (props) => {
 		hideModal = {hideStatusModal}
 		comp = {comp}
 		status = {editStatus}
-		
+
 	    />
 	    <ErrorModal
                 showModal = {displayErrorModal}
                 hideModal = {hideErrorModal}
                 message = {errorMessage}
-            />  
+            />
 	</>
     :
 	<p className="lead">Once vulnerabilites have been added, we will request that you update your status.</p>

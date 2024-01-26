@@ -252,9 +252,10 @@ describe("Case Detail Component", () => {
             "url": "/advise/cases/312650"
         })
 
+	let currentYear = new Date().getFullYear();
         mock.onGet("http://localhost:8000/advise/api/manage/cve/account/?active=true")
         .reply(200, data['cveaccounts'])
-        mock.onPost("somethingcve-id?amount=1&batch_type=Sequential&cve_year=2023&short_name=orgname")
+        mock.onPost(`somethingcve-id?amount=1&batch_type=Sequential&cve_year=${currentYear}&short_name=orgname`)
         .reply(200, {"cve_ids": [{"cve_id": "CVE-9999-1111"}]})
         mock.onGet("http://localhost:8000/advise/api/cases/310363/")
         .reply(200, data['case'])
@@ -468,17 +469,22 @@ describe("Case Detail Component", () => {
         await waitFor(() => {
             expect(screen.getByText(/Currently using/)).toBeInTheDocument();
             expect(screen.getByRole('button', {name:/Exploitation/i})).toBeInTheDocument();
-            user.click(screen.getByRole('button', {name:/Exploitation/i}))
+            user.click(screen.getByRole('button', {name:/Exploitation/i}));
         });
 
         await waitFor(() => {
             /* exploitation explanation popup */
+	    expect(screen.getByText('poc')).toBeInTheDocument();
+	});
+	/*
+	await waitFor(() => {
             expect(screen.getByText(/There is no evidence/)).toBeInTheDocument();
             user.click(screen.getByRole('button', {name:/Exploitation/i}))
         })
-
+	*/
         /* now go away */
-        await waitForElementToBeRemoved( () => screen.getByText(/There is no evidence/));
+	/*
+          await waitForElementToBeRemoved( () => screen.getByText(/There is no evidence/));*/
         await waitFor(() => {
             user.click(screen.getByLabelText('none'));
         })
@@ -491,13 +497,14 @@ describe("Case Detail Component", () => {
             user.click(screen.getByLabelText('partial'));
         })
         await waitFor(() => {
-            expect(screen.getByRole('button', {name:/Public Well-being Impact/i})).toBeInTheDocument();
-            user.click(screen.getByLabelText('Minimal'));
-        })
-        await waitFor(() => {
             expect(screen.getByRole('button', {name:/Mission Prevalence/i})).toBeInTheDocument();
             user.click(screen.getByLabelText('Support'));
         })
+	await waitFor(() => {
+            expect(screen.getByRole('button', {name:/Public Well-being Impact/i})).toBeInTheDocument();
+            user.click(screen.getByLabelText('Material'));
+        })
+
         mock.reset();
         let revised_vuls = data['vuls'];
         revised_vuls[1]['ssvc_vector']= 'SSVC/v2/E:N/A:Y/T:P/B:M/P:S/M:M/D:T/2023-10-03T13:08:34Z/'
@@ -546,7 +553,7 @@ describe("Case Detail Component", () => {
             expect(screen.getByText(/Publish CVE-9999-21128/i)).toBeInTheDocument();
             expect(screen.getByText(/Publish CVE Record/i)).toBeInTheDocument();
             expect(screen.getByText(/Publish ADP Record/i)).toBeInTheDocument();
-            expect(screen.getByText(/You are not the CNA/i)).toBeInTheDocument();
+            expect(screen.getByText(/MISSING REFERENCES/i)).toBeInTheDocument();
             expect(screen.getAllByRole('button', {name:/Publish/})[1]).toHaveAttribute('disabled');
 
 

@@ -23,4 +23,5 @@ module "monitoring" {
   oauth_rds_id              = module.oauth_db.db_id
   canary_duration_threshold = var.canary_duration_threshold
 
+  sns_kms_key = module.keys.sns_id
 }

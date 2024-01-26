@@ -179,11 +179,19 @@ describe("Case Detail Component", () => {
         })
 
         await waitFor(() => {
-            expect(screen.getByText(/This case is currently unassigned/)).toBeInTheDocument();
-            expect(mock.history.post.length).toBe(1);
-        })
+            expect(screen.getByText(/Are you sure you want to unassign this case?/)).toBeInTheDocument();
 
+	    user.click(screen.getByTestId("submit-unassign"));
+
+	})
+
+	await waitFor(() => {
+            expect(screen.getByText(/This case is currently unassigned/)).toBeInTheDocument();
+	    expect(mock.history.post.length).toBe(1);
+	});
+	
     });
+    
 
 
     it("should allow case status functions", async () => {

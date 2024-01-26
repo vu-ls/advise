@@ -11,8 +11,9 @@ resource "aws_ecs_task_definition" "default" {
 }
 
 resource "aws_sns_topic" "app_comms" {
-  count = var.app_comms_use_sns ? 1 : 0
-  name  = "${var.name_prefix}-app-comms-${local.unique_id}"
+  count             = var.app_comms_use_sns ? 1 : 0
+  name              = "${var.name_prefix}-app-comms-${local.unique_id}"
+  kms_master_key_id = var.sns_kms_key
 }
 
 # allow events to post to this topic

@@ -62,7 +62,9 @@ const SSVCScore = (props) => {
     const toggleFormLock = () => {
 	if (formLocked) {
 	    setFormLocked(false);
-	    props.scoreChange(true);
+	    if ('scoreChange' in props) {
+		props.scoreChange(true);
+	    }
 	} else {
 	    setFormLocked(true);
 	}
@@ -389,7 +391,9 @@ const SSVCScore = (props) => {
     }, [decisions]);
 
     const moveDecisionPoint = (label, e) => {
-	props.scoreChange(true);
+	if ('scoreChange' in props) {
+	    props.scoreChange(true);
+	}
 	/* get next decision point */
 	data.decision_points.forEach((d, index) => {
 	    if (d.label == label) {
@@ -642,7 +646,7 @@ const SSVCScore = (props) => {
 					 <Row className={`pb-3 ${showNotes.includes(d.label) ? "": "hidden"}`}>
 					      <Col lg={12}>
 						  <Form.Label>{d.label} Decision Justification:</Form.Label>
-						  <Form.Control name={d.label} as="textarea" rows={3} disabled={formLocked} defaultValue={justifications[d.label]} ref={el=>justRef.current[index] = el} onChange={(e)=>(props.scoreChange(true))} />
+						  <Form.Control name={d.label} as="textarea" rows={3} disabled={formLocked} defaultValue={justifications[d.label]} ref={el=>justRef.current[index] = el} onChange={(e)=>{'scoreChange' in props && props.scoreChange(true)}} />
 						  {/*onChange={(e) => handleAddDecisionNotes(e)} />*/}
 					      </Col>
 					  </Row>
@@ -682,7 +686,7 @@ const SSVCScore = (props) => {
 				       {showGutMismatch &&
 					<div>
 					    <Form.Label>Does this decision not match your expectation? Explain here:</Form.Label>
-					    <Form.Control name="assessment_mismatch" as="textarea" rows={3} defaultValue={justifications['assessment_mismatch']} ref={mismatchRef} disabled={formLocked} onChange={(e)=>props.scoreChange(true)}/>
+					    <Form.Control name="assessment_mismatch" as="textarea" rows={3} defaultValue={justifications['assessment_mismatch']} ref={mismatchRef} disabled={formLocked} onChange={(e)=>{'scoreChange' in props && props.scoreChange(true)}}/>
 					</div>
 				       }
 				   </>

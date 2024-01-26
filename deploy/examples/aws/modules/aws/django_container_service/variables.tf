@@ -134,6 +134,11 @@ variable "app_comms_use_sns" {
   default     = false
 }
 
+variable "sns_kms_key" {
+  description = "KMS key id for SNS"
+  type        = string
+}
+
 variable "rotation_key" {
   description = "Protection header random id value will rotate when this value is changed"
   type        = string
