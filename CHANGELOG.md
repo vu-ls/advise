@@ -2,6 +2,43 @@ AA#Changelog
 
 All notable changes to AdVISE will be documented in this file.
 
+## [1.5.0] - 2024-01-29
+
+### Added
+
+- Add option to add defaultStatus when choosing component status (for publishing affected products to CVE)
+- Add "Unknown" status and warnings to user for CVE/VEX status translation
+- Add "publish" advisory option in order to add revision history in CSAF
+- Show admin CVE users in CVE settings
+- Add version numbers when showing component dependencies
+- Show confirmation modal when unassigning user from case
+- Messaging improvements to show number of messages and participants in list
+- Allow cloning of components
+- Use django-allauth built-in MFA instead of django-allauth-2fa package
+- Add data validation for various API endpoints
+- Add tag manager
+- Use React router for system settings
+- Add additional tests
+
+### Changed
+
+- Only import celery if using celery for worker
+- Upgrade dependencies: jwcrypto, follow-redirects, jinja2, cryptography, axios,
+- Email templates to prevent spam routing
+- Add indexes to some tables to improve query times
+- Adjust random_page_cost in psql settings to improve query time on SSD
+- Move dependency add icon to dependency column in component table
+- Switch order of mission prevalence and public well-being impact in SSVC scoring modal
+- Remove SSVC vector
+
+### Fixed
+
+- Bug when tab selecting component status and then deleting
+- Bug when multiple CVE accounts are active and user is trying to publish CVE
+- Fix missing image in email notifications
+- Fix bug when searching groups
+- Auto-notify coordinators added to a case
+
 ## [1.4.0] - 2023-11-06
 
 ### Added
