@@ -551,6 +551,7 @@ class AffectedProductSerializer(serializers.ModelSerializer):
     vendor = serializers.SerializerMethodField()
     product = serializers.CharField(source='component.name')
     version = serializers.CharField(source='current_revision.version_value')
+    version_type = serializers.CharField(source='current_revision.version_type')
     version_affected = serializers.CharField(source='current_revision.version_affected')
     end_version_range = serializers.CharField(source='current_revision.version_name')
     status = ChoiceField(source='current_revision.status', choices=VUL_STATUS_CHOICES)
@@ -558,7 +559,7 @@ class AffectedProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ComponentStatus
-        fields = ('vendor', 'product', 'version', 'version_affected', 'end_version_range', 'status', 'default_status')
+        fields = ('vendor', 'product', 'version', 'version_affected', 'end_version_range', 'status', 'default_status', 'version_type')
 
     def get_vendor(self, obj):
         product = Product.objects.filter(component=obj.component).first()

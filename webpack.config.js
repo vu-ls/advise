@@ -26,7 +26,6 @@ module.exports = {
 	myreports: './assets/js/myreports',
 	contactapp: './assets/js/contact',
 	sysadmin: './assets/js/sysadmin',
-	adscore: './assets/js/plugins/adscore/adscore',
     },
 
     output: {

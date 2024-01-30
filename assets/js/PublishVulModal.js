@@ -267,6 +267,7 @@ const PublishVulModal = (props) => {
 	console.log(vul.affected_products);
 	vul.affected_products.forEach((v) => {
 	    let vul_status = v.status;
+	    let versions = [];
 	    switch(vul_status) {
 	    case 'Not Affected':
 	    case 'Fixed':
@@ -278,10 +279,27 @@ const PublishVulModal = (props) => {
 	    default:
 		vul_status = "unknown";
 	    }
+	    if (v.version_affected == "<" && v.end_version_range && v.version_type) {
+		versions = [{"version": v.version,
+                              "status": vul_status,
+			      "lessThan": v.end_version_range,
+			      "versionType": v.version_type
+			    }]
+	    } else if (v.version_affected == "<=" && v.end_version_range && v.version_type) {
+		versions = [{"version": v.version,
+                             "status": vul_status,
+			     "lessThanOrEqual": v.end_version_range,
+			     "versionType": v.version_type
+			    }]
+	    } else {
+		versions = [{"version": v.version,
+                             "status": vul_status}]
+	    }
+	    
 	    json["affected"].push({"vendor": v.vendor, "product": v.product,
 				   "defaultStatus": v.default_status.toLowerCase(),
-				   "versions": [{"version": v.version,
-						 "status": vul_status}]});
+				   "versions": versions});
+
 	});
 	json["problemTypes"] = [];
 	vul.problem_types.forEach((vul) => {

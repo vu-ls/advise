@@ -23,13 +23,21 @@ const PER_PAGE = 50;
 
 
 const VERSION_RANGE_CHOICES = [
-    {val:null, desc:'None'},
-    {val: '<', desc: '< (affects X versions prior to n)'},
-    {val: '<=', desc: '<= (affects X versions up to n)'},
-    {val: '=', desc: '= (affects n)'},
-    {val: '>', desc: '> (affects X versions above n)'},
-    {val: '>=', desc: '>= (affects X versions n and above)'}
+    {val:null, desc:''},
+    {val: '<', desc: '< (less than)'},
+    {val: '<=', desc: '<= (less than or Equal)'},
 ];
+
+const VERSION_TYPE_CHOICES = [
+    {val: null, desc: ''},
+    {val: "custom", desc: "custom"},
+    {val: "git", desc: "git"},
+    {val: "maven", desc: "maven"},
+    {val: "python", desc: "python"},
+    {val: "rpm", desc: "rpm"},
+    {val: "semver", desc: "semver"},
+]
+    
 
 const STATUS_CHOICES = [
     {val: 0, desc: 'Not Affected'},
@@ -111,6 +119,7 @@ const StatusAddForm = (props) => {
     const [selComponent, setSelComponent] = useState([]);
     const [invalidComponent, setInvalidComponent] = useState(false);
     const [version, setVersion] = useState("");
+    const [versionType, setVersionType] = useState("");
     const [statusWarning, setStatusWarning] = useState(null);
     const [status, setStatus] = useState("");
     const [defaultStatus, setDefaultStatus] = useState("Unknown");
@@ -119,7 +128,7 @@ const StatusAddForm = (props) => {
     const [versionRange, setVersionRange]=useState("");
     const [endVersion, setEndVersion] = useState("");
     const [checkedVuls, setCheckedVuls] = useState([]);
-    const [invalidVersion, setInvalidVersion] = useState(false);
+    const [invalidVersion, setInvalidVersion] = useState({});
     const [invalidStatus, setInvalidStatus] = useState(false);
     const [invalidVuls, setInvalidVuls] = useState(false);
     const [invalidJustification, setInvalidJustification] = useState(false);
@@ -237,7 +246,7 @@ const StatusAddForm = (props) => {
 	setVersion(q.version);
 	setEndVersion(q.version_end_range);
 	setVulStatement(q.statement);
-	if (q.version_range) {
+	if (["", "<", "<="].includes(q.version_range)) {
 	    setVersionRange(q.version_range);
 	} else {
 	    setVersionRange("");
@@ -245,6 +254,7 @@ const StatusAddForm = (props) => {
 	setCheckedVuls([q.vul.id]);
 	setStatus(q.status);
 	setDefaultStatus(q.default_status);
+	setVersionType(q.version_type);
 	if (q.justification) {
 	    let val = JUSTIFICATION_CHOICES.filter(item => item.desc == q.justification);
 	    setJustification(val[0].val);
@@ -308,11 +318,11 @@ const StatusAddForm = (props) => {
 	    setInvalidComponent(false);
 	}
 	if (version === "") {
-            setInvalidVersion(true);
+            setInvalidVersion({'field': 'version', 'msg': 'Version is required'});
             error = true;
-        } else {
-            setInvalidVersion(false);
-        }
+	} else if (Object.keys(invalidVersion).length > 0) {
+	    error = true;
+	} 
 	console.log(checkedVuls);
 	console.log(status);
 	if (checkedVuls.length == 0) {
@@ -455,6 +465,7 @@ const StatusAddForm = (props) => {
 	setVulStatement("");
 	setEndVersion("");
 	setStatus("");
+	setVersionType("");
 	setDefaultStatus("Unknown");
 	setShareStatus(false);
     }
@@ -472,12 +483,43 @@ const StatusAddForm = (props) => {
     }, [showForm]);
 
 
+    const validateVersion = () => {
+
+	console.log(versionRange);
+	
+	/* insert complicated version validation */
+	if (versionRange && !endVersion) {
+	    setInvalidVersion({'field':'version_end_range', 'msg':"End version is required when selecting range"});
+	} else if (endVersion && !versionRange) {
+	    setInvalidVersion({'field': 'version_affected', 'msg': "Version range is required when providing End Range"});
+	} else if (versionRange && !versionType) {
+	    setInvalidVersion({'field': 'version_type', 'msg': "Version type is required when selecting range"});
+	} else if (version == endVersion) {
+	    setInvalidVersion({'field': 'version_end_range', 'msg':"End is the same as the start"});
+	} else if (versionType && !versionRange) {
+	    setInvalidVersion({'field': 'version_type', 'msg':"Version type is only used for ranges. Clear this or define a range"});
+	} else {
+	    setInvalidVersion({});
+	}
+	console.log("validating...")
+
+    }
+
+	
+    useEffect(() => {
+	
+	if (version) {
+	    validateVersion();
+	}
+	
+    }, [version, versionType, versionRange, endVersion]);
+    
     const ActionColumn = (props) => {
 	const {component, vul, user} = props;
 
 	return (
 	    //user.role === "owner" ?
-	     <td>
+	     <td className="text-nowrap">
                  <Button variant="btn-icon px-1 edit-status-btn" onClick={(e)=>editStatusNow(component, vul)}>
 		     <i className="fas fa-edit"></i>
                  </Button>
@@ -788,7 +830,7 @@ const StatusAddForm = (props) => {
 					 inline
 					 label={type.desc}
 					 aria-label={type.desc}
-					 isInvalid={invalidVuls}
+					 isInvalid={invalidStatus}
 					 key={`status-${type.desc}`}
 					 name="status"
 					 checked = {status === type.desc ? true : false }
@@ -853,29 +895,41 @@ const StatusAddForm = (props) => {
 			 }
 			 <Form.Group className="mb-3">
 			     <Row>
-				 <Col lg={4} md={6} sm={12}>
-				     <Form.Label>Affected Version (or start range) <span className="required">*</span></Form.Label>
-				     <Form.Control name="version" isInvalid={invalidVersion} value={version} onChange={(e)=>setVersion(e.target.value)}/>
-				     {invalidVersion &&
-				      <Form.Text className="error">
-					  This field is required.
-				      </Form.Text>
-				     }
-
+				 <Col lg={3} md={6} sm={12}>
+				     <Form.Label>Version (or start range) <span className="required">*</span></Form.Label>
+				     <Form.Control name="version" isInvalid={invalidVersion.field == "version"} value={version} onChange={(e)=>setVersion(e.target.value)}/>
 				 </Col>
-				 <Col lg={4} md={6} sm={12}>
+				 <Col lg={3} md={6} sm={12}>
 				     <Form.Label>Version Range</Form.Label>
-				     <Form.Select name="version_affected" value={versionRange} onChange={(e)=>setVersionRange(e.target.value)} aria-label="Range Select">
+				     <Form.Select name="version_affected" isInvalid={invalidVersion.field == "version_affected"} value={versionRange} onChange={(e)=>setVersionRange(e.target.value)} aria-label="Range Select">
 					 {VERSION_RANGE_CHOICES.map((choice) => (
 					     <option key={choice.val} value={choice.val}>{choice.desc} </option>
 					 ))}
 				     </Form.Select>
 				 </Col>
-				 <Col lg={4} md={6} sm={12}>
-
+				 <Col lg={3} md={6} sm={12}>
 				     <Form.Label>End Version Range</Form.Label>
-                                     <Form.Control name="version_end_range" value={endVersion}  onChange={(e)=>setEndVersion(e.target.value)}/>
+                                     <Form.Control name="version_end_range" isInvalid={invalidVersion.field == "version_end_range"} value={endVersion}  onChange={(e)=>setEndVersion(e.target.value)}/>
                                  </Col>
+				 <Col lg={3} md={6} sm={12}>
+				     <Form.Label>Version Type</Form.Label>
+				     <Form.Select name="version_type" value={versionType} isInvalid={invalidVersion.field == "version_type"} onChange={(e)=>setVersionType(e.target.value)} aria-label="Version Type Select">
+					 {VERSION_TYPE_CHOICES.map((choice) => (
+                                             <option key={choice.val} value={choice.val}>{choice.desc} </option>
+					 ))}
+				     </Form.Select>
+                                 </Col>
+				 {Object.keys(invalidVersion).length > 0 &&
+				  <Row>
+				      <Col lg={12}>
+					  <Alert variant="danger">
+					      {invalidVersion.msg}
+					  </Alert>
+				      </Col>
+				  </Row>
+				 }
+
+
 			     </Row>
 			 </Form.Group>
 			 <Form.Group className="mb-3">

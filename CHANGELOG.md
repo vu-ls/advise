@@ -2,7 +2,7 @@ AA#Changelog
 
 All notable changes to AdVISE will be documented in this file.
 
-## [1.5.0] - 2024-01-29
+## [1.5.0] - 2024-01-30
 
 ### Added
 
@@ -25,6 +25,7 @@ All notable changes to AdVISE will be documented in this file.
 - Only import celery if using celery for worker
 - Upgrade dependencies: jwcrypto, follow-redirects, jinja2, cryptography, axios,
 - Email templates to prevent spam routing
+- Status range form and validation to align with CVE JSON 5 Schema
 - Add indexes to some tables to improve query times
 - Adjust random_page_cost in psql settings to improve query time on SSD
 - Move dependency add icon to dependency column in component table

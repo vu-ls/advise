@@ -102,7 +102,7 @@ class StatusRevisionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StatusRevision
-        fields = ('status', 'default_status', 'version', 'version_affected', 'version_end_range', 'statement', 'justification', 'revision_number', 'user', 'created', 'modified', 'diff',)
+        fields = ('status', 'default_status', 'version', 'version_affected', 'version_end_range', 'version_type', 'statement', 'justification', 'revision_number', 'user', 'created', 'modified', 'diff',)
 
     def get_user(self, obj):
         if obj.user:
@@ -136,6 +136,8 @@ class StatusRevisionSerializer(serializers.ModelSerializer):
                 all_diffs['justification'] = f"Justification changed from {other_revision.justification} to {obj.justification}"
             if (other.revision.default_status != obj.default_status):
                 all_diffs['default_status'] = f"Default status changed from {other_revision.get_default_status_display()} to {obj.get_default_status_display()}"
+            if (other_revision.version_type != obj.version_type):
+                all_diffs['version_type'] = f"Version type changed from {other_revision.version_type} to {obj.version_type}"
 
 
         return all_diffs
@@ -198,6 +200,7 @@ class StatusSerializer(serializers.ModelSerializer):
     status = StatusChoiceField(VUL_STATUS_CHOICES)
     default_status = CVEStatusChoiceField(required=False, choices=CVE_STATUS_CHOICES, allow_blank=True)
     version = serializers.CharField(source='version_value')
+    version_type = serializers.CharField(required=False, allow_blank=True)
     version_end_range = serializers.CharField(source='version_name', required=False, allow_blank=True)
     version_affected = serializers.ChoiceField(VERSION_RANGE_CHOICES, required=False, allow_blank=True)
     statement = serializers.CharField(required=False, allow_blank=True)
@@ -205,7 +208,7 @@ class StatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StatusRevision
-        fields = ('status', 'default_status', 'version', 'version_affected', 'version_end_range', 'statement', 'justification')
+        fields = ('status', 'default_status', 'version', 'version_type', 'version_affected', 'version_end_range', 'statement', 'justification')
 
 
 class VulStatusSerializer(serializers.ModelSerializer):
@@ -214,6 +217,7 @@ class VulStatusSerializer(serializers.ModelSerializer):
     default_status = ChoiceField(source='current_revision.default_status', choices=CVE_STATUS_CHOICES)
     version = serializers.CharField(source='current_revision.version_value')
     version_end_range = serializers.CharField(source='current_revision.version_name')
+    version_type = serializers.CharField(source='current_revision.version_type', allow_blank=True)
     version_range = ChoiceField(VERSION_RANGE_CHOICES, source='current_revision.version_affected', allow_blank=True)
     statement = serializers.CharField(source='current_revision.statement')
     vul = VulSerializer()
@@ -226,7 +230,7 @@ class VulStatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ComponentStatus
-        fields = ('id', 'default_status', 'status', 'version', 'version_end_range', 'version_range', 'user', 'statement', 'vul', 'revisions', 'revision_number', 'created', 'modified', 'share', 'justification', )
+        fields = ('id', 'default_status', 'status', 'version', 'version_type', 'version_end_range', 'version_range', 'user', 'statement', 'vul', 'revisions', 'revision_number', 'created', 'modified', 'share', 'justification', )
 
     def get_revisions(self, obj):
         return obj.statusrevision_set.count() - 1
@@ -236,6 +240,12 @@ class VulStatusSerializer(serializers.ModelSerializer):
             return obj.current_revision.user.screen_name
         else:
             return "Unknown"
+
+    def validate_version_type(self, value):
+        version_type = value.lower()
+        if value and value not in ['custom', 'git', 'maven', 'python', 'rpm', 'semvar']:
+            raise serializers.ValidationError("Invalid version type")
+        return version_type
 
 
 class StatusSummarySerializer(serializers.ModelSerializer):

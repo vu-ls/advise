@@ -245,6 +245,14 @@ class StatusRevision(BaseRevisionMixin, models.Model):
         _('Affected Version Value or Start Range'),
 	max_length=100)
 
+    version_type = models.CharField(
+        _('Version Type'),
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text=('The version numbering system used for specifying the range. This defines the exact semantics of the comparison (less-than) operation on versions, which is required to understand the range itself.')
+    )
+    
     statement = models.TextField(
         blank=True,
         null=True)
@@ -273,6 +281,7 @@ class StatusRevision(BaseRevisionMixin, models.Model):
         self.status = predecessor.status
         self.statement = predecessor.statement
         self.default_status = predecessor.default_status
+        self.version_type = predecessor.version_type
         self.deleted = predecessor.deleted
         self.locked = predecessor.locked
         self.version_affected = predecessor.version_affected

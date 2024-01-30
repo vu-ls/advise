@@ -582,17 +582,19 @@ class ComponentStatusAPIView(viewsets.ModelViewSet):
                         change = True
                     elif(cs.current_revision.version_value != data["version"]):
                         change=True
-                    elif (cs.current_revision.get_version_affected_display() != data["version_affected"]):
+                    elif (data.get('version_affected') and cs.current_revision.get_version_affected_display() != data["version_affected"]):
                         change = True
-                    elif (cs.current_revision.statement != data["statement"]):
+                    elif (data.get('statement') and cs.current_revision.statement != data["statement"]):
                         change = True
                     elif (data.get('justification') and cs.current_revision.justification != data["justification"]):
                         change = True
-                    elif (cs.current_revision.version_name != data["version_end_range"]):
+                    elif (data.get('version_end_range') and cs.current_revision.version_name != data["version_end_range"]):
                         change = True
-                    elif (cs.current_revision.default_status != data['default_status']):
+                    elif (data.get('default_status') and cs.current_revision.default_status != data['default_status']):
                         change = True
-                        
+                    elif (data.get('version_type') and cs.current_revision.version_type != data['version_type']):
+                        change = True
+                          
                     if cs.share != share:
                         cs.share = share
                         cs.save()

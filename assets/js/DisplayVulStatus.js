@@ -12,7 +12,8 @@ const DisplayVulStatus = ({status, count=null}) => {
     } else if (["Under Investigation", "Unknown"].includes(status)) {
 	return (
             <Badge pill bg="warning">
-                {status} {count && <Badge bg="light" text="dark">{count}</Badge>}
+		{status}{" "}
+                {count && <Badge bg="light" text="dark">{count}</Badge>}
             </Badge>
         )
     } else if (status == "Fixed") {
